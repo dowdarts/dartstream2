@@ -1,0 +1,24 @@
+{
+  "name": "dartstream-scorer",
+  "version": "1.0.0",
+  "description": "Dart scoring app with live TV scoreboard for OBS streaming",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "concurrently \"npm run server\" \"npm run dev\""
+  },
+  "keywords": ["darts", "scoring", "streaming", "obs", "websocket"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "concurrently": "^8.2.2"
+  }
+}
