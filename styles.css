@@ -1,0 +1,1693 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #000;
+    color: #fff;
+    overflow: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    width: 100%;
+    height: 100vh;
+}
+
+#app {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    /* Mobile phones */
+    body {
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Tablets */
+    body {
+        font-size: 16px;
+    }
+    
+    .player-name-large {
+        font-size: 26px;
+    }
+    
+    .score-large {
+        font-size: 58px;
+    }
+    
+    .timer-box {
+        width: 70px;
+        height: 70px;
+        font-size: 32px;
+    }
+    
+    .timer-display {
+        flex: 0 0 100px;
+    }
+    
+    .player-header {
+        padding: 16px;
+    }
+    
+    .starting-selection {
+        padding: 30px 20px;
+    }
+    
+    .starting-selection h2 {
+        font-size: 22px;
+    }
+    
+    .starting-player-btn {
+        font-size: 24px;
+        padding: 22px;
+        width: 85%;
+    }
+    
+    .coin-btn {
+        font-size: 14px;
+        padding: 12px 22px;
+    }
+    
+    .player-card {
+        padding: 15px;
+    }
+    
+    .modal-content {
+        max-width: 700px;
+    }
+}
+
+@media (min-width: 1025px) {
+    /* Desktop */
+    #app {
+        max-width: 1920px;
+        margin: 0 auto;
+    }
+    
+    .starting-selection {
+        padding: 40px 20px;
+    }
+    
+    .starting-selection h2 {
+        font-size: 24px;
+    }
+    
+    .starting-player-btn {
+        font-size: 28px;
+        padding: 25px;
+        width: 80%;
+    }
+    
+    .coin-btn {
+        font-size: 14px;
+        padding: 12px 24px;
+    }
+}
+
+/* Screen Management */
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Game Mode Selection Screen */
+.modal-header {
+    background: linear-gradient(to bottom, #4a5f7a 0%, #2d3e50 100%);
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 2px solid #1a1a1a;
+}
+
+.modal-header h1,
+.modal-header h2 {
+    text-align: center;
+    font-size: 24px;
+    color: #fff;
+}
+
+.modal-content {
+    flex: 1;
+    background: #3a3a3a;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 600px;
+}
+
+.game-option-btn {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 1px solid #888;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: #000;
+    transition: background 0.2s;
+}
+
+.game-option-btn:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.game-option-btn:hover {
+    background: linear-gradient(to bottom, #f8f8f8 0%, #d8d8d8 100%);
+}
+
+.game-option-btn:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.game-option-btn.custom {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    color: #000;
+    font-weight: bold;
+}
+
+.game-option-btn strong {
+    font-size: 18px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.game-option-btn em {
+    font-style: italic;
+    color: #444;
+}
+
+.game-option-btn span {
+    font-size: 14px;
+    color: #444;
+}
+
+/* Custom Game Options */
+.custom-game-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    width: 100%;
+    max-width: 600px;
+    margin: 20px 0;
+}
+
+.custom-game-options .game-option-btn {
+    border-radius: 8px;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 30px;
+}
+
+.back-btn {
+    background: linear-gradient(to bottom, #4a5f7a 0%, #2d3e50 100%);
+    color: #fff;
+    border: 2px solid #666;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.back-btn:hover {
+    background: linear-gradient(to bottom, #5a6f8a 0%, #3d4e60 100%);
+}
+
+/* Coin Toss Modal */
+.coin-toss-modal,
+.coin-result-display {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.coin-toss-content,
+.coin-result-content {
+    background: #2a2a2a;
+    padding: 40px;
+    border-radius: 12px;
+    border: 3px solid #d4af37;
+    text-align: center;
+}
+
+.coin-toss-content h2,
+.coin-result-content h2 {
+    color: #d4af37;
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+.coin-choice-btn {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border: 3px solid #d4af37;
+    color: #000;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 20px 50px;
+    margin: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.coin-choice-btn:hover {
+    background: linear-gradient(to bottom, #e4bf47 0%, #c8a42f 100%);
+    transform: translateY(-2px);
+}
+
+.coin-result-content h2 {
+    font-size: 36px;
+    color: #fff;
+}
+
+/* Game Header */
+.game-header {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #000;
+}
+
+.game-header h2 {
+    flex: 1;
+    text-align: center;
+    font-size: 20px;
+}
+
+.set-score {
+    color: #fff;
+}
+
+.score-display {
+    color: #fff;
+}
+
+.wifi-btn {
+    background: #8b0000;
+    border: 2px solid #fff;
+    color: #fff;
+    padding: 5px 15px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* Player Names Bar */
+.player-names-bar {
+    background: #000;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 2px solid #333;
+}
+
+.player-name {
+    flex: 1;
+    font-size: 24px;
+    font-weight: bold;
+    color: #d4af37;
+}
+
+.player-name.left {
+    text-align: left;
+}
+
+.player-name.right {
+    text-align: right;
+}
+
+.match-format {
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    flex: 0 0 auto;
+    padding: 0 30px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: #000;
+    border-bottom: 1px solid #333;
+}
+
+.action-btn {
+    flex: 1;
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 2px solid #888;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: linear-gradient(to bottom, #f8f8f8 0%, #d8d8d8 100%);
+    transform: translateY(-2px);
+}
+
+.action-btn.gold {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+}
+
+.action-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-btn.disabled:hover {
+    transform: none;
+}
+
+/* Opponent Selection */
+.opponent-selection {
+    flex: 1;
+    display: flex;
+    background: #000;
+    overflow: hidden;
+}
+
+.opponent-column {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.opponent-column h3 {
+    color: #d4af37;
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.selected-player-display {
+    background: #1a1a1a;
+    border: 2px solid #d4af37;
+    color: #d4af37;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.player-item {
+    background: #d4af37;
+    color: #000;
+    padding: 12px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-item:hover {
+    background: #c5a028;
+}
+
+.player-item.selected {
+    background: #8b0000;
+    color: #fff;
+}
+
+.player-item .info-icon {
+    margin-left: auto;
+    background: #fff;
+    color: #000;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.alphabet-nav {
+    flex: 0 0 50px;
+    background: #444;
+    border-left: 2px solid #1a1a1a;
+    border-right: 2px solid #1a1a1a;
+}
+
+.alphabet {
+    display: none;
+}
+
+/* Bottom Bar */
+.bottom-bar {
+    background: #1a1a1a;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    border-top: 2px solid #000;
+}
+
+.bottom-btn {
+    flex: 1;
+    background: linear-gradient(to bottom, #4a4a4a 0%, #2a2a2a 100%);
+    border: 2px solid #666;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+}
+
+.bottom-btn.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+}
+
+.bottom-btn.gold {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+    color: #000;
+}
+
+/* Match Info Bar */
+.match-info-bar {
+    background: #000;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    border-top: 2px solid #333;
+}
+
+.match-avg {
+    font-size: 12px;
+    text-align: center;
+    color: #888;
+}
+
+.set-display {
+    font-size: 32px;
+    font-weight: bold;
+    color: #888;
+}
+
+.set-score-big {
+    font-size: 48px;
+    font-weight: bold;
+    color: #d4af37;
+}
+
+.set-score-big.yellow {
+    color: #d4af37;
+}
+
+.legs-format {
+    font-size: 32px;
+    color: #888;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-dialog {
+    background: #3a3a3a;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-dialog.small-dialog {
+    max-width: 400px;
+}
+
+.close-modal {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    padding: 0 10px;
+}
+
+/* Player Library */
+.library-actions {
+    display: flex;
+    gap: 10px;
+    padding: 15px;
+    background: #2a2a2a;
+}
+
+.lib-btn {
+    flex: 1;
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 2px solid #888;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+}
+
+.player-grid {
+    flex: 1;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    background: #2a2a2a;
+}
+
+.player-card {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 2px solid #888;
+    border-radius: 8px;
+    padding: 20px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.player-card:hover {
+    background: linear-gradient(to bottom, #f8f8f8 0%, #d8d8d8 100%);
+    transform: translateY(-2px);
+}
+
+.player-card.selected {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+    transform: translateY(-2px);
+}
+
+.player-card.selected-for-game {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border-color: #8b0000;
+    transform: translateY(-2px);
+}
+
+.player-card.selected-for-game .name,
+.player-card.selected-for-game .surname {
+    color: #fff;
+}
+
+.player-card.selected-for-delete {
+    background: linear-gradient(to bottom, #ff4444 0%, #cc0000 100%);
+    border-color: #ff0000;
+    transform: translateY(-2px);
+}
+
+.player-card.selected-for-delete .name,
+.player-card.selected-for-delete .surname {
+    color: #fff;
+}
+
+.lib-btn.selected {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+}
+
+.player-card .name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+    margin-bottom: 5px;
+}
+
+.player-card .surname {
+    font-size: 14px;
+    color: #444;
+}
+
+.player-card .player-id {
+    font-size: 11px;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.library-footer {
+    display: flex;
+    gap: 10px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-top: 2px solid #1a1a1a;
+}
+
+.lib-footer-btn {
+    flex: 1;
+    background: linear-gradient(to bottom, #4a4a4a 0%, #2a2a2a 100%);
+    border: 2px solid #666;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+}
+
+.lib-footer-btn.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+}
+
+.lib-footer-btn.red {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.lib-footer-btn.gold {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+    color: #000;
+}
+
+/* Match Settings */
+.settings-btn {
+    width: 100%;
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border: 2px solid #d4af37;
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.modal-content h3 {
+    color: #fff;
+    font-size: 18px;
+    margin: 20px 0 10px 0;
+}
+
+.setting-option {
+    width: 100%;
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 2px solid #888;
+    padding: 15px;
+    font-size: 16px;
+    color: #000;
+    cursor: pointer;
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.setting-option:hover {
+    background: linear-gradient(to bottom, #f8f8f8 0%, #d8d8d8 100%);
+}
+
+.setting-option.selected {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.setting-option .right-label {
+    float: right;
+}
+
+.setting-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.setting-row .setting-option {
+    flex: 1;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.setting-option.wide {
+    width: 100%;
+}
+
+.continue-btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.continue-btn.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+    color: #fff;
+}
+
+.continue-btn.red {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.player-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border: 2px solid #888;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    background: #fff;
+    color: #000;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+}
+
+.player-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3);
+}
+
+.player-input::placeholder {
+    color: #888;
+}
+
+/* DartConnect Screen */
+.dartconnect-logo {
+    background: #000;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.dartconnect-logo h1 {
+    font-size: 64px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+}
+
+.yellow-text {
+    color: #d4af37;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.section-spacing-top {
+    margin-top: 30px;
+}
+
+.section-spacing {
+    margin-top: 20px;
+}
+
+.game-type-selection {
+    flex: 1;
+    background: #000;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.game-type-btn {
+    width: 80%;
+    max-width: 500px;
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border: 3px solid #8b0000;
+    border-radius: 8px;
+    padding: 25px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.game-type-btn:hover {
+    background: linear-gradient(to bottom, #a00000 0%, #6a0000 100%);
+    transform: translateY(-2px);
+}
+
+.add-game {
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+/* Starting Player Screen */
+.scoreboard-header {
+    background: #000;
+    display: flex;
+    align-items: stretch;
+    border-bottom: 3px solid #fff;
+}
+
+.player-header {
+    flex: 1;
+    padding: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.player-header.left {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.player-header.right {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.player-header.left.active {
+    background: #fff;
+    color: #000;
+}
+
+.player-header.right.active {
+    background: #fff;
+    color: #000;
+}
+
+.player-name-large {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.stats-small {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.stat-label {
+    font-size: 16px;
+}
+
+.stat-label.red {
+    color: #ff0000;
+}
+
+.score-large {
+    font-size: 72px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.checkout-hint {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 5px 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.dart-logo {
+    display: none;
+}
+
+.timer-display {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+.game-logo {
+    max-width: 100px;
+    max-height: 60px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+
+.version-text {
+    font-size: 11px;
+    color: #888;
+    font-weight: normal;
+}
+
+.timer-box {
+    width: 80px;
+    height: 80px;
+    background: #000;
+    border: 3px solid #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.starting-selection {
+    flex: 1;
+    background: #000;
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.starting-selection h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.starting-player-btn {
+    width: 90%;
+    max-width: 500px;
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border: 3px solid #8b0000;
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: all 0.2s;
+}
+
+.starting-player-btn:hover {
+    background: linear-gradient(to bottom, #a00000 0%, #6a0000 100%);
+    transform: translateY(-2px);
+}
+
+.coin-options {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.coin-btn {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 2px solid #888;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+}
+
+.coin-btn.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+    color: #fff;
+}
+
+.game-info {
+    margin-top: 30px;
+}
+
+.game-format-display {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.game-format-display:hover {
+    background: #2a2a2a;
+    border-color: #d4af37;
+}
+
+.legs-format-display {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.legs-format-display:hover {
+    background: #2a2a2a;
+    border-color: #d4af37;
+}
+
+.custom-options-row {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.option-btn {
+    background: #2a2a2a;
+    border: 2px solid #555;
+    border-radius: 6px;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.option-btn:hover {
+    background: #3a3a3a;
+    border-color: #d4af37;
+}
+
+.option-btn.selected {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+    color: #000;
+}
+
+/* Match Settings Screen */
+.match-settings-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.advanced-settings-btn {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border: none;
+    border-radius: 6px;
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 30px;
+    transition: all 0.2s;
+}
+
+.advanced-settings-btn:hover {
+    background: linear-gradient(to bottom, #e5c047 0%, #c9a52f 100%);
+}
+
+.settings-section {
+    width: 100%;
+}
+
+.section-title {
+    color: #fff;
+    font-size: 18px;
+    text-align: center;
+    margin: 20px 0 15px 0;
+}
+
+.section-title.left {
+    text-align: left;
+    margin: 10px 0 15px 0;
+}
+
+.section-title.right {
+    text-align: right;
+    margin: 10px 0 15px 0;
+}
+
+.settings-header-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.play-all-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.settings-btn {
+    background: #2a2a2a;
+    border: 2px solid #555;
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.settings-btn:hover {
+    background: #3a3a3a;
+    border-color: #d4af37;
+}
+
+.settings-btn.selected {
+    background: #8b0000;
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.settings-btn.first-to.selected {
+    background: #8b0000;
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.custom-leg-btn {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border: none;
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    width: 100%;
+    margin: 15px 0;
+    transition: all 0.2s;
+}
+
+.custom-leg-btn:hover {
+    background: linear-gradient(to bottom, #e5c047 0%, #c9a52f 100%);
+}
+
+.continue-btn {
+    background: #006400;
+    border: none;
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.2s;
+}
+
+.continue-btn:hover {
+    background: #008000;
+}
+
+.reset-btn {
+    background: #8b0000;
+    border: none;
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: all 0.2s;
+}
+
+.reset-btn:hover {
+    background: #a00000;
+}
+
+.settings-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.settings-option-btn {
+    flex: 1;
+    min-width: 150px;
+    background: #2a2a2a;
+    border: 2px solid #555;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.settings-option-btn:hover {
+    background: #3a3a3a;
+    border-color: #d4af37;
+}
+
+.settings-option-btn.selected {
+    background: #8b0000;
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.sets-input-container,
+.legs-input-container {
+    margin-bottom: 25px;
+}
+
+.sets-input,
+.legs-input {
+    width: 100%;
+    background: #1a1a1a;
+    border: 2px solid #555;
+    border-radius: 6px;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.sets-input:focus,
+.legs-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    background: #2a2a2a;
+}
+
+.sets-input::placeholder,
+.legs-input::placeholder {
+    color: #666;
+}
+
+/* Remove spinner arrows for number inputs */
+.sets-input::-webkit-outer-spin-button,
+.sets-input::-webkit-inner-spin-button,
+.legs-input::-webkit-outer-spin-button,
+.legs-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.sets-input[type=number],
+.legs-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+#advanced-settings,
+#bull-up-options {
+    display: none;
+}
+
+.bottom-bar-dark {
+    background: #000;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    border-top: 2px solid #333;
+}
+
+.bottom-btn-dark {
+    flex: 1;
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #888;
+    cursor: pointer;
+}
+
+.bottom-btn-dark.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+    color: #fff;
+}
+
+.bottom-btn-dark.gold {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+    color: #000;
+}
+
+.set-score-bottom {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    color: #888;
+}
+
+/* Game Screen */
+.scoring-area {
+    flex: 1;
+    background: #000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.visit-indicator {
+    text-align: center;
+}
+
+.visit-indicator .yellow-text {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 20px;
+}
+
+.visit-number {
+    font-size: 48px;
+    font-weight: bold;
+    color: #888;
+    margin-bottom: 20px;
+}
+
+.dart-marker {
+    font-size: 64px;
+    color: #888;
+}
+
+.bottom-controls {
+    background: #000;
+}
+
+.control-bar {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 2px solid #000;
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.control-btn.gold {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border: 2px solid #d4af37;
+    color: #000;
+}
+
+.control-btn.gold:hover {
+    background: linear-gradient(to bottom, #e4bf47 0%, #c8a42f 100%);
+}
+
+.control-btn.red {
+    background: #000;
+    color: #fff;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.set-score-inline {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    color: #fff;
+}
+
+.input-bar {
+    background: #000;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-btn {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.input-btn.yellow {
+    background: linear-gradient(to bottom, #d4af37 0%, #b8941f 100%);
+    border-color: #d4af37;
+    color: #000;
+}
+
+.input-btn.red {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border-color: #8b0000;
+    color: #fff;
+}
+
+.input-btn.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+    color: #fff;
+}
+
+.input-mode {
+    flex: 1;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #d4af37;
+}
+
+.number-pad {
+    background: #1a1a1a;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.num-btn {
+    background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
+    border: 2px solid #888;
+    border-radius: 6px;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.num-btn:hover {
+    background: linear-gradient(to bottom, #f8f8f8 0%, #d8d8d8 100%);
+    transform: translateY(-2px);
+}
+
+.num-btn:active {
+    transform: translateY(0);
+}
+
+.num-btn.edge {
+    background: linear-gradient(to bottom, #3a3a3a 0%, #2a2a2a 100%);
+    border-color: #555;
+    color: #888;
+}
+
+.num-btn.special {
+    font-size: 28px;
+}
+
+.num-btn.special.green {
+    background: linear-gradient(to bottom, #2d5016 0%, #1a3009 100%);
+    border-color: #2d5016;
+    color: #fff;
+}
+
+#zero-btn {
+    display: none;
+}
+
+.num-btn.special.red {
+    background: linear-gradient(to bottom, #8b0000 0%, #5a0000 100%);
+    border-color: #8b0000;
+    color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .player-name-large {
+        font-size: 20px;
+    }
+    
+    .score-large {
+        font-size: 42px;
+    }
+    
+    .timer-box {
+        width: 60px;
+        height: 60px;
+        font-size: 28px;
+    }
+    
+    .timer-display {
+        flex: 0 0 80px;
+    }
+    
+    .player-header {
+        padding: 12px;
+    }
+    
+    .stats-small {
+        font-size: 12px;
+    }
+    
+    .game-option-btn {
+        padding: 15px;
+        font-size: 14px;
+    }
+    
+    .starting-selection h2 {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+    
+    .starting-player-btn {
+        font-size: 20px;
+        padding: 18px;
+        width: 90%;
+    }
+    
+    .coin-btn {
+        font-size: 13px;
+        padding: 10px 18px;
+    }
+    
+    .header-player-info {
+        font-size: 11px;
+    }
+    
+    .player-card {
+        padding: 12px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        max-width: 95%;
+    }
+    
+    h1 {
+        font-size: 28px;
+    }
+    
+    h2 {
+        font-size: 20px;
+    }
+    
+    .play-all-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .settings-btn {
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    .settings-option-btn {
+        min-width: 100px;
+        padding: 10px 15px;
+        font-size: 12px;
+    }
+}

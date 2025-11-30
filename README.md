@@ -1,196 +1,141 @@
-# DartStream Scorer - Part 1
+# DartConnect Scoring App
 
-A professional dart scoring application with real-time TV scoreboard display for OBS streaming.
+A professional darts scoring application designed for live streaming broadcasts. This app replicates the DartConnect interface and scoring logic for 501 and other dart game formats.
 
 ## Features
 
-- **Dual Interface System**
-  - Control Panel: Full-featured scoring interface for match operator
-  - TV Viewer: Clean scoreboard display optimized for OBS capture
+### Game Modes
+- **Quick 501 SIDO** - Alternate start, Best of 3 legs
+- **Extended 501 SIDO** - Alternate start, Best of 9 legs
+- **Quick Cricket** - Best of 3 legs
+- **Chicago** - Game choice format, Best of 3 legs
+- **Custom Match Menu** - Create your own match rules
 
-- **Real-time Updates**
-  - WebSocket-based instant score synchronization
-  - Automatic reconnection on connection loss
-  - Live score updates across all connected viewers
+### Core Functionality
+- ✅ Player library management with 20+ preset players
+- ✅ Flexible match settings (sets, legs, game types)
+- ✅ Advanced match configuration options
+- ✅ 501 game with straight-in/double-out rules
+- ✅ Automatic 3-dart average calculation
+- ✅ Leg average and match average tracking
+- ✅ Score entry via number pad (1-9, 100, 140, 180)
+- ✅ Bust detection and validation
+- ✅ Checkout hints
+- ✅ Set and leg tracking
+- ✅ Alternate start format
+- ✅ Bull-up option for starting player selection
 
-- **Professional Scoring**
-  - Support for 301, 501, and 701 game formats
-  - Track sets, legs, and throws
-  - Calculate player averages
-  - Quick score buttons for common values
-  - Bust detection and handling
-  - Undo functionality
+## How to Use
 
-- **OBS-Ready Viewer**
-  - Clean, professional scoreboard design
-  - Responsive layout for different stream resolutions
-  - Smooth animations for score changes
-  - No watermarks or distractions
+### Getting Started
+1. Open `index.html` in a web browser
+2. Select a game mode from the main menu
+3. Choose players from the library or use default players
+4. Select starting player (or use coin toss/random)
+5. Start scoring!
 
-## Installation
+### Scoring
+- Click number buttons (1-9) to enter dart scores
+- Use quick score buttons: **100**, **140**, **180**
+- Click **MISS** to record a missed dart
+- Click **BACK** to undo the last dart entry
+- After 3 darts, the visit auto-submits
 
-1. **Install Node.js**
-   - Download from [nodejs.org](https://nodejs.org/)
-   - Version 14 or higher required
+### Game Rules (501 SIDO)
+- Each player starts with 501 points
+- **SIDO** = Straight In, Double Out
+  - Any score starts the game
+  - Must finish on a double to win
+- Subtracts each dart score from player total
+- First to exactly 0 wins the leg
+- Busts (going below 0 or landing on 1) reset the turn
+- First to win required legs (e.g., 2 out of 3) wins the match
 
-2. **Install Dependencies**
-   ```powershell
-   cd c:\Users\cgcda\Dartstream2
-   npm install
-   ```
+### Calculating Averages
+The app automatically calculates:
 
-## Usage
-
-### Starting the Server
-
-```powershell
-npm start
+**3-Dart Average Formula:**
+```
+(Points Scored ÷ Darts Thrown) × 3
 ```
 
-The server will start on `http://localhost:3000`
+**Example:**
+- Player scores 501 points in 15 darts
+- Average = (501 ÷ 15) × 3 = **100.2**
 
-For development with auto-restart:
-```powershell
-npm run dev
-```
+**Leg Average** - Performance for current leg only  
+**Match Average** - Overall performance across all legs
 
-### Accessing the Interfaces
-
-1. **Scorer Control Panel**
-   - URL: `http://localhost:3000`
-   - Use this interface to input scores and control the match
-   - Features full scoring controls, player name editing, and game management
-
-2. **TV Viewer (for OBS)**
-   - URL: `http://localhost:3000/viewer`
-   - Add as Browser Source in OBS Studio
-   - Recommended resolution: 1920x1080 or 1280x720
-
-## OBS Studio Setup
-
-1. Open OBS Studio
-2. Add a new source → Browser
-3. Configure:
-   - URL: `http://localhost:3000/viewer`
-   - Width: 1920 (or your stream width)
-   - Height: 1080 (or your stream height)
-   - FPS: 30
-4. Check "Shutdown source when not visible" for performance
-5. Position and resize as needed in your scene
-
-## Controls
-
-### Scorer Interface
-
-**Number Pad:**
-- Click number buttons to build a score
-- Click Submit or press Enter to record the score
-
-**Quick Scores:**
-- Buttons for common scores (95, 100, 121, 125, 135, 140, 180)
-- Click for instant score entry
-
-**Action Buttons:**
-- UNDO: Undo last score entry
-- MISS: Record a missed dart
-- BUST: Mark current turn as bust (score goes back)
-- Reset Game: Start a new game
-
-**Keyboard Shortcuts:**
-- Number keys (0-9): Enter scores
-- Enter: Submit score
-- Backspace: Delete last digit
-- Escape: Clear current input
-
-**Player Names:**
-- Click player name fields to edit
-- Changes sync automatically to viewer
-
-**Game Format:**
-- Select 301, 501, or 701 from dropdown
-- Changing format resets the game
-
-## Architecture
-
+## File Structure
 ```
 Dartstream2/
-├── server.js              # Express + WebSocket server
-├── package.json           # Dependencies and scripts
-├── public/
-│   ├── scorer.html        # Control panel interface
-│   ├── viewer.html        # TV scoreboard display
-│   ├── css/
-│   │   ├── scorer.css     # Control panel styles
-│   │   └── viewer.css     # TV viewer styles
-│   └── js/
-│       ├── scorer.js      # Control panel logic
-│       └── viewer.js      # TV viewer logic
-└── README.md
+├── index.html          # Main HTML structure
+├── styles.css          # All styling and layout
+├── app.js              # Game logic and state management
+└── README.md           # This file
 ```
 
-## WebSocket Events
+## Technical Details
 
-The app uses WebSocket for real-time communication:
+### Game State Management
+The app maintains a comprehensive game state including:
+- Player scores, darts thrown, wins
+- Current visit and dart count
+- Set and leg tracking
+- Match settings and format
+- Player library
 
-**Client → Server:**
-- `score`: Submit a score value
-- `undo`: Undo last action
-- `miss`: Record a miss
-- `bust`: Record a bust
-- `reset`: Reset the game
-- `updatePlayer`: Update player name
+### Screens
+1. **Game Mode Selection** - Choose game format
+2. **Player Selection** - Pick left/right opponents
+3. **Player Library** - Manage player database
+4. **Match Settings** - Configure legs, sets, start format
+5. **Game Selection** - Choose 301/501/Cricket
+6. **Starting Player** - Select who throws first
+7. **Main Game** - Active scoreboard and input
 
-**Server → Client:**
-- `state`: Complete game state update
+### Color Scheme
+- **Primary Red**: #8b0000 (Dark Red)
+- **Gold/Yellow**: #d4af37 (Accent color)
+- **Background**: #000000 (Black)
+- **Secondary**: #1a1a1a, #3a3a3a (Dark grays)
+- **Buttons**: Gradient combinations for depth
 
-## Customization
+## Future Enhancements
+This scoring app is designed to integrate with other streaming tools:
+- OBS Browser Source compatibility
+- Real-time statistics overlays
+- Multi-camera integration
+- Player profile graphics
+- Match replay system
+- Live commentary integration
 
-### Changing Port
-Edit `server.js` line 152:
-```javascript
-const PORT = process.env.PORT || 3000;
-```
+## Browser Compatibility
+- Modern browsers (Chrome, Firefox, Edge, Safari)
+- Responsive design for different screen sizes
+- No external dependencies required
 
-### Styling the Viewer
-Edit `public/css/viewer.css` to match your stream branding:
-- Colors: Update gradient values and accent colors
-- Fonts: Change font families in the CSS
-- Layout: Adjust grid layouts and spacing
+## Usage for Live Streaming
 
-### Adding Satellite Number
-The satellite number (8068) can be edited in the game state in `server.js`
+### OBS Setup
+1. Add Browser Source
+2. Point to `index.html` file path
+3. Set resolution (e.g., 1920x1080)
+4. Configure as needed for overlay or full screen
 
-## Troubleshooting
-
-**Viewer not updating:**
-- Check WebSocket connection status in browser console
-- Ensure both scorer and viewer are connected to the same server
-- Check firewall settings
-
-**Server won't start:**
-- Ensure port 3000 is not in use: `netstat -ano | findstr :3000`
-- Kill conflicting process or change port
-
-**OBS shows blank page:**
-- Verify URL is correct (`/viewer` path)
-- Check OBS browser source settings
-- Try refreshing the browser source
-
-## Next Steps (Future Parts)
-
-This is Part 1 of the DartStream multi-part application. Future additions:
-- Player statistics and match history
-- Tournament bracket management
-- Multi-match scheduling
-- Player profiles and photos
-- Advanced analytics
-- Mobile companion app
-- Cloud sync capabilities
-
-## License
-
-MIT License - Feel free to modify and use for your dart streaming needs!
+### Tips
+- Use fullscreen mode for clean overlay
+- Score entry is simple and fast for live games
+- All calculations are automatic
+- Checkout hints help players and viewers
 
 ## Support
+For issues or enhancements, refer to the reference files:
+- `Scoring-app-basic-dart-logic.txt` - Scoring rules
+- `scoringappcodereference.txt` - Original HTML reference
 
-For issues or questions about this scoring app, check the browser console for WebSocket connection status and errors.
+---
+
+**Version**: 1.0  
+**Based on**: DartConnect v3.24.9  
+**License**: For streaming production use

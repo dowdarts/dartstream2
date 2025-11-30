@@ -3,137 +3,543 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dart Scorer - Control Panel</title>
-    <link rel="stylesheet" href="/public/css/scorer.css">
+    <title>DartStream - Professional Dart Live Streaming Tools</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>DartStream Scorer</h1>
-            <div class="connection-status">
-                <span class="status-indicator" id="statusIndicator"></span>
-                <span id="statusText">Connecting...</span>
+    
+    <div id="app">
+        <!-- Game Mode Selection Screen - Hidden -->
+        <div id="game-mode-screen" class="screen" style="display: none;">
+            <div class="modal-header">
+                <h1>Choose Game Mode</h1>
             </div>
-        </div>
-
-        <div class="scoreboard-preview">
-            <div class="score-display">
-                <div class="player-section home">
-                    <div class="player-header">
-                        <input type="text" id="homeName" class="player-name-input" value="Home" />
-                        <div class="status-dot active" id="homeStatus"></div>
-                    </div>
-                    <div class="player-score" id="homeScore">501</div>
-                    <div class="player-average" id="homeAvg">0.00</div>
-                </div>
-
-                <div class="player-section away">
-                    <div class="player-header">
-                        <input type="text" id="awayName" class="player-name-input" value="Away" />
-                        <div class="status-dot" id="awayStatus"></div>
-                    </div>
-                    <div class="player-score" id="awayScore">501</div>
-                    <div class="player-average" id="awayAvg">0.00</div>
-                </div>
-            </div>
-
-            <div class="game-info">
-                <div class="sets-legs">
-                    <span id="homeSets">S:0-0</span>
-                    <span id="homeLegs">L:0-0</span>
-                </div>
-                <div class="satellite">
-                    <span>🛰️ 8068</span>
-                </div>
-                <div class="turn-info">
-                    <span>Turn <span id="turnNumber">1</span></span>
-                </div>
-            </div>
-
-            <div class="throw-display">
-                <div class="throw-header">
-                    <span>Home</span>
-                    <span>Turn</span>
-                    <span>Away</span>
-                </div>
-                <div class="throw-row">
-                    <span id="homeT1">0</span>
-                    <span class="turn-label">1</span>
-                    <span id="awayT1">0</span>
-                </div>
-                <div class="throw-row">
-                    <span id="homeT3">0</span>
-                    <span class="turn-label">3</span>
-                    <span id="awayT3">0</span>
-                </div>
-                <div class="throw-row">
-                    <span id="homeT5">0</span>
-                    <span class="turn-label">5</span>
-                    <span id="awayT5">0</span>
+            <div class="modal-content">
+                <div class="game-options">
+                    <button class="game-option-btn" data-game="quick-501">
+                        <strong>Quick 501</strong> <em>SIDO</em><br>
+                        <span>Alternate start, Best of 3 legs</span>
+                    </button>
+                    <button class="game-option-btn" data-game="extended-501">
+                        <strong>Extended 501</strong> <em>SIDO</em><br>
+                        <span>Alternate start, Best of 9 legs</span>
+                    </button>
+                    <button class="game-option-btn" data-game="quick-301">
+                        <strong>Quick 301</strong> <em>DIDO</em><br>
+                        <span>Alternate start, Best of 3 legs</span>
+                    </button>
+                    <button class="game-option-btn" data-game="extended-301">
+                        <strong>Extended 301</strong> <em>DIDO</em><br>
+                        <span>Alternate start, Best of 5 legs</span>
+                    </button>
+                    <button class="game-option-btn custom" data-game="custom">
+                        <strong>Custom Match Menu</strong><br>
+                        <span>Create your own match rules</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="controls">
+        <!-- Game Type Quick Selection Screen -->
+        <div id="game-type-select-screen" class="screen">
+            <div class="modal-header">
+                <h1>Select Game Type</h1>
+            </div>
+            <div class="modal-content">
+                <div class="game-options">
+                    <button class="game-option-btn" id="select-301-game">
+                        <strong>301 DIDO</strong>
+                    </button>
+                    <button class="game-option-btn" id="select-501-game">
+                        <strong>501 SIDO</strong>
+                    </button>
+                    <button class="game-option-btn custom" id="select-custom-game">
+                        <strong>Custom X01</strong>
+                    </button>
+                </div>
+                <button class="back-btn" id="back-from-game-type">Back to Starting Player</button>
+            </div>
+        </div>
+
+        <!-- Match Settings Screen -->
+        <div id="match-settings-screen" class="screen">
+            <div class="modal-header">
+                <h1>Match Settings</h1>
+            </div>
+            <div class="modal-content match-settings-content">
+                <button class="advanced-settings-btn" id="advanced-settings-btn">Advanced Settings</button>
+                
+                <div class="settings-section" id="simple-settings">
+                    <div class="settings-header-grid">
+                        <h2 class="section-title left">Best of</h2>
+                        <h2 class="section-title right">First to</h2>
+                    </div>
+                    <div class="settings-grid">
+                        <button class="settings-btn" data-legs="1">1 Leg</button>
+                        <button class="settings-btn first-to" data-legs="1">1 Wins</button>
+                    </div>
+                    <div class="settings-grid">
+                        <button class="settings-btn selected" data-legs="3">3 Legs</button>
+                        <button class="settings-btn first-to selected" data-legs="2">2 Wins</button>
+                    </div>
+                    <div class="settings-grid">
+                        <button class="settings-btn" data-legs="5">5 Legs</button>
+                        <button class="settings-btn first-to" data-legs="3">3 Wins</button>
+                    </div>
+                    <div class="settings-grid">
+                        <button class="settings-btn" data-legs="7">7 Legs</button>
+                        <button class="settings-btn first-to" data-legs="4">4 Wins</button>
+                    </div>
+                    <div class="settings-grid">
+                        <button class="settings-btn" data-legs="9">9 Legs</button>
+                        <button class="settings-btn first-to" data-legs="5">5 Wins</button>
+                    </div>
+                    <div class="settings-grid">
+                        <button class="settings-btn" data-legs="11">11 Legs</button>
+                        <button class="settings-btn first-to" data-legs="6">6 Wins</button>
+                    </div>
+                    <button class="custom-leg-btn" id="custom-leg-count-btn">Custom Leg Count</button>
+                    
+                    <h2 class="section-title section-spacing-top">Play All</h2>
+                    <div class="play-all-grid">
+                        <button class="settings-btn play-all" data-legs="1">1 Leg</button>
+                        <button class="settings-btn play-all" data-legs="2">2 Legs</button>
+                        <button class="settings-btn play-all" data-legs="3">3 Legs</button>
+                        <button class="settings-btn play-all" data-legs="4">4 Legs</button>
+                        <button class="settings-btn play-all" data-legs="5">5 Legs</button>
+                        <button class="settings-btn play-all" data-legs="6">6 Legs</button>
+                    </div>
+                    
+                    <button class="continue-btn" id="simple-continue-btn">Continue</button>
+                </div>
+
+                <div class="settings-section" id="advanced-settings" style="display: none;">
+                    <h2 class="section-title">1. How Many Sets?</h2>
+                    <div class="sets-input-container">
+                        <input type="number" id="sets-count-input" class="sets-input" min="1" max="99" value="1" placeholder="# of Sets">
+                        <div class="settings-row">
+                            <button class="settings-option-btn selected" id="sets-best-of">Best Of</button>
+                            <button class="settings-option-btn" id="sets-play-all">Play All</button>
+                        </div>
+                    </div>
+
+                    <h2 class="section-title">2. How Many Legs Per Set?</h2>
+                    <div class="legs-input-container">
+                        <input type="number" id="legs-count-input" class="legs-input" min="1" max="99" value="5" placeholder="# of Legs">
+                        <div class="settings-row">
+                            <button class="settings-option-btn selected" id="legs-best-of">Best Of</button>
+                            <button class="settings-option-btn" id="legs-play-all">Play All</button>
+                        </div>
+                    </div>
+
+                    <h2 class="section-title">3. Select Game Type</h2>
+                    <div class="settings-row">
+                        <button class="settings-option-btn" id="game-type-every-leg">Every Leg</button>
+                        <button class="settings-option-btn" id="game-type-per-set">Once Per Set</button>
+                        <button class="settings-option-btn selected" id="game-type-per-match">Once Per Match</button>
+                    </div>
+
+                    <h2 class="section-title">4. Select Player Start Format</h2>
+                    <div class="settings-row">
+                        <button class="settings-option-btn selected" id="start-alternate">Alternate</button>
+                        <button class="settings-option-btn" id="start-bull-up">Bull Up</button>
+                    </div>
+                    <div class="settings-row" id="alternate-options">
+                        <button class="settings-option-btn" id="start-random">Random Match Start</button>
+                        <button class="settings-option-btn selected" id="start-bull-first">Bull First Match Leg</button>
+                        <button class="settings-option-btn" id="start-bull-last">Bull Last Match Leg</button>
+                    </div>
+                    <div class="settings-row" id="bull-up-options" style="display: none;">
+                        <button class="settings-option-btn" id="bull-select-player">Select Player</button>
+                        <button class="settings-option-btn" id="bull-show-all">Show All Starting Options</button>
+                    </div>
+
+                    <button class="continue-btn" id="advanced-continue-btn">Continue</button>
+                    <button class="reset-btn" id="reset-settings-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Game Selection Screen -->
+        <div id="custom-game-screen" class="screen">
+            <div class="modal-header">
+                <h1>Custom X01 Game</h1>
+            </div>
+            <div class="modal-content">
+                <h2 class="yellow-text">Select Starting Score</h2>
+                <div class="custom-game-options">
+                    <button class="game-option-btn" data-custom="101">101</button>
+                    <button class="game-option-btn" data-custom="201">201</button>
+                    <button class="game-option-btn" data-custom="301">301</button>
+                    <button class="game-option-btn" data-custom="401">401</button>
+                    <button class="game-option-btn" data-custom="501">501</button>
+                    <button class="game-option-btn" data-custom="601">601</button>
+                    <button class="game-option-btn" data-custom="701">701</button>
+                    <button class="game-option-btn" data-custom="801">801</button>
+                    <button class="game-option-btn" data-custom="901">901</button>
+                    <button class="game-option-btn" data-custom="1001">1001</button>
+                </div>
+                
+                <h2 class="yellow-text section-spacing-top">Start Type</h2>
+                <div class="custom-options-row">
+                    <button class="option-btn selected" id="start-type-si">Straight In</button>
+                    <button class="option-btn" id="start-type-di">Double In</button>
+                </div>
+                
+                <h2 class="yellow-text section-spacing">Finish Type</h2>
+                <div class="custom-options-row">
+                    <button class="option-btn" id="finish-type-so">Straight Out</button>
+                    <button class="option-btn selected" id="finish-type-do">Double Out</button>
+                </div>
+                
+                <button class="back-btn" id="back-from-custom">Back to Game Modes</button>
+            </div>
+        </div>
+
+        <!-- Player Selection Screen -->
+        <div id="player-selection-screen" class="screen active">
+            <div class="game-header">
+                <h2 class="set-score">Set 1 <span class="score-display">0 - 0</span></h2>
+            </div>
+            
+            <div class="player-names-bar">
+                <div class="player-name left" id="player1-name-display">Home</div>
+                <div class="match-format">Singles</div>
+                <div class="player-name right" id="player2-name-display">Away</div>
+            </div>
+
             <div class="action-buttons">
-                <button class="btn btn-undo" id="undoBtn">UNDO</button>
-                <button class="btn btn-miss" id="missBtn">MISS</button>
+                <button class="action-btn green" id="start-game-btn">Start Game</button>
             </div>
 
-            <div class="number-pad">
-                <div class="left-section">
-                    <div class="quick-scores">
-                        <button class="quick-btn" data-score="95">95</button>
-                        <button class="quick-btn" data-score="100">100</button>
-                        <button class="quick-btn" data-score="121">121</button>
-                        <button class="quick-btn" data-score="125">125</button>
-                        <button class="quick-btn" data-score="135">135</button>
-                        <button class="quick-btn" data-score="140">140</button>
-                        <button class="quick-btn bust-btn" data-score="180">180</button>
+            <div class="action-buttons">
+                <button class="action-btn gold" id="reset-picks-left">Reset Picks</button>
+                <button class="action-btn" id="manage-library">Manage Player Library</button>
+                <button class="action-btn gold" id="reset-picks-right">Reset Picks</button>
+            </div>
+
+            <div class="opponent-selection">
+                <div class="opponent-column">
+                    <h3>Left Opponent</h3>
+                    <div class="selected-player-display" id="left-selected-display">Select player from list below</div>
+                    <div class="player-list" id="left-player-list"></div>
+                </div>
+
+                <div class="alphabet-nav">
+                    <!-- Gray separator bar -->
+                </div>
+
+                <div class="opponent-column">
+                    <h3>Right Opponent</h3>
+                    <div class="selected-player-display" id="right-selected-display">Select player from list below</div>
+                    <div class="player-list" id="right-player-list"></div>
+                </div>
+            </div>
+
+            <div class="bottom-bar" style="display: none;">
+                <button class="bottom-btn green" id="select-players-btn">Select Players</button>
+            </div>
+
+            <div class="match-info-bar">
+                <div class="match-avg">0 / 0.0<br>Match</div>
+                <div class="set-display">S1</div>
+                <div class="set-score-big">0 - 0</div>
+                <div class="legs-format">(3)</div>
+                <div class="match-avg">0 / 0.0<br>Match</div>
+            </div>
+        </div>
+
+        <!-- Player Library Modal -->
+        <div id="player-library-modal" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h2>Player Library</h2>
+                    <button class="close-modal">✕</button>
+                </div>
+                <div class="library-actions">
+                    <button class="lib-btn">Reset</button>
+                    <button class="lib-btn">New</button>
+                    <button class="lib-btn">Edit</button>
+                    <button class="lib-btn">Delete</button>
+                </div>
+                <div class="player-grid" id="player-grid"></div>
+                <div class="library-footer">
+                    <button class="lib-footer-btn">Backup Library</button>
+                    <button id="library-continue-btn" class="lib-footer-btn green">Continue</button>
+                    <button class="lib-footer-btn gold">Download Library</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Player Modal -->
+        <div id="add-player-modal" class="modal">
+            <div class="modal-dialog small-dialog">
+                <div class="modal-header">
+                    <h2>Player Details</h2>
+                    <button class="close-modal" id="close-add-player">✕</button>
+                </div>
+                <div class="modal-content">
+                    <input 
+                        type="text" 
+                        id="new-player-firstname" 
+                        class="player-input" 
+                        placeholder="First Name"
+                        autocomplete="off"
+                        autocapitalize="words"
+                        inputmode="text">
+                    <input 
+                        type="text" 
+                        id="new-player-lastname" 
+                        class="player-input" 
+                        placeholder="Last Name"
+                        autocomplete="off"
+                        autocapitalize="words"
+                        inputmode="text">
+                    
+                    <button class="continue-btn green" id="add-player-submit">Add Player</button>
+                    <button class="continue-btn red" id="add-player-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Match Settings Modal -->
+        <div id="match-settings-modal" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <button class="header-btn">ℹ</button>
+                    <h2>Match Settings</h2>
+                </div>
+                <div class="modal-content">
+                    <button class="settings-btn gold">Advanced Settings</button>
+                    
+                    <h3>Best of <span style="float:right">First to</span></h3>
+                    <button class="setting-option">1 Leg <span class="right-label">1 Wins</span></button>
+                    <button class="setting-option selected">3 Legs <span class="right-label">2 Wins</span></button>
+                    <button class="setting-option">5 Legs <span class="right-label">3 Wins</span></button>
+                    <button class="setting-option">7 Legs <span class="right-label">4 Wins</span></button>
+                    <button class="setting-option">9 Legs <span class="right-label">5 Wins</span></button>
+                    <button class="setting-option">11 Legs <span class="right-label">6 Wins</span></button>
+                    <button class="settings-btn gold">Custom Leg Count</button>
+                    
+                    <button class="continue-btn green">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Match Settings Modal -->
+        <div id="advanced-settings-modal" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <button class="header-btn">ℹ</button>
+                    <h2>Match Settings</h2>
+                </div>
+                <div class="modal-content">
+                    <h3>1. Select Set Format (optional)</h3>
+                    <div class="setting-row">
+                        <button class="setting-option">"Best Of"</button>
+                        <button class="setting-option">#</button>
+                        <button class="setting-option">Play All Sets</button>
                     </div>
+
+                    <h3>2. Select Legs Format</h3>
+                    <div class="setting-row">
+                        <button class="setting-option selected">"Best Of"</button>
+                        <button class="setting-option">Play Every Leg</button>
+                    </div>
+                    <div class="setting-row">
+                        <button class="setting-option">Select Number of<br>Legs Before Each Set</button>
+                        <button class="setting-option selected">Same Number of<br>Legs For All Sets</button>
+                    </div>
+
+                    <h3>3. Select Game Type</h3>
+                    <div class="setting-row">
+                        <button class="setting-option">Every<br>Leg</button>
+                        <button class="setting-option">Once<br>Per Set</button>
+                        <button class="setting-option selected">Once<br>Per Match</button>
+                    </div>
+
+                    <h3>4. Select Player Start Format</h3>
+                    <button class="setting-option wide selected">Alternate</button>
+                    <div class="setting-row">
+                        <button class="setting-option">Random<br>Match Start</button>
+                        <button class="setting-option selected">Bull First<br>Match Leg</button>
+                        <button class="setting-option">Bull Last<br>Match Leg</button>
+                    </div>
+
+                    <button class="continue-btn green">Continue</button>
+                    <button class="continue-btn red">Reset</button>
                 </div>
+            </div>
+        </div>
 
-                <div class="number-grid">
-                    <button class="num-btn" data-num="1">1</button>
-                    <button class="num-btn" data-num="2">2</button>
-                    <button class="num-btn" data-num="3">3</button>
-                    <button class="num-btn special" data-num="26">26</button>
-                    <button class="num-btn special" data-num="45">45</button>
+        <!-- Game Selection (DartStream) Screen -->
+        <div id="game-selection-screen" class="screen">
+            <div class="game-header">
+                <h2 class="set-score">Set 1 <span class="score-display">0 - 0</span></h2>
+            </div>
 
-                    <button class="num-btn" data-num="4">4</button>
-                    <button class="num-btn" data-num="5">5</button>
-                    <button class="num-btn" data-num="6">6</button>
-                    <button class="num-btn special" data-num="41">41</button>
-                    <button class="num-btn special" data-num="81">81</button>
+            <div class="dartconnect-logo">
+                <h1>DartStream</h1>
+                <p class="yellow-text">Professional Dart Live Streaming Tools</p>
+            </div>
 
-                    <button class="num-btn" data-num="7">7</button>
-                    <button class="num-btn" data-num="8">8</button>
-                    <button class="num-btn" data-num="9">9</button>
-                    <button class="num-btn special" data-num="60">60</button>
-                    <button class="num-btn special" data-num="85">85</button>
+            <div class="game-type-selection">
+                <button class="game-type-btn" data-type="301">301 DIDO</button>
+                <button class="game-type-btn" data-type="501">501 SIDO</button>
+                <button class="game-type-btn custom" id="custom-game-link">Custom Game</button>
+            </div>
 
-                    <button class="num-btn bust-btn" id="bustBtn">BUST!</button>
-                    <button class="num-btn" data-num="0">0</button>
-                    <button class="num-btn plus-btn" id="plusBtn">+</button>
+            <div class="bottom-bar">
+                <button class="bottom-btn green" id="select-players-btn2">Select Players</button>
+                <button class="bottom-btn gold" id="connect-btn2">Connect</button>
+            </div>
+
+            <div class="match-info-bar">
+                <div class="match-avg">0 / 0.0<br>Match</div>
+                <div class="set-display">S1</div>
+                <div class="set-score-big">0 - 0</div>
+                <div class="legs-format">(3)</div>
+                <div class="match-avg">0 / 0.0<br>Match</div>
+            </div>
+        </div>
+
+        <!-- Starting Player Selection Screen -->
+        <div id="starting-player-screen" class="screen">
+            <div class="scoreboard-header">
+                <div class="player-header left">
+                    <div class="player-name-large" id="starting-player1-name-top">Matthew Dow</div>
+                    <div class="score-large" id="starting-player1-score-top">501</div>
+                    <div class="dart-logo">DART<br>CONNECT</div>
+                </div>
+                <div class="timer-display">
+                    <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
+                    <div class="version-text">v1.0.0</div>
+                </div>
+                <div class="player-header right">
+                    <div class="player-name-large" id="starting-player2-name-top">Moe C</div>
+                    <div class="score-large" id="starting-player2-score-top">501</div>
                 </div>
             </div>
 
-            <div class="input-display">
-                <input type="text" id="scoreInput" class="score-input" placeholder="Enter score..." readonly />
-                <button class="btn btn-submit" id="submitBtn">Submit Score</button>
+            <div class="starting-selection">
+                <h2 class="yellow-text">Select Starting Player</h2>
+                <button class="starting-player-btn" id="start-player1">Matthew Dow</button>
+                <button class="starting-player-btn" id="start-player2">Moe Cormier</button>
+                <div class="coin-options">
+                    <button class="coin-btn" id="coin-toss-btn">Coin Toss</button>
+                    <button class="coin-btn green" id="random-btn">Random</button>
+                    <button class="coin-btn" id="skip-btn">Skip</button>
+                </div>
+                <div class="game-info">
+                    <button class="game-format-display" id="game-format-btn">501 SIDO</button>
+                    <button class="legs-format-display" id="legs-format-btn">Best of 3 Legs</button>
+                </div>
             </div>
 
-            <div class="game-controls">
-                <button class="btn btn-reset" id="resetBtn">Reset Game</button>
-                <select id="gameFormat" class="format-select">
-                    <option value="301">301</option>
-                    <option value="501" selected>501</option>
-                    <option value="701">701</option>
-                </select>
+            <!-- Coin Toss Result -->
+            <div id="coin-result-display" class="coin-result-display" style="display: none;">
+                <div class="coin-result-content">
+                    <h2 id="coin-result-text"></h2>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <h2 class="set-score-bottom">Set 1 <span class="score-display">0 - 0</span></h2>
+            </div>
+
+            <div class="bottom-bar-dark">
+                <button class="bottom-btn-dark green">Select Players</button>
+                <button class="bottom-btn-dark gold">Connect</button>
+            </div>
+
+            <div class="match-info-bar">
+                <div class="match-avg">0 / 0.0<br>Match</div>
+                <div class="set-display">S1</div>
+                <div class="set-score-big yellow">0 - 0</div>
+                <div class="legs-format">(3)</div>
+                <div class="match-avg">0 / 0.0<br>Match</div>
+            </div>
+        </div>
+
+        <!-- Main Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="scoreboard-header">
+                <div class="player-header left" id="player1-display">
+                    <div class="player-name-large">Matthew Dow</div>
+                    <div class="stats-small">
+                        <span class="stat-label red">0</span>
+                        <span class="stat-label red">0</span>
+                    </div>
+                    <div class="score-large">501</div>
+                </div>
+                <div class="timer-display">
+                    <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
+                    <div class="version-text">v1.0.0</div>
+                </div>
+                <div class="player-header right active" id="player2-display">
+                    <div class="player-name-large">Moe C</div>
+                    <div class="stats-small">
+                        <span class="stat-label red">0</span>
+                        <span class="stat-label red">0</span>
+                    </div>
+                    <div class="score-large">501</div>
+                </div>
+            </div>
+
+            <div class="scoring-area">
+                <div class="visit-indicator">
+                    <span class="yellow-text">SI</span>
+                    <div class="visit-number">1</div>
+                    <div class="dart-marker">●</div>
+                </div>
+            </div>
+
+            <div class="bottom-controls">
+                <div class="control-bar">
+                    <button class="control-btn" id="back-to-players">Back</button>
+                    <h2 class="set-score-inline">Set 1 <span class="score-display">0 - 0</span></h2>
+                    <button class="control-btn gold" id="connect-btn">Connect</button>
+                </div>
+
+                <div class="input-bar">
+                    <button class="input-btn yellow" id="action-btn">BACK</button>
+                    <div class="input-mode" id="input-mode">Straight-In</div>
+                    <button class="input-btn red" id="submit-btn">MISS</button>
+                </div>
+
+                <div class="number-pad">
+                    <button class="num-btn edge">26</button>
+                    <button class="num-btn" data-score="1">1</button>
+                    <button class="num-btn" data-score="2">2</button>
+                    <button class="num-btn" data-score="3">3</button>
+                    <button class="num-btn edge">45</button>
+                    
+                    <button class="num-btn edge">40</button>
+                    <button class="num-btn" data-score="4">4</button>
+                    <button class="num-btn" data-score="5">5</button>
+                    <button class="num-btn" data-score="6">6</button>
+                    <button class="num-btn edge">60</button>
+                    
+                    <button class="num-btn edge">41</button>
+                    <button class="num-btn" data-score="7">7</button>
+                    <button class="num-btn" data-score="8">8</button>
+                    <button class="num-btn" data-score="9">9</button>
+                    <button class="num-btn edge">81</button>
+                    
+                    <button class="num-btn edge">43</button>
+                    <button class="num-btn special green" data-score="100">100</button>
+                    <button class="num-btn" id="zero-btn" data-score="0" style="display: none;">0</button>
+                    <button class="num-btn special red" data-score="180">180</button>
+                    <button class="num-btn special green" data-score="140">140</button>
+                    <button class="num-btn edge">85</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script type="module" src="/public/js/scorer.js"></script>
+    <!-- Load Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
