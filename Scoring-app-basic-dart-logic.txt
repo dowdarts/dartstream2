@@ -1,6 +1,236 @@
+X01 Dart Scoring Application Design Logic
+
+This document outlines the required functions, rules, and presentation logic for the X01 Dart Scoring Application, following the initial setup (player names, starting score, and starting player selection).
+
+I. Application State (Data Storage)
+
+The application must track and manage the following data fields for the current game:
+
+Data Field
+
+Description
+
+current_score
+
+The starting score for the game (e.g., 501, 301).
+
+players
+
+An array of player objects, including name, score_remaining, and dart_history.
+
+current_player_index
+
+Index indicating whose turn it is.
+
+darts_thrown_count
+
+Tracks darts thrown in the current turn (0, 1, 2).
+
+turn_total_score
+
+Accumulates the score for the current player's 3-dart turn.
+
+pre_turn_score
+
+The player's score before the current turn started (used for busts).
+
+II. Core Gameplay Loop and Turn Logic
+
+Once the starting player is highlighted, the application must enter the turn loop:
+
+Step 1: Turn Start (System Function)
+
+Highlight Current Player: Visually highlight the name and current score of the player whose turn it is.
+
+Store Baseline Score: Set pre_turn_score to the player's current score_remaining.
+
+Reset Turn Counter: Set darts_thrown_count to 0.
+
+Reset Turn Total: Set turn_total_score to 0.
+
+Step 2: Dart Input and Scoring (User Interaction)
+
+This sequence runs up to three times per turn:
+
+Input Prompt: The UI prompts for the score of the current dart (Dart 1, Dart 2, or Dart 3).
+
+Input Validation: The application accepts and validates the score input (0 to 180, only valid dart values like 20, T20 (60), D10 (20), Bull (50), etc.).
+
+Update Turn Total: Add the input score to turn_total_score.
+
+Calculate Provisional Score: Calculate the score_remaining minus turn_total_score.
+
+Check for Immediate Win/Bust: Before accepting the next dart input, run the full validation check (Section IV).
+
+Step 3: Turn End Scenarios (System Functions)
+
+The turn ends when any of the following conditions are met:
+
+Condition
+
+Action
+
+Next State
+
+A. Player Throws 3 Darts
+
+Update the player's score_remaining with the provisional score.
+
+Proceed to Next Player (Step 4).
+
+B. Player Checks Out (Wins)
+
+Set the player's score_remaining to 0. Log the winning checkout.
+
+Proceed to Game Won (Section V).
+
+C. Player Busts
+
+Reset the player's score_remaining to pre_turn_score. Discard turn_total_score.
+
+Proceed to Next Player (Step 4).
+
+Step 4: Next Player Progression
+
+Clear UI Feedback: Remove highlighting and turn total display.
+
+Update Player Index: Increment current_player_index (wrapping back to 0 if it exceeds the number of players).
+
+Loop: Return to Turn Start (Step 1) for the next player.
+
+III. Scoring and Checkout Validation
+
+The core of the X01 game is the Double Out rule. The application must enforce this validation after every dart throw.
+
+1. The Provisional Score Rule
+
+After a dart is thrown and its score is added to the turn_total_score, the application calculates the Provisional Score (pre_turn_score - turn_total_score).
+
+2. The Bust Condition (The "Too Low" Rule)
+
+A player busts (and their turn ends immediately, regardless of remaining darts) if the Provisional Score is:
+
+Exactly 1: This is an impossible score to check out on (must be a double).
+
+Less than 0: The player exceeded their required score.
+
+If a bust occurs, the application must:
+
+Display a BUST message.
+
+The player's score reverts to pre_turn_score.
+
+Proceed to Next Player (Step 4).
+
+3. The Winning Condition (The "Double Out" Rule)
+
+A player wins the game (and their turn ends immediately) only if:
+
+The Provisional Score is Exactly 0.
+
+AND The last dart thrown landed in a Double segment (D1 through D20) or the Inner Bull (D50, which counts as a double).
+
+If both conditions are met, the application must:
+
+Display a GAME SHOT! message.
+
+Proceed to Game Won (Section V).
+
+IV. UI Presentation and Feedback
+
+The application must provide continuous, real-time feedback to the user:
+
+1. Primary Scoreboard
+
+All Players: Clearly display the name and score_remaining for every player.
+
+Current Player Highlight: The active player's row/card must be visibly highlighted.
+
+2. Turn Status Display
+
+This area should appear only during the active turn:
+
+Darts Thrown Counter: Visually show Dart 1, Dart 2, and Dart 3, indicating which dart is currently being scored.
+
+Turn Total: Display the accumulated turn_total_score (e.g., "Turn Total: 85").
+
+Required Score: Display the score the player needs to hit to check out on the next dart (e.g., "Needed: D20"). This should dynamically update after each dart.
+
+Quick Bust Button (New Feature): If the current player's score_remaining (before the turn) is 170 or less, the high-value score input button (e.g., the button labeled "180" or similar) should dynamically change to a "BUST" button. Tapping this button executes the Bust Condition logic (Section III.2) immediately, overriding manual input.
+
+3. Game Over/Message Log
+
+Bust Notification: A large, temporary message (e.g., "BUST! Score Reverts to 145") when a player violates a rule.
+
+Checkout Assistance: When a player is on 170 or less and needs a double, the app should display the optimal checkout path (e.g., "T20, T20, D20").
+
+Game Won: A clear and celebratory message announcing the winner.
+
+V. Game Flow and Conclusion
+
+1. Game Won Logic
+
+When a player meets the winning conditions:
+
+Final Score: The winner's score is set to 0.
+
+Checkout Dart Confirmation (New Feature): Before logging the win, the application must prompt the user with a modal or inline selection asking: "Which dart finished the game?" (Options: 1st, 2nd, or 3rd).
+
+Log Win: Store the total score of the turn, the winning checkout, and the dart number that finished the game in the dart_history for accurate average calculation.
+
+Display: A "Player X Wins!" notification is shown.
+
+End State: The application stops accepting dart inputs.
+
+Next Action: A button/prompt to "Start New Game" or "Start Next Set" should appear, resetting all scores to the starting format.
+
+2. Tracking History (Optional but Recommended)
+
+For more advanced analysis, the application should maintain:
+
+Per-Turn History: Log the 3 dart scores for every completed turn.
+
+Game History: Track the winner, final score, and statistics (e.g., average score per dart, highest checkout, and total darts thrown based on confirmed checkout dart).
+
+
+
+
+
+
+
+
+
+
+
+
 To calculate a 3-dart average in darts, add up the total points scored in a round or leg, and divide that number by the total number of darts thrown. Then, multiply that result by three to get your average score per three darts. For example, a player scoring 501 points in 15 darts would have a 3-dart average of 100.2 (501 ÷ 15 x 3 = 100.2). 
 
 In darts, a "leg" is a single game, typically starting with each player on 501 points and ending when a player reduces their score to exactly zero by finishing on a double. Multiple legs are played to win a "set" (the most common format is the best of five legs, where a player needs to win three legs) and multiple sets are played to win the entire match. 
+
+
+
+
+
+
+
+
+
+The basic rules of the X01 dart game are straightforward yet require strategic play. Here's a summary of the key rules:
+Starting Score: Players start with a score of 501, which is the standard for X01 games. 
+
+Scoring: The objective is to reduce the score to exactly zero by subtracting the total points scored from the remaining score. 
+
+Busting: If a player's score goes below zero, it is called a "bust," and the round ends immediately. 
+
+Double Out: To win, a player must reduce their score to exactly zero, with the final dart landing on a double or the bullseye. 
+
+Game Completion: The game is called a "leg," and playing multiple legs example best of 3 legs is a Set. The ultimate winner is the player who first wins 2 legs. Meaning they won the Set and would be score the set if the match settings are set to 1 set of best of 3 then the player with score of 2 legs being one set would win the Match the match is the whole game with legs and sets  
+
+
+These rules provide a solid foundation for playing the X01 dart game, ensuring a fun and competitive experience for all players.
+
+
+
 
 In darts, "set play" is a format where matches are won by winning a certain number of "sets," and each set is won by winning a specific number of "legs". A leg is a single game of 501, and a set is usually won by the first player to win three legs (a "best of five" format). The number of sets needed to win the match varies based on the tournament and round, with longer matches required for later stages. 
 Key terms in set play

@@ -3,13 +3,51 @@ const gameState = {
     currentScreen: 'player-selection-screen',
     gameMode: null,
     players: {
-        player1: { name: 'Home', score: 501, darts: 0, legWins: 0, setWins: 0, matchAvg: 0, legAvg: 0 },
-        player2: { name: 'Away', score: 501, darts: 0, legWins: 0, setWins: 0, matchAvg: 0, legAvg: 0 }
+        player1: { 
+            name: 'Home', 
+            score: 501, 
+            preTurnScore: 501, // Score before current turn started
+            darts: 0, 
+            legDarts: 0, // Darts thrown in current leg
+            matchDarts: 0, // Total darts in match
+            legScore: 0, // Points scored in current leg
+            matchScore: 0, // Total points in match
+            legWins: 0, 
+            setWins: 0, 
+            matchAvg: 0, 
+            legAvg: 0,
+            turnHistory: [] // Track all turns for undo
+        },
+        player2: { 
+            name: 'Away', 
+            score: 501, 
+            preTurnScore: 501,
+            darts: 0, 
+            legDarts: 0,
+            matchDarts: 0,
+            legScore: 0,
+            matchScore: 0,
+            legWins: 0, 
+            setWins: 0, 
+            matchAvg: 0, 
+            legAvg: 0,
+            turnHistory: []
+        }
     },
     currentPlayer: 2, // 1 or 2
     currentVisit: [],
+    currentInput: '', // Track digits being entered
+    dartScores: [], // Track individual dart scores in current turn (for calculator mode)
+    dartsThrown: 0, // Darts thrown in current turn (0-3)
+    turnTotal: 0, // Accumulated score for current turn
     visitNumber: 1,
     currentSet: 1,
+    currentLeg: 1,
+    legStarter: null, // Track who started the current leg (1 or 2)
+    setStarter: null, // Track who started the first leg of current set (1 or 2)
+    isChangingPlayers: false, // Flag for when changing players mid-match
+    isChangingGame: false, // Flag for when changing game type mid-match
+    isEditingSettings: false, // Flag for when editing match settings mid-match
     matchSettings: {
         gameType: '501',
         startScore: 501,
@@ -754,6 +792,7 @@ function updateLegsFormatDisplay() {
 // Starting Player Selection
 document.getElementById('start-player1').addEventListener('click', function() {
     gameState.currentPlayer = 1;
+    gameState.legStarter = 1; // Track that player 1 started this leg
     
     // Track first leg starter if not set
     if (gameState.matchSettings.firstLegStarter === null) {
@@ -768,6 +807,7 @@ document.getElementById('start-player1').addEventListener('click', function() {
 
 document.getElementById('start-player2').addEventListener('click', function() {
     gameState.currentPlayer = 2;
+    gameState.legStarter = 2; // Track that player 2 started this leg
     
     // Track first leg starter if not set
     if (gameState.matchSettings.firstLegStarter === null) {
@@ -800,9 +840,13 @@ document.getElementById('coin-toss-btn').addEventListener('click', function() {
 document.getElementById('random-btn').addEventListener('click', function() {
     gameState.currentPlayer = Math.random() > 0.5 ? 1 : 2;
     
-    // Track first leg starter if not set
-    if (gameState.matchSettings.firstLegStarter === null) {
+    // Track first leg starter if not set (or if changing players mid-match)
+    if (gameState.matchSettings.firstLegStarter === null || gameState.isChangingPlayers) {
         gameState.matchSettings.firstLegStarter = gameState.currentPlayer;
+        gameState.legStarter = gameState.currentPlayer;
+        if (!gameState.isChangingPlayers) {
+            gameState.setStarter = gameState.currentPlayer;
+        }
     }
     
     // Show result
@@ -834,16 +878,28 @@ document.getElementById('select-301-game').addEventListener('click', function() 
     gameState.matchSettings.gameType = '301';
     gameState.matchSettings.startType = 'DIDO';
     gameState.matchSettings.startScore = 301;
-    showScreen('starting-player-screen');
-    updateStartingPlayerScreen();
+    
+    // If changing game mid-match, update scores and continue
+    if (gameState.isChangingGame) {
+        updateGameAfterChange();
+    } else {
+        showScreen('starting-player-screen');
+        updateStartingPlayerScreen();
+    }
 });
 
 document.getElementById('select-501-game').addEventListener('click', function() {
     gameState.matchSettings.gameType = '501';
     gameState.matchSettings.startType = 'SIDO';
     gameState.matchSettings.startScore = 501;
-    showScreen('starting-player-screen');
-    updateStartingPlayerScreen();
+    
+    // If changing game mid-match, update scores and continue
+    if (gameState.isChangingGame) {
+        updateGameAfterChange();
+    } else {
+        showScreen('starting-player-screen');
+        updateStartingPlayerScreen();
+    }
 });
 
 document.getElementById('select-custom-game').addEventListener('click', function() {
@@ -1189,9 +1245,68 @@ document.getElementById('custom-game-link').addEventListener('click', function()
     showScreen('custom-game-screen');
 });
 
-// Back to Players button on game screen
+// Back to Players button on game screen - with confirmation
 document.getElementById('back-to-players').addEventListener('click', function() {
-    showScreen('player-selection-screen');
+    const confirmed = confirm('Are you sure you want to return to main menu? All game progress will be lost.');
+    if (confirmed) {
+        // Reset all game state
+        const startScore = gameState.matchSettings.startScore || 501;
+        
+        // Reset both players completely
+        gameState.players.player1.score = startScore;
+        gameState.players.player1.preTurnScore = startScore;
+        gameState.players.player1.darts = 0;
+        gameState.players.player1.legDarts = 0;
+        gameState.players.player1.matchDarts = 0;
+        gameState.players.player1.legScore = 0;
+        gameState.players.player1.matchScore = 0;
+        gameState.players.player1.legAvg = 0;
+        gameState.players.player1.matchAvg = 0;
+        gameState.players.player1.legWins = 0;
+        gameState.players.player1.setWins = 0;
+        gameState.players.player1.turnHistory = [];
+        
+        gameState.players.player2.score = startScore;
+        gameState.players.player2.preTurnScore = startScore;
+        gameState.players.player2.darts = 0;
+        gameState.players.player2.legDarts = 0;
+        gameState.players.player2.matchDarts = 0;
+        gameState.players.player2.legScore = 0;
+        gameState.players.player2.matchScore = 0;
+        gameState.players.player2.legAvg = 0;
+        gameState.players.player2.matchAvg = 0;
+        gameState.players.player2.legWins = 0;
+        gameState.players.player2.setWins = 0;
+        gameState.players.player2.turnHistory = [];
+        
+        // Reset game counters
+        gameState.currentVisit = [];
+        gameState.visitNumber = 1;
+        gameState.currentSet = 1;
+        gameState.currentLeg = 1;
+        gameState.dartsThrown = 0;
+        gameState.turnTotal = 0;
+        gameState.currentInput = '';
+        gameState.dartScores = [];
+        gameState.legStarter = null;
+        
+        // Update all score displays on player selection screen
+        const playerSelectSetScore = document.getElementById('player-select-set-score');
+        const playerSelectLegScore = document.getElementById('player-select-leg-score');
+        const playerSelectSetScoreBig = document.getElementById('player-select-set-score-big');
+        
+        if (playerSelectSetScore) {
+            playerSelectSetScore.textContent = '0 - 0';
+        }
+        if (playerSelectLegScore) {
+            playerSelectLegScore.textContent = '0 - 0';
+        }
+        if (playerSelectSetScoreBig) {
+            playerSelectSetScoreBig.textContent = '0 - 0';
+        }
+        
+        showScreen('player-selection-screen');
+    }
 });
 
 // Connect button (no function for now)
@@ -1203,31 +1318,147 @@ document.getElementById('connect-btn').addEventListener('click', function() {
 
 // Start Game
 function startGame() {
+    // Check if this is a mid-match change
+    if (gameState.isChangingPlayers) {
+        // Keep match scores, just reset leg scores
+        const startScore = gameState.matchSettings.startScore || 501;
+        
+        gameState.players.player1.score = startScore;
+        gameState.players.player1.preTurnScore = startScore;
+        gameState.players.player1.legDarts = 0;
+        gameState.players.player1.legScore = 0;
+        gameState.players.player1.legAvg = 0;
+        gameState.players.player1.turnHistory = [];
+        
+        gameState.players.player2.score = startScore;
+        gameState.players.player2.preTurnScore = startScore;
+        gameState.players.player2.legDarts = 0;
+        gameState.players.player2.legScore = 0;
+        gameState.players.player2.legAvg = 0;
+        gameState.players.player2.turnHistory = [];
+        
+        gameState.currentVisit = [];
+        gameState.dartScores = [];
+        gameState.currentInput = '';
+        gameState.turnTotal = 0;
+        
+        // Reset player change flag
+        gameState.isChangingPlayers = false;
+        
+        // Continue with next set
+        showScreen('game-screen');
+        updateGameScreen();
+        return;
+    }
+    
     // Reset game state for new game
-    const startScore = gameState.matchSettings.gameType === '301' ? 301 : 501;
+    const startScore = gameState.matchSettings.gameType === '301' ? 301 : 
+                       gameState.matchSettings.startScore || 501;
+    
+    // Reset both players
     gameState.players.player1.score = startScore;
-    gameState.players.player2.score = startScore;
+    gameState.players.player1.preTurnScore = startScore;
     gameState.players.player1.darts = 0;
+    gameState.players.player1.legDarts = 0;
+    gameState.players.player1.matchDarts = 0;
+    gameState.players.player1.legScore = 0;
+    gameState.players.player1.matchScore = 0;
+    gameState.players.player1.legAvg = 0;
+    gameState.players.player1.matchAvg = 0;
+    gameState.players.player1.turnHistory = [];
+    
+    gameState.players.player2.score = startScore;
+    gameState.players.player2.preTurnScore = startScore;
     gameState.players.player2.darts = 0;
+    gameState.players.player2.legDarts = 0;
+    gameState.players.player2.matchDarts = 0;
+    gameState.players.player2.legScore = 0;
+    gameState.players.player2.matchScore = 0;
+    gameState.players.player2.legAvg = 0;
+    gameState.players.player2.matchAvg = 0;
+    gameState.players.player2.turnHistory = [];
+    
     gameState.currentVisit = [];
+    gameState.dartsThrown = 0;
+    gameState.turnTotal = 0;
     gameState.visitNumber = 1;
     
     showScreen('game-screen');
     updateGameScreen();
 }
 
+// ===== SCORING LOGIC - TO BE REWRITTEN =====
+// All scoring functions, button handlers, and input logic removed
+// Ready for new implementation
+
 function updateGameScreen() {
     // Update player displays
     const player1Display = document.getElementById('player1-display');
     const player2Display = document.getElementById('player2-display');
     
-    // Update names
-    player1Display.querySelector('.player-name-large').textContent = gameState.players.player1.name;
-    player2Display.querySelector('.player-name-large').textContent = gameState.players.player2.name;
+    if (!player1Display || !player2Display) {
+        console.error('Player displays not found');
+        return;
+    }
     
-    // Update scores
-    player1Display.querySelector('.score-large').textContent = gameState.players.player1.score;
-    player2Display.querySelector('.score-large').textContent = gameState.players.player2.score;
+    // Update names - show first name when active, last name when inactive
+    const p1NameParts = gameState.players.player1.name.split(' ');
+    const p1FirstName = p1NameParts[0] || '';
+    const p1LastName = p1NameParts[p1NameParts.length - 1];
+    const p1DisplayName = gameState.currentPlayer === 1 ? p1FirstName : p1LastName;
+    
+    const p2NameParts = gameState.players.player2.name.split(' ');
+    const p2FirstName = p2NameParts[0] || '';
+    const p2LastName = p2NameParts[p2NameParts.length - 1];
+    const p2DisplayName = gameState.currentPlayer === 2 ? p2FirstName : p2LastName;
+    
+    player1Display.querySelector('.player-name-large').textContent = p1DisplayName;
+    player2Display.querySelector('.player-name-large').textContent = p2DisplayName;
+    
+    // Update scores with edit mode styling
+    const p1ScoreElement = player1Display.querySelector('.score-large');
+    const p2ScoreElement = player2Display.querySelector('.score-large');
+    
+    // Check if current player is typing a score or has dart scores entered
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const currentPlayer = gameState.players[currentPlayerKey];
+    const isTyping = gameState.currentInput.length > 0;
+    const hasDartScores = gameState.dartScores.length > 0;
+    
+    if (isTyping || hasDartScores) {
+        // Calculate provisional score including current input and all dart scores
+        let totalDartScore = 0;
+        
+        // Add up all confirmed dart scores
+        for (const dart of gameState.dartScores) {
+            totalDartScore += dart;
+        }
+        
+        // Add current input if typing
+        if (isTyping) {
+            totalDartScore += parseInt(gameState.currentInput);
+        }
+        
+        const provisionalScore = currentPlayer.preTurnScore - totalDartScore;
+        
+        if (gameState.currentPlayer === 1) {
+            p1ScoreElement.textContent = provisionalScore;
+            p1ScoreElement.classList.add('edit-mode');
+            p2ScoreElement.textContent = gameState.players.player2.score;
+            p2ScoreElement.classList.remove('edit-mode');
+        } else {
+            p2ScoreElement.textContent = provisionalScore;
+            p2ScoreElement.classList.add('edit-mode');
+            p1ScoreElement.textContent = gameState.players.player1.score;
+            p1ScoreElement.classList.remove('edit-mode');
+        }
+    } else {
+        // Normal display
+        p1ScoreElement.textContent = gameState.players.player1.score;
+        p2ScoreElement.textContent = gameState.players.player2.score;
+        p1ScoreElement.classList.remove('edit-mode');
+        p2ScoreElement.classList.remove('edit-mode');
+    }
     
     // Update active player
     if (gameState.currentPlayer === 1) {
@@ -1245,81 +1476,524 @@ function updateGameScreen() {
     }
     
     // Update visit number
-    document.querySelector('.visit-number').textContent = gameState.visitNumber;
-    
-    // Update timer (shows darts in current visit)
-    document.getElementById('timer').textContent = gameState.currentVisit.length;
-    
-    // Update checkout hints
-    updateCheckoutHints();
-}
-
-function updateCheckoutHints() {
-    const p1Score = gameState.players.player1.score;
-    const p2Score = gameState.players.player2.score;
-    
-    document.getElementById('player1-checkout').textContent = p1Score <= 170 ? 'HC' : 'HC';
-    document.getElementById('player2-checkout').textContent = p2Score <= 170 ? 'HC' : 'HC';
-}
-
-// Number Pad Scoring
-document.querySelectorAll('.num-btn[data-score]').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const score = parseInt(this.getAttribute('data-score'));
-        addScore(score);
-    });
-});
-
-function addScore(score) {
-    if (gameState.currentVisit.length >= 3) {
-        return; // Already thrown 3 darts
+    const visitNumberElement = document.querySelector('.visit-number');
+    if (visitNumberElement) {
+        visitNumberElement.textContent = gameState.visitNumber;
     }
     
-    gameState.currentVisit.push(score);
+    // Update timer (shows darts in current visit)
+    const timerElement = document.getElementById('timer');
+    if (timerElement) {
+        timerElement.textContent = gameState.currentVisit.length;
+    }
     
-    if (gameState.currentVisit.length === 3) {
-        // Auto-submit after 3 darts
-        setTimeout(() => submitVisit(), 500);
+    // Update input mode display
+    updateInputDisplay();
+    
+    // Update dual-function button labels
+    updateDualFunctionButtonDisplay();
+    
+    // Update score history display
+    updateScoreHistory();
+    
+    // Update throw indicator
+    updateThrowIndicator();
+    
+    // Update leg and set scores
+    updateLegSetScores();
+    
+    // Update averages display
+    updateAverages();
+}
+
+function updateAverages() {
+    // Update player 1 averages
+    const p1LegAvg = document.getElementById('player1-leg-avg');
+    const p1MatchAvg = document.getElementById('player1-match-avg');
+    
+    if (p1LegAvg) {
+        const legAvg = gameState.players.player1.legAvg || 0;
+        p1LegAvg.textContent = legAvg.toFixed(2);
+    }
+    if (p1MatchAvg) {
+        const matchAvg = gameState.players.player1.matchAvg || 0;
+        p1MatchAvg.textContent = matchAvg.toFixed(2);
+    }
+    
+    // Update player 2 averages
+    const p2LegAvg = document.getElementById('player2-leg-avg');
+    const p2MatchAvg = document.getElementById('player2-match-avg');
+    
+    if (p2LegAvg) {
+        const legAvg = gameState.players.player2.legAvg || 0;
+        p2LegAvg.textContent = legAvg.toFixed(2);
+    }
+    if (p2MatchAvg) {
+        const matchAvg = gameState.players.player2.matchAvg || 0;
+        p2MatchAvg.textContent = matchAvg.toFixed(2);
+    }
+}
+
+function updateLegSetScores() {
+    const legScoreDisplay = document.getElementById('leg-score-display');
+    const setScoreDisplay = document.getElementById('set-score-display');
+    
+    if (legScoreDisplay) {
+        const p1Legs = gameState.players.player1.legWins || 0;
+        const p2Legs = gameState.players.player2.legWins || 0;
+        legScoreDisplay.textContent = `${p1Legs} - ${p2Legs}`;
+    }
+    
+    if (setScoreDisplay) {
+        const p1Sets = gameState.players.player1.setWins || 0;
+        const p2Sets = gameState.players.player2.setWins || 0;
+        setScoreDisplay.textContent = `${p1Sets} - ${p2Sets}`;
+    }
+}
+
+function updateInputDisplay() {
+    const inputModeDisplay = document.getElementById('input-mode');
+    if (!inputModeDisplay) {
+        console.error('input-mode element not found!');
+        return;
+    }
+    
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
+    
+    console.log('updateInputDisplay called:', {
+        currentInput: gameState.currentInput,
+        legScore: player.legScore,
+        legDarts: player.legDarts,
+        gameType: gameState.matchSettings.gameType,
+        startType: gameState.matchSettings.startType
+    });
+    
+    // If player is using calculator mode, show the expression
+    if (gameState.dartScores.length > 0 || gameState.currentInput) {
+        let expression = '';
+        
+        // Build expression from dart scores
+        for (let i = 0; i < gameState.dartScores.length; i++) {
+            if (i > 0) expression += '+';
+            expression += gameState.dartScores[i];
+        }
+        
+        // Add current input
+        if (gameState.currentInput) {
+            if (gameState.dartScores.length > 0) expression += '+';
+            expression += gameState.currentInput;
+        }
+        
+        inputModeDisplay.textContent = expression;
+        console.log('Showing calculator expression:', expression);
+        return;
+    }
+    
+    // Check if player has scored yet in this leg (hasn't entered the game)
+    const hasNotScored = player.legScore === 0 && player.legDarts === 0;
+    
+    if (hasNotScored) {
+        // Show entry requirement based on game type
+        const gameType = gameState.matchSettings.gameType;
+        const startType = gameState.matchSettings.startType;
+        
+        if (gameType === '301') {
+            // 301 defaults to DIDO (Double In, Double Out)
+            if (startType === 'DIDO' || startType === 'DISO') {
+                inputModeDisplay.textContent = 'Double-In';
+                console.log('Showing: Double-In');
+            } else {
+                inputModeDisplay.textContent = 'Str';
+                console.log('Showing: Str');
+            }
+        } else {
+            // 501 and other games default to SIDO (Straight In, Double Out)
+            if (startType === 'DIDO' || startType === 'DISO') {
+                inputModeDisplay.textContent = 'Double-In';
+                console.log('Showing: Double-In');
+            } else {
+                inputModeDisplay.textContent = 'Str';
+                console.log('Showing: Str');
+            }
+        }
     } else {
+        // Player has entered the game - show blank (ready for next input)
+        inputModeDisplay.textContent = '';
+        console.log('Showing: blank (player has scored)');
+    }
+}
+
+// ===== SCORING FUNCTIONS =====
+
+function addDigit(digit) {
+    // Build up the current input (max 3 digits for 0-180)
+    if (gameState.currentInput.length < 3) {
+        gameState.currentInput += digit;
         updateGameScreen();
     }
 }
 
-function submitVisit() {
-    const visitTotal = gameState.currentVisit.reduce((a, b) => a + b, 0);
+function addScore(score) {
+    // Store the score being entered
+    gameState.currentInput = score.toString();
+    
+    // Update display to show provisional score
+    updateGameScreen();
+}
+
+function confirmScore() {
+    // Called when ENTER is pressed to submit the score
+    if (!gameState.currentInput && gameState.dartScores.length === 0) return;
+    
     const currentPlayerKey = `player${gameState.currentPlayer}`;
     const player = gameState.players[currentPlayerKey];
     
-    // Update score
-    const newScore = player.score - visitTotal;
+    // Calculate total score from all darts
+    let totalScore = 0;
     
-    // Check for bust or invalid finish
-    if (newScore < 0 || newScore === 1) {
-        // Bust - score stays the same
-        alert('Bust! Score remains the same.');
-    } else if (newScore === 0) {
-        // Check if finished on double (simplified - would need to track last dart)
-        if (gameState.matchSettings.startType === 'SIDO' || gameState.matchSettings.startType === 'DIDO') {
-            // Win the leg
-            player.score = 0;
-            player.darts += gameState.currentVisit.length;
-            calculateAverages(currentPlayerKey);
-            endLeg();
-            return;
-        }
-    } else {
-        // Valid score
-        player.score = newScore;
-        player.darts += gameState.currentVisit.length;
+    // Add all dart scores
+    for (const dart of gameState.dartScores) {
+        totalScore += dart;
     }
     
-    // Calculate averages
-    calculateAverages(currentPlayerKey);
+    // Add current input if exists
+    if (gameState.currentInput) {
+        totalScore += parseInt(gameState.currentInput);
+    }
     
-    // Next player
-    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+    // Validate total score
+    if (totalScore < 0 || totalScore > 180) {
+        alert('Invalid total score! Must be between 0 and 180.');
+        gameState.currentInput = '';
+        gameState.dartScores = [];
+        updateGameScreen();
+        return;
+    }
+    
+    // Add the total score for this turn
+    gameState.turnTotal = totalScore;
+    gameState.currentVisit.push(totalScore); // Store the total score
+    
+    // Calculate final score
+    const finalScore = player.preTurnScore - gameState.turnTotal;
+    player.score = finalScore;
+    
+    // Clear input and dart scores
+    gameState.currentInput = '';
+    gameState.dartScores = [];
+    
+    updateGameScreen();
+    
+    // Check if player finished (reached 0 or below)
+    if (finalScore <= 0) {
+        if (finalScore === 0) {
+            // Player finished exactly - prompt for darts used
+            handleLegWin();
+        } else {
+            // Player went bust
+            handleBust();
+        }
+    } else {
+        // Normal turn - submit after brief delay
+        setTimeout(() => submitTurn(), 300);
+    }
+}
+
+function handleBust() {
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
+    
+    alert(`BUST! Score reverts to ${player.preTurnScore}`);
+    
+    // Revert score
+    player.score = player.preTurnScore;
     gameState.currentVisit = [];
+    gameState.turnTotal = 0;
+    gameState.currentInput = '';
+    gameState.dartScores = [];
     
+    updateGameScreen();
+    
+    // Switch to next player after brief delay
+    setTimeout(() => switchPlayer(), 500);
+}
+
+function handleLegWin() {
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
+    
+    // Show modal to select darts used to finish
+    showFinishDartsModal((finishDarts) => {
+        // Validate input
+        const actualDarts = Math.min(Math.max(finishDarts, 1), 3);
+        
+        // Calculate total darts for this leg
+        const totalDartsThisLeg = player.legDarts + actualDarts;
+        
+        // Calculate leg average: (points scored / darts thrown) * 3
+        const startScore = gameState.matchSettings.startScore || 501;
+        player.legAvg = (startScore / totalDartsThisLeg) * 3;
+        
+        // Update match stats
+        player.legDarts += actualDarts;
+        player.matchDarts += actualDarts;
+        player.legScore = startScore; // Full starting score
+        player.matchScore += startScore;
+        
+        // Calculate match average
+        if (player.matchDarts > 0) {
+            player.matchAvg = (player.matchScore / player.matchDarts) * 3;
+        }
+        
+        // Set score to exactly 0
+        player.score = 0;
+        
+        // Award leg win
+        player.legWins++;
+        
+        // Save to history
+        player.turnHistory.push({
+            darts: [gameState.turnTotal],
+            total: gameState.turnTotal,
+            scoreAfter: 0
+        });
+        
+        // Reset turn state
+        gameState.currentVisit = [];
+        gameState.turnTotal = 0;
+        gameState.currentInput = '';
+        gameState.dartScores = [];
+        
+        updateGameScreen();
+        
+        // Show game shot confirmation
+        showGameShotModal();
+    });
+}
+
+function showFinishDartsModal(callback) {
+    const modal = document.getElementById('finish-darts-modal');
+    if (!modal) return;
+    
+    modal.classList.add('show');
+    
+    // Remove any existing event listeners
+    const buttons = modal.querySelectorAll('.finish-dart-btn');
+    buttons.forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+    });
+    
+    // Add new event listeners
+    const newButtons = modal.querySelectorAll('.finish-dart-btn');
+    newButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const darts = parseInt(this.getAttribute('data-darts'));
+            modal.classList.remove('show');
+            callback(darts);
+        });
+    });
+}
+
+function showGameShotModal() {
+    const modal = document.getElementById('game-shot-modal');
+    if (!modal) return;
+    
+    const winnerName = document.getElementById('winner-name');
+    const matchScore = document.getElementById('match-score');
+    const confirmBtn = document.getElementById('confirm-win-btn');
+    const changeBtn = document.getElementById('change-win-btn');
+    
+    // Get winner info
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const winner = gameState.players[currentPlayerKey];
+    
+    // Update modal content
+    winnerName.textContent = winner.name;
+    matchScore.textContent = `${gameState.players.player1.legWins} - ${gameState.players.player2.legWins}`;
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Remove old event listeners
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    const newChangeBtn = changeBtn.cloneNode(true);
+    changeBtn.parentNode.replaceChild(newChangeBtn, changeBtn);
+    
+    // Add confirm button handler
+    document.getElementById('confirm-win-btn').addEventListener('click', function() {
+        modal.classList.remove('show');
+        // Check if set/match is complete
+        checkSetWin();
+    });
+    
+    // Add change button handler - allow user to edit last score
+    document.getElementById('change-win-btn').addEventListener('click', function() {
+        modal.classList.remove('show');
+        // Revert the leg win
+        const currentPlayerKey = `player${gameState.currentPlayer}`;
+        const player = gameState.players[currentPlayerKey];
+        player.legWins--;
+        player.turnHistory.pop(); // Remove last turn from history
+        
+        // Restore score to pre-turn state
+        player.score = player.preTurnScore;
+        
+        // Put the score back into input mode (not submitted)
+        gameState.currentInput = gameState.turnTotal.toString();
+        gameState.currentVisit = [];
+        gameState.turnTotal = 0;
+        
+        updateGameScreen();
+    });
+}
+
+function submitScore() {
+    // Called when ENTER button is pressed
+    confirmScore();
+}
+
+function quickHitScore(score) {
+    // Quick hit buttons (26, 40, 41, 43, 45, 60, 81, 85, 100, 140, 180)
+    // Set the score and immediately confirm it
+    gameState.currentInput = score.toString();
+    confirmScore();
+}
+
+function multiplyLastScore() {
+    // Multiply button (×3) - treble
+    if (gameState.currentInput) {
+        // If typing a number, multiply it by 3 and confirm
+        const score = parseInt(gameState.currentInput);
+        if (score >= 0 && score <= 60) {
+            gameState.currentInput = (score * 3).toString();
+            confirmScore();
+        }
+    }
+}
+
+function addZero() {
+    // 0 button - add zero to current input to make double digit
+    if (gameState.currentInput.length > 0 && gameState.currentInput.length < 3) {
+        gameState.currentInput += '0';
+        updateGameScreen();
+    } else if (gameState.currentInput.length === 0) {
+        // No input, quick-hit 0 (MISS)
+        quickHitScore(0);
+    }
+}
+
+function doubleLastScore() {
+    // Plus button (+) - add current dart score to the running total
+    if (gameState.currentInput) {
+        const dartScore = parseInt(gameState.currentInput);
+        
+        // Validate individual dart score (0-180)
+        if (dartScore >= 0 && dartScore <= 180) {
+            // Add to dart scores array
+            gameState.dartScores.push(dartScore);
+            
+            // Clear current input for next dart
+            gameState.currentInput = '';
+            
+            // Update display to show running calculation
+            updateGameScreen();
+        } else {
+            alert('Invalid dart score! Must be between 0 and 180.');
+            gameState.currentInput = '';
+            updateGameScreen();
+        }
+    }
+}
+
+function submitTurn() {
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
+    
+    // Check for good shots and display prompt
+    showGoodShotPrompt(gameState.turnTotal);
+    
+    // Update player stats (assuming 3 darts per turn)
+    player.legDarts += 3;
+    player.matchDarts += 3;
+    player.legScore += gameState.turnTotal;
+    player.matchScore += gameState.turnTotal;
+    
+    // Calculate final score
+    player.score = player.preTurnScore - gameState.turnTotal;
+    
+    // Calculate averages after every turn
+    if (player.legDarts > 0) {
+        player.legAvg = (player.legScore / player.legDarts) * 3;
+    }
+    if (player.matchDarts > 0) {
+        player.matchAvg = (player.matchScore / player.matchDarts) * 3;
+    }
+    
+    // Save to history
+    player.turnHistory.push({
+        darts: [gameState.turnTotal], // Store total score
+        total: gameState.turnTotal,
+        scoreAfter: player.score
+    });
+    
+    // Reset turn state
+    gameState.currentVisit = [];
+    gameState.turnTotal = 0;
+    gameState.currentInput = '';
+    gameState.dartScores = [];
+    
+    // Update display to show new averages
+    updateGameScreen();
+    
+    // Switch to next player
+    switchPlayer();
+}
+
+function showGoodShotPrompt(score) {
+    let message = '';
+    
+    // Check for good shots: 95-99, 100 (Ton), 101-180 (Ton+)
+    if (score >= 95 && score <= 99) {
+        message = `${score}!`;
+    } else if (score === 100) {
+        message = 'TON!';
+    } else if (score >= 101 && score <= 109) {
+        message = `${score}!`;
+    } else if (score >= 110 && score <= 180) {
+        const tonValue = score - 100;
+        message = `TON${tonValue}!`;
+    }
+    
+    // Display the message if there is one
+    if (message) {
+        const display = document.getElementById('good-shot-display');
+        const text = document.getElementById('good-shot-text');
+        
+        if (display && text) {
+            text.textContent = message;
+            display.style.display = 'block';
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                display.style.display = 'none';
+            }, 3000);
+        }
+    }
+}
+
+function switchPlayer() {
+    // Switch to next player
+    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+    
+    // Store pre-turn score for new player
+    const newPlayerKey = `player${gameState.currentPlayer}`;
+    gameState.players[newPlayerKey].preTurnScore = gameState.players[newPlayerKey].score;
+    
+    // Increment visit number only when switching TO player 1
+    // This way both players throw in the same visit number
     if (gameState.currentPlayer === 1) {
         gameState.visitNumber++;
     }
@@ -1327,184 +2001,572 @@ function submitVisit() {
     updateGameScreen();
 }
 
-function calculateAverages(playerKey) {
-    const player = gameState.players[playerKey];
+function checkSetWin() {
+    const player1 = gameState.players.player1;
+    const player2 = gameState.players.player2;
+    const settings = gameState.matchSettings;
     
-    if (player.darts > 0) {
-        // Calculate 3-dart average: (total points scored / darts thrown) * 3
-        const startScore = gameState.matchSettings.gameType === '301' ? 301 : 501;
-        const pointsScored = startScore - player.score;
-        player.legAvg = (pointsScored / player.darts) * 3;
-        player.matchAvg = player.legAvg; // Simplified - would track across legs
+    // Determine legs needed to win based on format
+    let legsToWin = settings.legsToWin;
+    if (settings.legsFormat === 'play-all') {
+        legsToWin = settings.totalLegs;
     }
+    
+    // Check if either player won the set
+    const player1WonSet = player1.legWins >= legsToWin;
+    const player2WonSet = player2.legWins >= legsToWin;
+    
+    if (player1WonSet || player2WonSet) {
+        // Award set win
+        if (player1WonSet) {
+            player1.setWins++;
+        } else {
+            player2.setWins++;
+        }
+        
+        // Check if match is complete
+        const setsToWin = settings.setsFormat === 'best-of' ? settings.setsToWin : settings.totalSets;
+        const matchComplete = player1.setWins >= setsToWin || player2.setWins >= setsToWin;
+        
+        // Show set complete modal
+        showSetCompleteModal(matchComplete);
+        return;
+    }
+    
+    // If no set win, start a new leg with alternate starter
+    startNewLeg();
 }
 
-function endLeg() {
-    const winner = gameState.currentPlayer;
-    const winnerKey = `player${winner}`;
-    gameState.players[winnerKey].legWins++;
+function showSetCompleteModal(matchComplete) {
+    const modal = document.getElementById('set-complete-modal');
+    if (!modal) return;
     
-    alert(`${gameState.players[winnerKey].name} wins the leg!`);
+    const player1 = gameState.players.player1;
+    const player2 = gameState.players.player2;
+    const settings = gameState.matchSettings;
     
-    // Check if match is won
-    if (gameState.players[winnerKey].legWins >= gameState.matchSettings.legsToWin) {
-        endMatch();
+    // Update modal content
+    const setNumber = document.getElementById('set-complete-number');
+    const homeScore = document.getElementById('set-home-score').querySelector('.score-value');
+    const awayScore = document.getElementById('set-away-score').querySelector('.score-value');
+    const nextSetText = document.getElementById('next-set-text');
+    const nextSetBtn = document.getElementById('next-set-btn');
+    
+    // Set current set number
+    setNumber.textContent = `Set ${String(gameState.currentSet).padStart(2, '0')}`;
+    
+    // Show set scores (who won this set)
+    const player1WonSet = player1.legWins > player2.legWins;
+    homeScore.textContent = player1WonSet ? '1' : '0';
+    awayScore.textContent = player1WonSet ? '0' : '1';
+    
+    // Update next set text
+    const gameType = settings.gameType === '301' ? '301' : '501';
+    const startType = settings.startType || 'SIDO';
+    
+    if (matchComplete) {
+        nextSetText.textContent = `Match Complete: ${player1.name} wins ${player1.setWins}-${player2.setWins}`;
+        nextSetBtn.textContent = 'New Match';
     } else {
-        // Start new leg
-        startNewLeg();
+        nextSetText.textContent = `Next Set: Play ${gameType} ${startType} Again`;
+        nextSetBtn.textContent = 'Next Set';
     }
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Remove old event listeners by cloning buttons
+    const changePlayersBtn = document.getElementById('change-players-btn');
+    const changeGameBtn = document.getElementById('change-game-btn');
+    const editSettingsBtn = document.getElementById('edit-match-settings-btn');
+    const endMatchBtn = document.getElementById('end-match-btn');
+    
+    const newNextSetBtn = nextSetBtn.cloneNode(true);
+    const newChangePlayersBtn = changePlayersBtn.cloneNode(true);
+    const newChangeGameBtn = changeGameBtn.cloneNode(true);
+    const newEditSettingsBtn = editSettingsBtn.cloneNode(true);
+    const newEndMatchBtn = endMatchBtn.cloneNode(true);
+    
+    nextSetBtn.parentNode.replaceChild(newNextSetBtn, nextSetBtn);
+    changePlayersBtn.parentNode.replaceChild(newChangePlayersBtn, changePlayersBtn);
+    changeGameBtn.parentNode.replaceChild(newChangeGameBtn, changeGameBtn);
+    editSettingsBtn.parentNode.replaceChild(newEditSettingsBtn, editSettingsBtn);
+    endMatchBtn.parentNode.replaceChild(newEndMatchBtn, endMatchBtn);
+    
+    // Next Set button - Continue match with next set
+    document.getElementById('next-set-btn').addEventListener('click', function() {
+        modal.classList.remove('show');
+        
+        if (matchComplete) {
+            // Match is over - go back to player selection
+            endMatch();
+        } else {
+            // Start next set
+            startNextSet();
+        }
+    });
+    
+    // Change Players button - Go to player library but keep match score
+    document.getElementById('change-players-btn').addEventListener('click', function() {
+        modal.classList.remove('show');
+        gameState.isChangingPlayers = true;
+        showScreen('player-selection-screen');
+        renderPlayerSelectionLists();
+    });
+    
+    // Change Game button - Change game type but keep match score
+    document.getElementById('change-game-btn').addEventListener('click', function() {
+        modal.classList.remove('show');
+        gameState.isChangingGame = true;
+        showScreen('game-type-select-screen');
+    });
+    
+    // Edit Match Settings button - Update match format but keep scores
+    document.getElementById('edit-match-settings-btn').addEventListener('click', function() {
+        modal.classList.remove('show');
+        gameState.isEditingSettings = true;
+        // Open format selection to update legs/sets
+        showScreen('format-select-screen');
+    });
+    
+    // End Match button - End match and reset everything
+    document.getElementById('end-match-btn').addEventListener('click', function() {
+        const confirmed = confirm('Are you sure you want to end the match? All progress will be lost.');
+        if (confirmed) {
+            modal.classList.remove('show');
+            endMatch();
+        }
+    });
+}
+
+function startNextSet() {
+    const startScore = gameState.matchSettings.startScore || 501;
+    
+    // Increment set number
+    gameState.currentSet++;
+    
+    // Reset leg wins for both players
+    gameState.players.player1.legWins = 0;
+    gameState.players.player2.legWins = 0;
+    
+    // Reset leg-specific stats
+    gameState.players.player1.score = startScore;
+    gameState.players.player1.preTurnScore = startScore;
+    gameState.players.player1.legDarts = 0;
+    gameState.players.player1.legScore = 0;
+    gameState.players.player1.legAvg = 0;
+    gameState.players.player1.turnHistory = [];
+    
+    gameState.players.player2.score = startScore;
+    gameState.players.player2.preTurnScore = startScore;
+    gameState.players.player2.legDarts = 0;
+    gameState.players.player2.legScore = 0;
+    gameState.players.player2.legAvg = 0;
+    gameState.players.player2.turnHistory = [];
+    
+    // Reset game state
+    gameState.currentVisit = [];
+    gameState.visitNumber = 1;
+    gameState.currentInput = '';
+    gameState.dartScores = [];
+    gameState.turnTotal = 0;
+    
+    // Determine who starts this set (opposite of who started previous set)
+    const firstSetStarter = gameState.matchSettings.firstLegStarter;
+    if (gameState.currentSet % 2 === 1) {
+        // Odd set - use original starter
+        gameState.setStarter = firstSetStarter;
+    } else {
+        // Even set - use opposite starter
+        gameState.setStarter = firstSetStarter === 1 ? 2 : 1;
+    }
+    
+    // First leg of set starts with setStarter
+    gameState.legStarter = gameState.setStarter;
+    gameState.currentPlayer = gameState.legStarter;
+    
+    // Update display
+    updateGameScreen();
 }
 
 function startNewLeg() {
-    const startScore = gameState.matchSettings.gameType === '301' ? 301 : 501;
+    const startScore = gameState.matchSettings.startScore || 501;
+    
+    // Increment leg counter
+    gameState.currentLeg++;
+    
+    // Reset leg-specific stats
     gameState.players.player1.score = startScore;
+    gameState.players.player1.preTurnScore = startScore;
+    gameState.players.player1.legDarts = 0;
+    gameState.players.player1.legScore = 0;
+    gameState.players.player1.legAvg = 0;
+    gameState.players.player1.turnHistory = [];
+    
     gameState.players.player2.score = startScore;
-    gameState.players.player1.darts = 0;
-    gameState.players.player2.darts = 0;
+    gameState.players.player2.preTurnScore = startScore;
+    gameState.players.player2.legDarts = 0;
+    gameState.players.player2.legScore = 0;
+    gameState.players.player2.legAvg = 0;
+    gameState.players.player2.turnHistory = [];
+    
+    // Reset game state
     gameState.currentVisit = [];
     gameState.visitNumber = 1;
+    gameState.currentInput = '';
+    gameState.dartScores = [];
+    gameState.turnTotal = 0;
     
-    // Alternate starting player
-    if (gameState.matchSettings.playerStartFormat === 'alternate') {
-        gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+    // Alternate starter within the set
+    // If setStarter is not set yet (first leg of match), use legStarter
+    if (gameState.setStarter === null) {
+        gameState.setStarter = gameState.legStarter;
     }
     
+    // Count legs in current set to determine alternation
+    const legsPlayed = gameState.players.player1.legWins + gameState.players.player2.legWins;
+    
+    // Alternate based on leg number within set
+    if (legsPlayed % 2 === 0) {
+        // Even legs (0, 2, 4...) - setStarter starts
+        gameState.legStarter = gameState.setStarter;
+    } else {
+        // Odd legs (1, 3, 5...) - opposite player starts
+        gameState.legStarter = gameState.setStarter === 1 ? 2 : 1;
+    }
+    
+    gameState.currentPlayer = gameState.legStarter;
+    
+    // Update display
     updateGameScreen();
 }
 
 function endMatch() {
-    const winner = gameState.currentPlayer;
-    const winnerKey = `player${winner}`;
-    alert(`${gameState.players[winnerKey].name} wins the match!`);
+    // Reset all match data
+    const startScore = gameState.matchSettings.startScore || 501;
     
-    // Return to game mode selection
-    showScreen('game-mode-screen');
+    // Reset both players completely
+    gameState.players.player1.score = startScore;
+    gameState.players.player1.preTurnScore = startScore;
+    gameState.players.player1.darts = 0;
+    gameState.players.player1.legDarts = 0;
+    gameState.players.player1.matchDarts = 0;
+    gameState.players.player1.legScore = 0;
+    gameState.players.player1.matchScore = 0;
+    gameState.players.player1.legAvg = 0;
+    gameState.players.player1.matchAvg = 0;
+    gameState.players.player1.legWins = 0;
+    gameState.players.player1.setWins = 0;
+    gameState.players.player1.turnHistory = [];
+    
+    gameState.players.player2.score = startScore;
+    gameState.players.player2.preTurnScore = startScore;
+    gameState.players.player2.darts = 0;
+    gameState.players.player2.legDarts = 0;
+    gameState.players.player2.matchDarts = 0;
+    gameState.players.player2.legScore = 0;
+    gameState.players.player2.matchScore = 0;
+    gameState.players.player2.legAvg = 0;
+    gameState.players.player2.matchAvg = 0;
+    gameState.players.player2.legWins = 0;
+    gameState.players.player2.setWins = 0;
+    gameState.players.player2.turnHistory = [];
+    
+    // Reset game state
+    gameState.currentSet = 1;
+    gameState.currentLeg = 1;
+    gameState.currentVisit = [];
+    gameState.visitNumber = 1;
+    gameState.currentInput = '';
+    gameState.dartScores = [];
+    gameState.turnTotal = 0;
+    gameState.legStarter = null;
+    gameState.setStarter = null;
+    gameState.isChangingPlayers = false;
+    gameState.isChangingGame = false;
+    gameState.isEditingSettings = false;
+    
+    // Update player selection screen displays
+    updatePlayerSelectionDisplays();
+    
+    // Go back to player selection
+    showScreen('player-selection-screen');
 }
 
-// Number pad state management
-let currentInput = [];
-let inputHistory = [];
-
-function switchToInputMode() {
-    // Change BACK to UNDO
-    const actionBtn = document.getElementById('action-btn');
-    actionBtn.textContent = 'UNDO';
-    actionBtn.classList.remove('yellow');
-    actionBtn.classList.add('red');
+function updateGameAfterChange() {
+    // Update start score based on new game type
+    const startScore = gameState.matchSettings.startScore;
     
-    // Change MISS to ENTER
+    // Reset current leg scores to new game type
+    gameState.players.player1.score = startScore;
+    gameState.players.player1.preTurnScore = startScore;
+    gameState.players.player1.legDarts = 0;
+    gameState.players.player1.legScore = 0;
+    gameState.players.player1.legAvg = 0;
+    gameState.players.player1.turnHistory = [];
+    
+    gameState.players.player2.score = startScore;
+    gameState.players.player2.preTurnScore = startScore;
+    gameState.players.player2.legDarts = 0;
+    gameState.players.player2.legScore = 0;
+    gameState.players.player2.legAvg = 0;
+    gameState.players.player2.turnHistory = [];
+    
+    // Reset current turn state
+    gameState.currentVisit = [];
+    gameState.dartScores = [];
+    gameState.currentInput = '';
+    gameState.turnTotal = 0;
+    gameState.visitNumber = 1;
+    
+    // Clear flag and return to game
+    gameState.isChangingGame = false;
+    showScreen('game-screen');
+    updateGameScreen();
+}
+
+function handleDualFunctionButton(button, defaultScore) {
+    // Dual-function buttons: 100 (×), 180 (0), 140 (+)
+    const hasInput = gameState.currentVisit.length > 0 || gameState.currentInput;
+    
+    if (button.id === 'btn-100-multiply') {
+        if (hasInput) {
+            // × mode - multiply by 3
+            multiplyLastScore();
+        } else {
+            // 100 mode - quick hit
+            quickHitScore(100);
+        }
+    } else if (button.id === 'btn-180-zero') {
+        if (hasInput) {
+            // 0 mode - add zero
+            addZero();
+        } else {
+            // 180 mode - quick hit
+            quickHitScore(180);
+        }
+    } else if (button.id === 'btn-140-plus') {
+        if (hasInput) {
+            // + mode - add score
+            doubleLastScore();
+        } else {
+            // 140 mode - quick hit
+            quickHitScore(140);
+        }
+    }
+}
+
+function updateDualFunctionButtonDisplay() {
+    const hasInput = gameState.currentVisit.length > 0 || gameState.currentInput || gameState.dartScores.length > 0;
+    
+    // Update button 100/×
+    const btn100 = document.getElementById('btn-100-multiply');
+    if (btn100) {
+        btn100.textContent = hasInput ? '×' : '100';
+    }
+    
+    // Update button 180/0
+    const btn180 = document.getElementById('btn-180-zero');
+    if (btn180) {
+        btn180.textContent = hasInput ? '0' : '180';
+    }
+    
+    // Update button 140/+
+    const btn140 = document.getElementById('btn-140-plus');
+    if (btn140) {
+        btn140.textContent = hasInput ? '+' : '140';
+    }
+    
+    // Update MISS/ENTER button
     const submitBtn = document.getElementById('submit-btn');
-    submitBtn.textContent = 'ENTER';
-    submitBtn.classList.remove('red');
-    submitBtn.classList.add('green');
-    
-    // Show zero button, hide 180 button
-    document.getElementById('zero-btn').style.display = 'block';
-    document.querySelector('[data-score="180"]').style.display = 'none';
+    if (submitBtn) {
+        if (gameState.currentInput || gameState.dartScores.length > 0) {
+            submitBtn.textContent = 'ENTER';
+            submitBtn.classList.remove('red');
+            submitBtn.classList.add('green');
+        } else {
+            submitBtn.textContent = 'MISS';
+            submitBtn.classList.add('red');
+            submitBtn.classList.remove('green');
+        }
+    }
 }
 
-function switchToDefaultMode() {
-    // Change UNDO to BACK
-    const actionBtn = document.getElementById('action-btn');
-    actionBtn.textContent = 'BACK';
-    actionBtn.classList.remove('red');
-    actionBtn.classList.add('yellow');
+function updateScoreHistory() {
+    const historyContainer = document.getElementById('score-history');
+    if (!historyContainer) return;
     
-    // Change ENTER to MISS
-    const submitBtn = document.getElementById('submit-btn');
-    submitBtn.textContent = 'MISS';
-    submitBtn.classList.remove('green');
-    submitBtn.classList.add('red');
+    // Get the history for both players
+    const p1History = gameState.players.player1.turnHistory;
+    const p2History = gameState.players.player2.turnHistory;
     
-    // Hide zero button, show 180 button
-    document.getElementById('zero-btn').style.display = 'none';
-    document.querySelector('[data-score="180"]').style.display = 'block';
+    // The current visit number shows which turn we're on
+    const currentVisit = gameState.visitNumber;
     
-    // Clear current input
-    currentInput = [];
-    document.getElementById('input-mode').textContent = 'Straight-In';
-}
-
-// Number button clicks
-document.querySelectorAll('.num-btn[data-score]').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const score = this.dataset.score;
-        currentInput.push(score);
+    // Clear and rebuild the display
+    historyContainer.innerHTML = '';
+    
+    // Display all visits from 1 to current (full log)
+    for (let visit = 1; visit <= currentVisit; visit++) {
+        const entry = document.createElement('div');
+        const isCurrentTurn = (visit === currentVisit);
+        entry.className = isCurrentTurn ? 'score-entry active' : 'score-entry';
         
-        // Switch to input mode
-        switchToInputMode();
+        // Player 1 column
+        const p1Column = document.createElement('div');
+        p1Column.className = 'player-column';
         
-        // Display current input
-        document.getElementById('input-mode').textContent = currentInput.join(' + ');
-    });
-});
-
-// Action button (BACK / UNDO)
-document.getElementById('action-btn').addEventListener('click', function() {
-    if (this.textContent === 'UNDO') {
-        // Undo last input
-        if (currentInput.length > 0) {
-            currentInput.pop();
-            
-            if (currentInput.length === 0) {
-                switchToDefaultMode();
+        // Check if player 1 has completed this turn
+        const p1TurnIndex = visit - 1;
+        if (p1TurnIndex < p1History.length) {
+            p1Column.innerHTML = `<div class="darts">${p1History[p1TurnIndex].total}</div>`;
+        } else if (isCurrentTurn && gameState.currentPlayer === 1 && gameState.currentVisit.length > 0) {
+            // Player 1 is currently throwing
+            p1Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
+        }
+        
+        // Turn number column with arrow indicator
+        const turnColumn = document.createElement('div');
+        turnColumn.className = 'turn-info';
+        
+        if (isCurrentTurn) {
+            // Show arrow for current player
+            if (gameState.currentPlayer === 1) {
+                turnColumn.innerHTML = `<span class="turn-arrow">← ${visit}</span>`;
             } else {
-                document.getElementById('input-mode').textContent = currentInput.join(' + ');
+                turnColumn.innerHTML = `<span class="turn-arrow">${visit} →</span>`;
             }
-        }
-    } else {
-        // BACK - return to player selection
-        showScreen('player-selection-screen');
-    }
-});
-
-// Submit button (MISS / ENTER)
-document.getElementById('submit-btn').addEventListener('click', function() {
-    if (this.textContent === 'ENTER') {
-        // Submit the score
-        const totalScore = currentInput.reduce((sum, val) => sum + parseInt(val), 0);
-        
-        // Add to game state
-        gameState.currentVisit.push(totalScore);
-        inputHistory.push([...currentInput]);
-        
-        // Process the score
-        const currentPlayerKey = `player${gameState.currentPlayer}`;
-        gameState.players[currentPlayerKey].score -= totalScore;
-        gameState.players[currentPlayerKey].darts += currentInput.length;
-        
-        // Check for win or bust
-        if (gameState.players[currentPlayerKey].score === 0) {
-            endLeg();
-        } else if (gameState.players[currentPlayerKey].score < 0) {
-            // Bust - restore score
-            gameState.players[currentPlayerKey].score += totalScore;
-            gameState.players[currentPlayerKey].darts -= currentInput.length;
-            alert('BUST!');
+        } else {
+            // Just show turn number for completed turns
+            turnColumn.innerHTML = `<span class="turn-number">${visit}</span>`;
         }
         
-        // Switch back to default mode
-        switchToDefaultMode();
-        updateGameScreen();
+        // Player 2 column
+        const p2Column = document.createElement('div');
+        p2Column.className = 'player-column';
         
-    } else {
-        // MISS - record a miss
-        gameState.currentVisit.push(0);
-        gameState.players[`player${gameState.currentPlayer}`].darts++;
-        updateGameScreen();
+        // Check if player 2 has completed this turn
+        const p2TurnIndex = visit - 1;
+        if (p2TurnIndex < p2History.length) {
+            p2Column.innerHTML = `<div class="darts">${p2History[p2TurnIndex].total}</div>`;
+        } else if (isCurrentTurn && gameState.currentPlayer === 2 && gameState.currentVisit.length > 0) {
+            // Player 2 is currently throwing
+            p2Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
+        }
+        
+        entry.appendChild(p1Column);
+        entry.appendChild(turnColumn);
+        entry.appendChild(p2Column);
+        
+        historyContainer.appendChild(entry);
     }
-});
+    
+    // Smooth auto-scroll to bottom to show latest entries
+    historyContainer.scrollTo({
+        top: historyContainer.scrollHeight,
+        behavior: 'smooth'
+    });
+}
 
-document.getElementById('back-btn')?.addEventListener('click', function() {
-    if (gameState.currentVisit.length > 0) {
-        gameState.currentVisit.pop();
-        updateGameScreen();
+function updateThrowIndicator() {
+    const player1Indicator = document.getElementById('player1-throw');
+    const player2Indicator = document.getElementById('player2-throw');
+    
+    if (!player1Indicator || !player2Indicator) return;
+    
+    // Clear both indicators
+    player1Indicator.classList.remove('active');
+    player2Indicator.classList.remove('active');
+    
+    // Show indicator for whoever started this leg
+    if (gameState.legStarter === 1) {
+        player1Indicator.classList.add('active');
+    } else if (gameState.legStarter === 2) {
+        player2Indicator.classList.add('active');
     }
-});
+}
+
+// updateDualFunctionButtons removed - will be rewritten
+
+// addScore function removed - will be rewritten
+
+// handleBust function removed - will be rewritten
+
+// handleWin function removed - will be rewritten
+
+// completeTurn function removed - will be rewritten
+
+// switchPlayer function removed - will be rewritten
+
+// Duplicate checkSetWin, checkMatchWin, startNewLeg, startNewSet removed - using versions above
+
+// ===== INITIALIZATION =====
 
 // Initialize
 window.addEventListener('DOMContentLoaded', async function() {
+    console.log('DOM loaded, initializing...');
+    
     await initializePlayerLibrary();
     renderPlayerSelectionLists();
     showScreen('player-selection-screen');
+    
+    // Attach number button event handlers
+    const numButtons = document.querySelectorAll('.num-btn[data-score]');
+    numButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const score = this.getAttribute('data-score');
+            
+            // Check if this is a dual-function button
+            if (this.classList.contains('dual-function')) {
+                handleDualFunctionButton(this, parseInt(score));
+            } else if (this.classList.contains('edge')) {
+                // Quick-hit buttons (26, 40, 41, 43, 45, 60, 81, 85)
+                quickHitScore(parseInt(score));
+            } else {
+                // Regular number buttons (1-9)
+                addDigit(score);
+            }
+        });
+    });
+    
+    // Submit button - MISS (quick-hit 0) or ENTER (submit input)
+    document.getElementById('submit-btn')?.addEventListener('click', function() {
+        if (gameState.currentInput) {
+            // ENTER mode - submit the typed score
+            submitScore();
+        } else {
+            // MISS mode - quick-hit 0
+            quickHitScore(0);
+        }
+    });
+    
+    // Action button - undo or back to starting player
+    document.getElementById('action-btn')?.addEventListener('click', function() {
+        // Check if this is a fresh game (no scores entered by anyone)
+        const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
+        const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
+        const noCurrentInput = !gameState.currentInput && gameState.currentVisit.length === 0 && gameState.dartScores.length === 0;
+        
+        if (player1Fresh && player2Fresh && noCurrentInput) {
+            // Fresh game, no inputs - go back to starting player selection
+            showScreen('starting-player-screen');
+            updateStartingPlayerScreen();
+        } else if (gameState.currentInput) {
+            // Remove last digit from current input
+            gameState.currentInput = gameState.currentInput.slice(0, -1);
+            updateGameScreen();
+        } else if (gameState.dartScores.length > 0) {
+            // Remove last dart score from calculator
+            gameState.dartScores.pop();
+            updateGameScreen();
+        }
+    });
+    
+    console.log('All scoring event handlers attached');
+    
+    // Number pad scoring and keyboard handlers removed - will be rewritten
+    console.log('Player library initialized, ready for scoring logic');
 });
+
+
+// All duplicate event handlers removed - scoring logic will be rewritten

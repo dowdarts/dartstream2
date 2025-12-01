@@ -1,4 +1,6 @@
 // Supabase Configuration
+console.log('supabase-config.js loading...');
+
 const SUPABASE_URL = 'https://namwnoscgymzuiiebxvk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbXdub3NjZ3ltenVpaWVieHZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MDg0NjQsImV4cCI6MjA3ODI4NDQ2NH0.uoz9L_nE-VZylXJvJNStdh5c4Ep7fUuwg0EWVCvkql0';
 
@@ -164,3 +166,9 @@ const PlayerDB = {
         }
     }
 };
+
+// Make PlayerDB available globally for ES6 modules
+window.PlayerDB = PlayerDB;
+window.supabaseConfigReady = true;
+console.log('PlayerDB registered on window object');
+console.log('window.PlayerDB:', window.PlayerDB);

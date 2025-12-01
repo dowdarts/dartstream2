@@ -199,7 +199,7 @@
         <!-- Player Selection Screen -->
         <div id="player-selection-screen" class="screen active">
             <div class="game-header">
-                <h2 class="set-score">Set 1 <span class="score-display">0 - 0</span></h2>
+                <h2 class="set-score">Set <span class="score-display" id="player-select-set-score">0 - 0</span> | Leg <span class="score-display" id="player-select-leg-score">0 - 0</span></h2>
             </div>
             
             <div class="player-names-bar">
@@ -243,7 +243,7 @@
             <div class="match-info-bar">
                 <div class="match-avg">0 / 0.0<br>Match</div>
                 <div class="set-display">S1</div>
-                <div class="set-score-big">0 - 0</div>
+                <div class="set-score-big" id="player-select-set-score-big">0 - 0</div>
                 <div class="legs-format">(3)</div>
                 <div class="match-avg">0 / 0.0<br>Match</div>
             </div>
@@ -375,7 +375,7 @@
         <!-- Game Selection (DartStream) Screen -->
         <div id="game-selection-screen" class="screen">
             <div class="game-header">
-                <h2 class="set-score">Set 1 <span class="score-display">0 - 0</span></h2>
+                <h2 class="set-score">Set <span class="score-display">0 - 0</span> | Leg <span class="score-display">0 - 0</span></h2>
             </div>
 
             <div class="dartconnect-logo">
@@ -444,7 +444,7 @@
             </div>
 
             <div class="bottom-bar">
-                <h2 class="set-score-bottom">Set 1 <span class="score-display">0 - 0</span></h2>
+                <h2 class="set-score-bottom">Set <span class="score-display">0 - 0</span> | Leg <span class="score-display">0 - 0</span></h2>
             </div>
 
             <div class="bottom-bar-dark">
@@ -465,74 +465,147 @@
         <div id="game-screen" class="screen">
             <div class="scoreboard-header">
                 <div class="player-header left" id="player1-display">
-                    <div class="player-name-large">Matthew Dow</div>
-                    <div class="stats-small">
-                        <span class="stat-label red">0</span>
-                        <span class="stat-label red">0</span>
+                    <div class="throw-indicator" id="player1-throw"></div>
+                    <div class="player-info">
+                        <div class="player-name-large">Matthew Dow</div>
+                        <div class="score-row">
+                            <div class="averages-display">
+                                <div class="avg-label red" id="player1-leg-avg">0.00</div>
+                                <div class="avg-label red" id="player1-match-avg">0.00</div>
+                            </div>
+                            <div class="score-large">501</div>
+                        </div>
                     </div>
-                    <div class="score-large">501</div>
                 </div>
                 <div class="timer-display">
                     <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
                     <div class="version-text">v1.0.0</div>
                 </div>
                 <div class="player-header right active" id="player2-display">
-                    <div class="player-name-large">Moe C</div>
-                    <div class="stats-small">
-                        <span class="stat-label red">0</span>
-                        <span class="stat-label red">0</span>
+                    <div class="throw-indicator" id="player2-throw"></div>
+                    <div class="player-info">
+                        <div class="player-name-large">Moe C</div>
+                        <div class="score-row">
+                            <div class="averages-display">
+                                <div class="avg-label red" id="player2-leg-avg">0.00</div>
+                                <div class="avg-label red" id="player2-match-avg">0.00</div>
+                            </div>
+                            <div class="score-large">501</div>
+                        </div>
                     </div>
-                    <div class="score-large">501</div>
                 </div>
             </div>
 
             <div class="scoring-area">
-                <div class="visit-indicator">
-                    <span class="yellow-text">SI</span>
-                    <div class="visit-number">1</div>
-                    <div class="dart-marker">●</div>
+                <div class="score-history" id="score-history">
+                    <!-- Score entries will be added here dynamically -->
+                </div>
+                
+                <!-- Good Shot Display -->
+                <div id="good-shot-display" class="good-shot-display" style="display: none;">
+                    <div class="good-shot-text" id="good-shot-text"></div>
                 </div>
             </div>
 
             <div class="bottom-controls">
                 <div class="control-bar">
                     <button class="control-btn" id="back-to-players">Back</button>
-                    <h2 class="set-score-inline">Set 1 <span class="score-display">0 - 0</span></h2>
+                    <h2 class="set-score-inline">Set <span class="score-display" id="set-score-display">0 - 0</span> | Leg <span class="score-display" id="leg-score-display">0 - 0</span></h2>
                     <button class="control-btn gold" id="connect-btn">Connect</button>
                 </div>
 
                 <div class="input-bar">
-                    <button class="input-btn yellow" id="action-btn">BACK</button>
-                    <div class="input-mode" id="input-mode">Straight-In</div>
+                    <button class="input-btn yellow" id="action-btn">UNDO</button>
+                    <div class="input-mode" id="input-mode"></div>
                     <button class="input-btn red" id="submit-btn">MISS</button>
                 </div>
 
                 <div class="number-pad">
-                    <button class="num-btn edge">26</button>
+                    <button class="num-btn edge" data-score="26">26</button>
                     <button class="num-btn" data-score="1">1</button>
                     <button class="num-btn" data-score="2">2</button>
                     <button class="num-btn" data-score="3">3</button>
-                    <button class="num-btn edge">45</button>
+                    <button class="num-btn edge" data-score="45">45</button>
                     
-                    <button class="num-btn edge">40</button>
+                    <button class="num-btn edge" data-score="40">40</button>
                     <button class="num-btn" data-score="4">4</button>
                     <button class="num-btn" data-score="5">5</button>
                     <button class="num-btn" data-score="6">6</button>
-                    <button class="num-btn edge">60</button>
+                    <button class="num-btn edge" data-score="60">60</button>
                     
-                    <button class="num-btn edge">41</button>
+                    <button class="num-btn edge" data-score="41">41</button>
                     <button class="num-btn" data-score="7">7</button>
                     <button class="num-btn" data-score="8">8</button>
                     <button class="num-btn" data-score="9">9</button>
-                    <button class="num-btn edge">81</button>
+                    <button class="num-btn edge" data-score="81">81</button>
                     
-                    <button class="num-btn edge">43</button>
-                    <button class="num-btn special green" data-score="100">100</button>
-                    <button class="num-btn" id="zero-btn" data-score="0" style="display: none;">0</button>
-                    <button class="num-btn special red" data-score="180">180</button>
-                    <button class="num-btn special green" data-score="140">140</button>
-                    <button class="num-btn edge">85</button>
+                    <button class="num-btn edge" data-score="43">43</button>
+                    <button class="num-btn special green dual-function" id="btn-100-multiply" data-score="100" data-operation="multiply" data-default="100" data-alt="×">100</button>
+                    <button class="num-btn special red dual-function" id="btn-180-zero" data-score="180" data-operation="zero" data-default="180" data-alt="0">180</button>
+                    <button class="num-btn special green dual-function" id="btn-140-plus" data-score="140" data-operation="plus" data-default="140" data-alt="+">140</button>
+                    <button class="num-btn edge" data-score="85">85</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finish Darts Modal -->
+    <div id="finish-darts-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="modal-title">How many darts to finish?</h2>
+            <div class="finish-darts-buttons">
+                <button class="finish-dart-btn" data-darts="1">
+                    <img src="button 1.png" alt="1 Dart">
+                </button>
+                <button class="finish-dart-btn" data-darts="2">
+                    <img src="button 2.png" alt="2 Darts">
+                </button>
+                <button class="finish-dart-btn" data-darts="3">
+                    <img src="button 3.png" alt="3 Darts">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Shot Winner Modal -->
+    <div id="game-shot-modal" class="modal-overlay">
+        <div class="modal-content winner-modal">
+            <h2 class="modal-header-dark">Game Shot Winner:</h2>
+            <h1 class="winner-name" id="winner-name">Home</h1>
+            <h2 class="match-score" id="match-score">0 - 1</h2>
+            <a href="#" class="hide-confirmation">Hide this confirmation</a>
+            <button class="confirm-btn green" id="confirm-win-btn">Confirm</button>
+            <button class="confirm-btn red" id="change-win-btn">Change</button>
+            <button class="refresh-btn">Refresh App</button>
+        </div>
+    </div>
+
+    <!-- Set Complete Modal -->
+    <div id="set-complete-modal" class="modal-overlay">
+        <div class="modal-content set-complete-modal">
+            <div class="set-complete-header">
+                <div class="player-score-display" id="set-home-score">
+                    <div class="player-label">Home</div>
+                    <div class="score-value">0</div>
+                </div>
+                <div class="set-title">
+                    <div class="set-number" id="set-complete-number">Set 01</div>
+                    <div class="set-status">Complete</div>
+                </div>
+                <div class="player-score-display" id="set-away-score">
+                    <div class="player-label">Away</div>
+                    <div class="score-value">1</div>
+                </div>
+            </div>
+            <h3 class="next-set-text" id="next-set-text">Next Set: Play 501 SIDO Again</h3>
+            <div class="set-complete-buttons">
+                <button class="set-btn yellow" id="change-players-btn">Change Players</button>
+                <button class="set-btn green" id="next-set-btn">Next Set</button>
+                <button class="set-btn yellow" id="change-game-btn">Change Game</button>
+            </div>
+            <div class="set-complete-buttons">
+                <button class="set-btn gray" id="edit-match-settings-btn">Edit Match Settings</button>
+                <button class="set-btn red" id="end-match-btn">End Match</button>
             </div>
         </div>
     </div>
