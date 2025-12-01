@@ -1,3 +1,7 @@
+-- PostgreSQL/Supabase Database Setup
+-- NOTE: This file uses PostgreSQL syntax, not SQL Server
+-- Run this in Supabase SQL Editor or via Supabase CLI
+
 -- Create players table
 CREATE TABLE IF NOT EXISTS players (
     id BIGSERIAL PRIMARY KEY,
