@@ -2790,30 +2790,84 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     // Action button - undo or back to starting player
     document.getElementById('action-btn')?.addEventListener('click', function() {
-        // If in edit mode, UNDO clears the edit and exits edit mode
-        if (gameState.isEditMode) {
-            exitEditMode();
+        // If in edit mode with input, remove last digit
+        if (gameState.isEditMode && gameState.currentInput.length > 0) {
+            gameState.currentInput = gameState.currentInput.slice(0, -1);
             updateGameScreen();
             return;
         }
         
-        // Check if this is a fresh game (no scores entered by anyone)
-        const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
-        const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
-        const noCurrentInput = !gameState.currentInput && gameState.currentVisit.length === 0 && gameState.dartScores.length === 0;
+        // If in edit mode with empty input, go back to previous score
+        if (gameState.isEditMode && gameState.currentInput.length === 0) {
+            // Find the previous score to edit
+            const currentPlayer = gameState.editModePlayer;
+            const currentTurnIndex = gameState.editModeTurnIndex;
+            
+            // Exit current edit mode first
+            exitEditMode();
+            
+            // Try to find previous score from same player
+            const playerKey = `player${currentPlayer}`;
+            const player = gameState.players[playerKey];
+            
+            if (currentTurnIndex > 0) {
+                // Go to previous turn of same player
+                const prevTurn = player.turnHistory[currentTurnIndex - 1];
+                if (prevTurn) {
+                    enterEditMode(currentPlayer, currentTurnIndex - 1, prevTurn.total);
+                }
+            } else {
+                // No more turns for this player, try other player's last turn
+                const otherPlayer = currentPlayer === 1 ? 2 : 1;
+                const otherPlayerKey = `player${otherPlayer}`;
+                const otherPlayerData = gameState.players[otherPlayerKey];
+                
+                if (otherPlayerData.turnHistory.length > 0) {
+                    const lastTurnIndex = otherPlayerData.turnHistory.length - 1;
+                    const lastTurn = otherPlayerData.turnHistory[lastTurnIndex];
+                    enterEditMode(otherPlayer, lastTurnIndex, lastTurn.total);
+                }
+            }
+            
+            return;
+        }
         
-        if (player1Fresh && player2Fresh && noCurrentInput) {
-            // Fresh game, no inputs - go back to starting player selection
-            showScreen('starting-player-screen');
-            updateStartingPlayerScreen();
-        } else if (gameState.currentInput) {
-            // Remove last digit from current input
+        // If currently typing (not in edit mode), remove last digit
+        if (gameState.currentInput) {
             gameState.currentInput = gameState.currentInput.slice(0, -1);
             updateGameScreen();
-        } else if (gameState.dartScores.length > 0) {
-            // Remove last dart score from calculator
+            return;
+        }
+        
+        // If dart scores in calculator, remove last one
+        if (gameState.dartScores.length > 0) {
             gameState.dartScores.pop();
             updateGameScreen();
+            return;
+        }
+        
+        // No current input or dart scores - enter edit mode for last submitted score
+        // Find the most recent score from either player
+        const p1History = gameState.players.player1.turnHistory;
+        const p2History = gameState.players.player2.turnHistory;
+        
+        if (p1History.length === 0 && p2History.length === 0) {
+            // Fresh game - go back to starting player selection
+            showScreen('starting-player-screen');
+            updateStartingPlayerScreen();
+            return;
+        }
+        
+        // Determine which player submitted the last score
+        // The player who just finished is NOT the current player (since we switched)
+        const lastPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+        const lastPlayerKey = `player${lastPlayer}`;
+        const lastPlayerData = gameState.players[lastPlayerKey];
+        
+        if (lastPlayerData.turnHistory.length > 0) {
+            const lastTurnIndex = lastPlayerData.turnHistory.length - 1;
+            const lastTurn = lastPlayerData.turnHistory[lastTurnIndex];
+            enterEditMode(lastPlayer, lastTurnIndex, lastTurn.total);
         }
     });
     
