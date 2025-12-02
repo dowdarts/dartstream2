@@ -240,13 +240,13 @@
             ⚠️ Not Connected
         </div>
         <div class="control-group">
-            <label class="control-label">score bug Connection Code</label>
-            <input type="text" class="control-input" id="score bugCode" placeholder="Enter 4-digit code from score bug" maxlength="4" style="font-size: 24px; text-align: center; letter-spacing: 4px; font-weight: bold;">
+            <label class="control-label">Score Bug Connection Code</label>
+            <input type="text" class="control-input" id="scoreBugCode" placeholder="Enter 4-digit code from score bug" maxlength="4" style="font-size: 24px; text-align: center; letter-spacing: 4px; font-weight: bold;">
             <div style="font-size: 12px; color: #94a3b8; margin-top: 8px; text-align: center;">
                 Get this code from the Ad Settings panel in the score bug
             </div>
         </div>
-        <button class="btn btn-success" onclick="connectToscore bug()">Connect to score bug</button>
+        <button class="btn btn-success" onclick="connectToScoreBug()">Connect to score bug</button>
     </div>
 
     <!-- score bug Controls -->
@@ -305,7 +305,7 @@
             </label>
         </div>
 
-        <button class="btn btn-primary" onclick="updatescore bugSettings()">💾 Update score bug</button>
+        <button class="btn btn-primary" onclick="updateScoreBugSettings()">💾 Update score bug</button>
     </div>
 
     <!-- Advertisement Controls -->
@@ -364,7 +364,7 @@
             // Load saved score bug code if any
             connectionCode = localStorage.getItem('score bug-connection-code');
             if (connectionCode) {
-                const codeInput = document.getElementById('score bugCode');
+                const codeInput = document.getElementById('scoreBugCode');
                 if (codeInput) {
                     codeInput.value = connectionCode;
                 }
@@ -375,7 +375,7 @@
             
             // Listen for responses from score bug
             controlChannel.addEventListener('message', function(event) {
-                handlescore bugResponse(event.data);
+                handleScoreBugResponse(event.data);
             });
             
             // Also listen for localStorage changes (for cross-computer via page refresh)
@@ -383,7 +383,7 @@
                 if (e.key && e.key.startsWith('dartstream-response-')) {
                     try {
                         const response = JSON.parse(e.newValue);
-                        handlescore bugResponse(response);
+                        handleScoreBugResponse(response);
                     } catch (err) {
                         console.error('Error parsing response:', err);
                     }
@@ -398,7 +398,7 @@
                         try {
                             const response = JSON.parse(localStorage.getItem(key));
                             if (response && response.controllerId === controllerId) {
-                                handlescore bugResponse(response);
+                                handleScoreBugResponse(response);
                             }
                         } catch (err) {
                             console.error('Error parsing localStorage response:', err);
@@ -408,10 +408,10 @@
             }, 100); // Poll every 100ms for fast response
             
             // Try to connect automatically if we have a saved code
-            const score bugCodeInput = document.getElementById('score bugCode');
-            if (score bugCodeInput && score bugCodeInput.value) {
-                connectionCode = score bugCodeInput.value;
-                setTimeout(() => pingscore bug(), 500);
+            const scoreBugCodeInput = document.getElementById('scoreBugCode');
+            if (scoreBugCodeInput && scoreBugCodeInput.value) {
+                connectionCode = scoreBugCodeInput.value;
+                setTimeout(() => pingScoreBug(), 500);
             }
         }
 
@@ -421,20 +421,20 @@
         }
 
         // Ping score bug to check connection
-        function pingscore bug() {
+        function pingScoreBug() {
             if (!connectionCode) {
                 console.error('No connection code set');
                 return;
             }
-            sendToscore bug({ 
+            sendToScoreBug({ 
                 type: 'ping',
-                score bugCode: connectionCode,
+                scoreBugCode: connectionCode,
                 controllerId: controllerId
             });
         }
 
         // Handle responses from score bug
-        function handlescore bugResponse(data) {
+        function handleScoreBugResponse(data) {
             if (data.type === 'pong' && data.controllerId) {
                 controllerId = data.controllerId;
                 updateConnectionStatus(true);
@@ -458,8 +458,8 @@
         }
 
         // Connect to score bug
-        function connectToscore bug() {
-            const codeInput = document.getElementById('score bugCode');
+        function connectToScoreBug() {
+            const codeInput = document.getElementById('scoreBugCode');
             if (!codeInput || !codeInput.value || codeInput.value.length !== 4) {
                 alert('Please enter a valid 4-digit connection code');
                 return;
@@ -471,7 +471,7 @@
             // Initialize Supabase for remote communication
             setupSupabaseConnection();
             
-            pingscore bug();
+            pingScoreBug();
             updateConnectionStatus(false);
             
             // Check connection after a moment
@@ -503,7 +503,7 @@
             supabaseControllerChannel
                 .on('broadcast', { event: 'controller-response' }, (payload) => {
                     console.log('Received remote response:', payload);
-                    handlescore bugResponse(payload.payload);
+                    handleScoreBugResponse(payload.payload);
                 })
                 .subscribe((status) => {
                     console.log('Controller channel status:', status);
@@ -514,7 +514,7 @@
         }
 
         // Update score bug settings
-        function updatescore bugSettings() {
+        function updateScoreBugSettings() {
             if (!isConnected) {
                 alert('Not connected to score bug. Please connect first.');
                 return;
@@ -536,7 +536,7 @@
                 showScore: document.getElementById('showScore').checked
             };
 
-            sendToscore bug(settings);
+            sendToScoreBug(settings);
             
             // Save to localStorage
             localStorage.setItem('score bug-settings', JSON.stringify(settings));
@@ -560,7 +560,7 @@
                     preview.classList.remove('hidden');
                     
                     // Send to score bug
-                    sendToscore bug({
+                    sendToScoreBug({
                         type: 'updateAdImage',
                         controllerId: controllerId,
                         image: e.target.result
@@ -579,7 +579,7 @@
                 alert('Not connected to score bug. Please connect first.');
                 return;
             }
-            sendToscore bug({ 
+            sendToScoreBug({ 
                 type: 'toggleAd',
                 controllerId: controllerId
             });
@@ -591,7 +591,7 @@
                 alert('Not connected to score bug. Please connect first.');
                 return;
             }
-            sendToscore bug({ 
+            sendToScoreBug({ 
                 type: 'showAd',
                 controllerId: controllerId
             });
@@ -603,7 +603,7 @@
                 alert('Not connected to score bug. Please connect first.');
                 return;
             }
-            sendToscore bug({ 
+            sendToScoreBug({ 
                 type: 'hideAd',
                 controllerId: controllerId
             });
@@ -624,7 +624,7 @@
                 transitionDuration: document.getElementById('adTransitionDuration').value
             };
 
-            sendToscore bug(settings);
+            sendToScoreBug(settings);
             
             // Save to localStorage
             localStorage.setItem('ad-settings', JSON.stringify(settings));
@@ -633,7 +633,7 @@
         }
 
         // Send message to score bug window
-        function sendToscore bug(message) {
+        function sendToScoreBug(message) {
             // Send via BroadcastChannel (same browser, different tabs)
             if (controlChannel) {
                 try {
@@ -676,7 +676,7 @@
             initializeController();
             
             // Start periodic ping
-            setInterval(pingscore bug, 5000);
+            setInterval(pingScoreBug, 5000);
             
             // Load score bug settings
             const savedSettings = localStorage.getItem('score bug-settings');
@@ -721,3 +721,4 @@
     </script>
 </body>
 </html>
+
