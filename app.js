@@ -1800,9 +1800,59 @@ function handleLegWin() {
     });
 }
 
+function getMinimumDartsToFinish(score) {
+    // Determines minimum darts needed to finish a score on a double
+    
+    if (score <= 0) return 0;
+    
+    // Can finish in 1 dart: 2-40 (even numbers only, doubles)
+    // Plus 50 (bull)
+    if (score === 50 || (score >= 2 && score <= 40 && score % 2 === 0)) {
+        return 1;
+    }
+    
+    // Can finish in 2 darts: Any checkout from 41-110 that's possible
+    // Common 2-dart finishes include most scores in this range
+    if (score >= 41 && score <= 110) {
+        // Impossible 2-dart finishes in this range
+        const impossible2Dart = [99, 103, 105, 107, 109];
+        if (impossible2Dart.includes(score)) {
+            return 3;
+        }
+        return 2;
+    }
+    
+    // 111-170 range - most need 3 darts, some can be done in 2
+    if (score >= 111 && score <= 170) {
+        // Scores that CAN be finished in 2 darts
+        const possible2Dart = [110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120,
+                               121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
+                               131, 132, 134, 136, 137, 138, 140,
+                               141, 142, 143, 144, 145, 146, 148, 149, 150,
+                               151, 152, 153, 154, 155, 156, 157, 158, 160,
+                               161, 164, 167, 170];
+        
+        if (possible2Dart.includes(score)) {
+            return 2;
+        }
+        return 3;
+    }
+    
+    // Anything over 170 requires 3 darts
+    return 3;
+}
+
 function showFinishDartsModal(callback) {
     const modal = document.getElementById('finish-darts-modal');
     if (!modal) return;
+    
+    // Get the score that was just finished
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
+    const finishedScore = player.preTurnScore;
+    
+    // Determine minimum darts needed
+    const minDarts = getMinimumDartsToFinish(finishedScore);
     
     modal.classList.add('show');
     
@@ -1813,14 +1863,21 @@ function showFinishDartsModal(callback) {
         btn.parentNode.replaceChild(newBtn, btn);
     });
     
-    // Add new event listeners
+    // Show/hide buttons based on minimum darts required
     const newButtons = modal.querySelectorAll('.finish-dart-btn');
     newButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const darts = parseInt(this.getAttribute('data-darts'));
-            modal.classList.remove('show');
-            callback(darts);
-        });
+        const darts = parseInt(btn.getAttribute('data-darts'));
+        
+        // Only show buttons for valid dart counts (>= minDarts)
+        if (darts < minDarts) {
+            btn.style.display = 'none';
+        } else {
+            btn.style.display = 'block';
+            btn.addEventListener('click', function() {
+                modal.classList.remove('show');
+                callback(darts);
+            });
+        }
     });
 }
 
