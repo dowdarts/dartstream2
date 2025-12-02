@@ -2109,12 +2109,8 @@ function checkSetWin() {
             player2.setWins++;
         }
         
-        // Check if match is complete
-        const setsToWin = settings.setsFormat === 'best-of' ? settings.setsToWin : settings.totalSets;
-        const matchComplete = player1.setWins >= setsToWin || player2.setWins >= setsToWin;
-        
-        // Show set complete modal
-        showSetCompleteModal(matchComplete);
+        // Show set complete modal - match continues until manually ended
+        showSetCompleteModal();
         return;
     }
     
@@ -2122,7 +2118,7 @@ function checkSetWin() {
     startNewLeg();
 }
 
-function showSetCompleteModal(matchComplete) {
+function showSetCompleteModal() {
     const modal = document.getElementById('set-complete-modal');
     if (!modal) return;
     
@@ -2148,14 +2144,23 @@ function showSetCompleteModal(matchComplete) {
     const gameType = settings.gameType === '301' ? '301' : '501';
     const startType = settings.startType || 'SIDO';
     
-    if (matchComplete) {
-        const winner = player1.setWins > player2.setWins ? player1 : player2;
-        nextSetText.textContent = `Match Complete: ${winner.name} wins ${player1.setWins}-${player2.setWins}`;
-        nextSetBtn.textContent = 'New Match';
+    // Determine who won this set
+    const setWinner = player1.legWins > player2.legWins ? player1 : player2;
+    const setScore = `${player1.legWins}-${player2.legWins}`;
+    
+    // Check if original match settings goal was met
+    const setsToWin = settings.setsFormat === 'best-of' ? settings.setsToWin : settings.totalSets;
+    const settingsGoalMet = player1.setWins >= setsToWin || player2.setWins >= setsToWin;
+    
+    if (settingsGoalMet) {
+        const matchWinner = player1.setWins > player2.setWins ? player1 : player2;
+        nextSetText.textContent = `${setWinner.name} wins Set ${gameState.currentSet} (${setScore}). ${matchWinner.name} wins Match ${player1.setWins}-${player2.setWins}`;
     } else {
-        nextSetText.textContent = `Next Set: Play ${gameType} ${startType} Again`;
-        nextSetBtn.textContent = 'Next Set';
+        nextSetText.textContent = `${setWinner.name} wins Set ${gameState.currentSet} (${setScore}). Next: ${gameType} ${startType}`;
     }
+    
+    // Always show Next Set - match continues until manually ended
+    nextSetBtn.textContent = 'Next Set';
     
     // Show modal
     modal.classList.add('show');
@@ -2178,17 +2183,11 @@ function showSetCompleteModal(matchComplete) {
     editSettingsBtn.parentNode.replaceChild(newEditSettingsBtn, editSettingsBtn);
     endMatchBtn.parentNode.replaceChild(newEndMatchBtn, endMatchBtn);
     
-    // Next Set button - Continue match with next set
+    // Next Set button - Always continue match with next set
     document.getElementById('next-set-btn').addEventListener('click', function() {
         modal.classList.remove('show');
-        
-        if (matchComplete) {
-            // Match is over - go back to player selection
-            endMatch();
-        } else {
-            // Start next set
-            startNextSet();
-        }
+        // Always start next set - match continues until manually ended
+        startNextSet();
     });
     
     // Change Players button - Go to player library but keep match score
