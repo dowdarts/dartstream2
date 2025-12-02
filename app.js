@@ -48,6 +48,10 @@ const gameState = {
     isChangingPlayers: false, // Flag for when changing players mid-match
     isChangingGame: false, // Flag for when changing game type mid-match
     isEditingSettings: false, // Flag for when editing match settings mid-match
+    isEditMode: false, // Flag for when editing a previous score
+    editModePlayer: null, // Which player's score is being edited (1 or 2)
+    editModeTurnIndex: null, // Which turn index is being edited
+    editModeOriginalScore: null, // The original score being edited
     matchSettings: {
         gameType: '501',
         startScore: 501,
@@ -1312,6 +1316,99 @@ document.getElementById('back-to-players').addEventListener('click', function() 
 // Connect button replaced with connection code display
 // No event listener needed anymore
 
+// Edit Mode Functions
+function enterEditMode(player, turnIndex, score) {
+    console.log(`Entering edit mode for Player ${player}, Turn ${turnIndex + 1}, Score: ${score}`);
+    
+    gameState.isEditMode = true;
+    gameState.editModePlayer = player;
+    gameState.editModeTurnIndex = turnIndex;
+    gameState.editModeOriginalScore = score;
+    gameState.currentInput = score.toString();
+    
+    // Set preTurnScore for the edit mode player so provisional score displays correctly
+    const playerKey = `player${player}`;
+    const playerData = gameState.players[playerKey];
+    
+    // Calculate what the score was BEFORE this turn
+    const startScore = gameState.matchSettings.startScore;
+    let scoreBeforeTurn = startScore;
+    
+    for (let i = 0; i < turnIndex; i++) {
+        const turn = playerData.turnHistory[i];
+        if (turn) {
+            scoreBeforeTurn -= turn.total;
+        }
+    }
+    
+    playerData.preTurnScore = scoreBeforeTurn;
+    
+    // Update display to show edit mode
+    updateInputDisplay();
+    updateActionButtonText();
+    updateGameScreen();
+}
+
+function exitEditMode() {
+    gameState.isEditMode = false;
+    gameState.editModePlayer = null;
+    gameState.editModeTurnIndex = null;
+    gameState.editModeOriginalScore = null;
+    gameState.currentInput = '';
+    
+    updateInputDisplay();
+    updateActionButtonText();
+}
+
+function applyEditedScore() {
+    if (!gameState.isEditMode) return;
+    
+    const newScore = parseInt(gameState.currentInput) || 0;
+    const playerKey = `player${gameState.editModePlayer}`;
+    const player = gameState.players[playerKey];
+    const turnIndex = gameState.editModeTurnIndex;
+    
+    // Update the turn history with the new score
+    if (player.turnHistory[turnIndex]) {
+        player.turnHistory[turnIndex].total = newScore;
+        
+        // Recalculate all scores from this point forward
+        recalculateScoresFromTurn(gameState.editModePlayer, turnIndex);
+        
+        console.log(`Updated Player ${gameState.editModePlayer} Turn ${turnIndex + 1} to ${newScore}`);
+    }
+    
+    exitEditMode();
+    updateGameScreen();
+}
+
+function recalculateScoresFromTurn(player, fromTurnIndex) {
+    const playerKey = `player${player}`;
+    const playerData = gameState.players[playerKey];
+    const startScore = gameState.matchSettings.startScore;
+    
+    // Reset to start score
+    let currentScore = startScore;
+    let legScore = 0;
+    let legDarts = 0;
+    
+    // Recalculate from beginning to current point
+    for (let i = 0; i <= fromTurnIndex; i++) {
+        const turn = playerData.turnHistory[i];
+        if (turn) {
+            currentScore -= turn.total;
+            legScore += turn.total;
+            legDarts += turn.darts;
+        }
+    }
+    
+    // Update player state
+    playerData.score = currentScore;
+    playerData.legScore = legScore;
+    playerData.legDarts = legDarts;
+    playerData.legAvg = legDarts > 0 ? (legScore / legDarts) * 3 : 0;
+}
+
 
 // Start Game
 function startGame() {
@@ -1435,8 +1532,9 @@ function updateGameScreen() {
     const p1ScoreElement = player1Display.querySelector('.score-large');
     const p2ScoreElement = player2Display.querySelector('.score-large');
     
-    // Check if current player is typing a score or has dart scores entered
-    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    // In edit mode, use editModePlayer; otherwise use currentPlayer
+    const activePlayerNum = gameState.isEditMode ? gameState.editModePlayer : gameState.currentPlayer;
+    const currentPlayerKey = `player${activePlayerNum}`;
     const currentPlayer = gameState.players[currentPlayerKey];
     const isTyping = gameState.currentInput.length > 0;
     const hasDartScores = gameState.dartScores.length > 0;
@@ -1457,7 +1555,8 @@ function updateGameScreen() {
         
         const provisionalScore = currentPlayer.preTurnScore - totalDartScore;
         
-        if (gameState.currentPlayer === 1) {
+        // Use activePlayerNum instead of currentPlayer to determine which score to highlight
+        if (activePlayerNum === 1) {
             p1ScoreElement.textContent = provisionalScore;
             p1ScoreElement.classList.add('edit-mode');
             p2ScoreElement.textContent = gameState.players.player2.score;
@@ -1598,8 +1697,18 @@ function updateInputDisplay() {
         legScore: player.legScore,
         legDarts: player.legDarts,
         gameType: gameState.matchSettings.gameType,
-        startType: gameState.matchSettings.startType
+        startType: gameState.matchSettings.startType,
+        isEditMode: gameState.isEditMode
     });
+    
+    // If in edit mode, show the score being edited in yellow
+    if (gameState.isEditMode) {
+        inputModeDisplay.textContent = gameState.currentInput || gameState.editModeOriginalScore.toString();
+        inputModeDisplay.style.color = '#ffd700'; // Yellow text in edit mode
+        return;
+    } else {
+        inputModeDisplay.style.color = '#ffffff'; // White text in normal mode
+    }
     
     // If player is using calculator mode, show the expression
     if (gameState.dartScores.length > 0 || gameState.currentInput) {
@@ -1659,6 +1768,13 @@ function updateInputDisplay() {
 // ===== SCORING FUNCTIONS =====
 
 function addDigit(digit) {
+    // In edit mode, first digit overwrites the current value
+    if (gameState.isEditMode && gameState.currentInput === gameState.editModeOriginalScore.toString()) {
+        gameState.currentInput = digit;
+        updateGameScreen();
+        return;
+    }
+    
     // Build up the current input (max 3 digits for 0-180)
     if (gameState.currentInput.length < 3) {
         gameState.currentInput += digit;
@@ -2538,6 +2654,9 @@ function updateScoreHistory() {
             const turnData = p1History[p1TurnIndex];
             const displayText = turnData.bust ? `${turnData.total} (BUST)` : turnData.total;
             p1Column.innerHTML = `<div class="darts">${displayText}</div>`;
+            // Make clickable if it's a completed turn
+            p1Column.style.cursor = 'pointer';
+            p1Column.addEventListener('click', () => enterEditMode(1, p1TurnIndex, turnData.total));
         } else if (isCurrentTurn && gameState.currentPlayer === 1 && gameState.currentVisit.length > 0) {
             // Player 1 is currently throwing
             p1Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
@@ -2569,6 +2688,9 @@ function updateScoreHistory() {
             const turnData = p2History[p2TurnIndex];
             const displayText = turnData.bust ? `${turnData.total} (BUST)` : turnData.total;
             p2Column.innerHTML = `<div class="darts">${displayText}</div>`;
+            // Make clickable if it's a completed turn
+            p2Column.style.cursor = 'pointer';
+            p2Column.addEventListener('click', () => enterEditMode(2, p2TurnIndex, turnData.total));
         } else if (isCurrentTurn && gameState.currentPlayer === 2 && gameState.currentVisit.length > 0) {
             // Player 2 is currently throwing
             p2Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
@@ -2651,6 +2773,12 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     // Submit button - MISS (quick-hit 0) or ENTER (submit input)
     document.getElementById('submit-btn')?.addEventListener('click', function() {
+        // If in edit mode, apply the edited score
+        if (gameState.isEditMode) {
+            applyEditedScore();
+            return;
+        }
+        
         if (gameState.currentInput) {
             // ENTER mode - submit the typed score
             submitScore();
@@ -2662,6 +2790,13 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     // Action button - undo or back to starting player
     document.getElementById('action-btn')?.addEventListener('click', function() {
+        // If in edit mode, UNDO clears the edit and exits edit mode
+        if (gameState.isEditMode) {
+            exitEditMode();
+            updateGameScreen();
+            return;
+        }
+        
         // Check if this is a fresh game (no scores entered by anyone)
         const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
         const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
