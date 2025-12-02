@@ -52,6 +52,9 @@ const gameState = {
     editModePlayer: null, // Which player's score is being edited (1 or 2)
     editModeTurnIndex: null, // Which turn index is being edited
     editModeOriginalScore: null, // The original score being edited
+    isSequentialUndo: false, // Flag for sequential undo mode (vs clicked edit mode)
+    gameProgressPlayer: null, // Track current game progress player
+    gameProgressTurnIndex: null, // Track current game progress turn index
     matchSettings: {
         gameType: '501',
         startScore: 501,
@@ -1317,14 +1320,15 @@ document.getElementById('back-to-players').addEventListener('click', function() 
 // No event listener needed anymore
 
 // Edit Mode Functions
-function enterEditMode(player, turnIndex, score) {
-    console.log(`Entering edit mode for Player ${player}, Turn ${turnIndex + 1}, Score: ${score}`);
+function enterEditMode(player, turnIndex, score, isSequential = false) {
+    console.log(`Entering edit mode for Player ${player}, Turn ${turnIndex + 1}, Score: ${score}, Sequential: ${isSequential}`);
     
     gameState.isEditMode = true;
     gameState.editModePlayer = player;
     gameState.editModeTurnIndex = turnIndex;
     gameState.editModeOriginalScore = score;
     gameState.currentInput = score.toString();
+    gameState.isSequentialUndo = isSequential;
     
     // Set preTurnScore for the edit mode player so provisional score displays correctly
     const playerKey = `player${player}`;
@@ -1354,6 +1358,7 @@ function exitEditMode() {
     gameState.editModePlayer = null;
     gameState.editModeTurnIndex = null;
     gameState.editModeOriginalScore = null;
+    gameState.isSequentialUndo = false;
     gameState.currentInput = '';
     
     updateInputDisplay();
@@ -1376,6 +1381,13 @@ function applyEditedScore() {
         recalculateScoresFromTurn(gameState.editModePlayer, turnIndex);
         
         console.log(`Updated Player ${gameState.editModePlayer} Turn ${turnIndex + 1} to ${newScore}`);
+    }
+    
+    // If in clicked edit mode and game progress exists, return to it
+    if (!gameState.isSequentialUndo && gameState.gameProgressPlayer !== null) {
+        gameState.currentPlayer = gameState.gameProgressPlayer;
+        gameState.gameProgressPlayer = null;
+        gameState.gameProgressTurnIndex = null;
     }
     
     exitEditMode();
@@ -1678,8 +1690,12 @@ function updateActionButtonText() {
     const actionBtn = document.getElementById('action-btn');
     if (!actionBtn) return;
     
-    // Always show UNDO - functionality stays the same regardless
-    actionBtn.textContent = 'UNDO';
+    // Show RETURN PLAY when in edit mode with empty input and sequential undo
+    if (gameState.isEditMode && gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
+        actionBtn.textContent = 'RETURN PLAY';
+    } else {
+        actionBtn.textContent = 'UNDO';
+    }
 }
 
 function updateInputDisplay() {
@@ -2656,7 +2672,13 @@ function updateScoreHistory() {
             p1Column.innerHTML = `<div class="darts">${displayText}</div>`;
             // Make clickable if it's a completed turn
             p1Column.style.cursor = 'pointer';
-            p1Column.addEventListener('click', () => enterEditMode(1, p1TurnIndex, turnData.total));
+            p1Column.addEventListener('click', () => {
+                // Save current game progress
+                gameState.gameProgressPlayer = gameState.currentPlayer;
+                gameState.gameProgressTurnIndex = Math.max(p1History.length, p2History.length);
+                // Enter edit mode (not sequential)
+                enterEditMode(1, p1TurnIndex, turnData.total, false);
+            });
         } else if (isCurrentTurn && gameState.currentPlayer === 1 && gameState.currentVisit.length > 0) {
             // Player 1 is currently throwing
             p1Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
@@ -2690,7 +2712,13 @@ function updateScoreHistory() {
             p2Column.innerHTML = `<div class="darts">${displayText}</div>`;
             // Make clickable if it's a completed turn
             p2Column.style.cursor = 'pointer';
-            p2Column.addEventListener('click', () => enterEditMode(2, p2TurnIndex, turnData.total));
+            p2Column.addEventListener('click', () => {
+                // Save current game progress
+                gameState.gameProgressPlayer = gameState.currentPlayer;
+                gameState.gameProgressTurnIndex = Math.max(p1History.length, p2History.length);
+                // Enter edit mode (not sequential)
+                enterEditMode(2, p2TurnIndex, turnData.total, false);
+            });
         } else if (isCurrentTurn && gameState.currentPlayer === 2 && gameState.currentVisit.length > 0) {
             // Player 2 is currently throwing
             p2Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
@@ -2790,23 +2818,47 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     // Action button - undo or back to starting player
     document.getElementById('action-btn')?.addEventListener('click', function() {
-        // If in edit mode with input, remove last digit
+        // RETURN PLAY mode - only in sequential undo with empty input
+        if (gameState.isEditMode && gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
+            // Return to the turn after the edited one
+            const playerKey = `player${gameState.editModePlayer}`;
+            const player = gameState.players[playerKey];
+            
+            // Exit edit mode and restore normal gameplay
+            exitEditMode();
+            
+            // Set current player to the turn after the edited turn
+            // This simulates returning to where the game was
+            gameState.currentPlayer = gameState.editModePlayer;
+            
+            updateGameScreen();
+            return;
+        }
+        
+        // UNDO in edit mode with input - remove last digit
         if (gameState.isEditMode && gameState.currentInput.length > 0) {
             gameState.currentInput = gameState.currentInput.slice(0, -1);
             updateGameScreen();
             return;
         }
         
-        // If in edit mode with empty input, go back to previous score
-        if (gameState.isEditMode && gameState.currentInput.length === 0) {
-            // Find the previous score to edit
+        // UNDO in clicked edit mode with empty input - can't go further back
+        if (gameState.isEditMode && gameState.currentInput.length === 0 && !gameState.isSequentialUndo) {
+            // Set input to "0" - they can only submit 0 or type a new score
+            gameState.currentInput = '0';
+            updateGameScreen();
+            return;
+        }
+        
+        // UNDO in sequential edit mode with empty input - go to previous turn
+        if (gameState.isEditMode && gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
             const currentPlayer = gameState.editModePlayer;
             const currentTurnIndex = gameState.editModeTurnIndex;
             
             // Exit current edit mode first
             exitEditMode();
             
-            // Try to find previous score from same player
+            // Try to find previous score
             const playerKey = `player${currentPlayer}`;
             const player = gameState.players[playerKey];
             
@@ -2814,7 +2866,7 @@ window.addEventListener('DOMContentLoaded', async function() {
                 // Go to previous turn of same player
                 const prevTurn = player.turnHistory[currentTurnIndex - 1];
                 if (prevTurn) {
-                    enterEditMode(currentPlayer, currentTurnIndex - 1, prevTurn.total);
+                    enterEditMode(currentPlayer, currentTurnIndex - 1, prevTurn.total, true);
                 }
             } else {
                 // No more turns for this player, try other player's last turn
@@ -2825,29 +2877,28 @@ window.addEventListener('DOMContentLoaded', async function() {
                 if (otherPlayerData.turnHistory.length > 0) {
                     const lastTurnIndex = otherPlayerData.turnHistory.length - 1;
                     const lastTurn = otherPlayerData.turnHistory[lastTurnIndex];
-                    enterEditMode(otherPlayer, lastTurnIndex, lastTurn.total);
+                    enterEditMode(otherPlayer, lastTurnIndex, lastTurn.total, true);
                 }
             }
             
             return;
         }
         
-        // If currently typing (not in edit mode), remove last digit
+        // UNDO while typing (not in edit mode) - remove last digit
         if (gameState.currentInput) {
             gameState.currentInput = gameState.currentInput.slice(0, -1);
             updateGameScreen();
             return;
         }
         
-        // If dart scores in calculator, remove last one
+        // UNDO with dart scores in calculator - remove last one
         if (gameState.dartScores.length > 0) {
             gameState.dartScores.pop();
             updateGameScreen();
             return;
         }
         
-        // No current input or dart scores - enter edit mode for last submitted score
-        // Find the most recent score from either player
+        // UNDO with no input - enter sequential edit mode for last submitted score
         const p1History = gameState.players.player1.turnHistory;
         const p2History = gameState.players.player2.turnHistory;
         
@@ -2867,7 +2918,8 @@ window.addEventListener('DOMContentLoaded', async function() {
         if (lastPlayerData.turnHistory.length > 0) {
             const lastTurnIndex = lastPlayerData.turnHistory.length - 1;
             const lastTurn = lastPlayerData.turnHistory[lastTurnIndex];
-            enterEditMode(lastPlayer, lastTurnIndex, lastTurn.total);
+            // Enter sequential undo mode
+            enterEditMode(lastPlayer, lastTurnIndex, lastTurn.total, true);
         }
     });
     
