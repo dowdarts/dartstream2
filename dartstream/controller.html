@@ -353,6 +353,7 @@
     <script>
         let controlChannel = null;
         let connectionCode = null;
+        let controllerId = null;
         let isConnected = false;
 
         // Initialize BroadcastChannel for cross-tab communication
@@ -407,15 +408,17 @@
             }
             sendToScoreboard({ 
                 type: 'ping',
-                controllerCode: connectionCode
+                scoreboardCode: connectionCode,
+                controllerId: controllerId
             });
         }
 
         // Handle responses from scoreboard
         function handleScoreboardResponse(data) {
-            if (data.type === 'pong' && data.controllerCode === connectionCode) {
+            if (data.type === 'pong' && data.controllerId) {
+                controllerId = data.controllerId;
                 updateConnectionStatus(true);
-            } else if (data.type === 'ack' && data.controllerCode === connectionCode) {
+            } else if (data.type === 'ack' && data.controllerId === controllerId) {
                 // Acknowledged command
                 console.log('Command acknowledged:', data.commandType);
             }
@@ -467,7 +470,7 @@
             
             const settings = {
                 type: 'updateScoreboard',
-                controllerCode: connectionCode,
+                controllerId: controllerId,
                 header: document.getElementById('headerText').value,
                 group: document.getElementById('footerGroup').value,
                 event: document.getElementById('footerEvent').value,
@@ -507,7 +510,7 @@
                     // Send to scoreboard
                     sendToScoreboard({
                         type: 'updateAdImage',
-                        controllerCode: connectionCode,
+                        controllerId: controllerId,
                         image: e.target.result
                     });
                     
@@ -526,7 +529,7 @@
             }
             sendToScoreboard({ 
                 type: 'toggleAd',
-                controllerCode: connectionCode
+                controllerId: controllerId
             });
         }
 
@@ -539,7 +542,7 @@
             
             const settings = {
                 type: 'updateAdSettings',
-                controllerCode: connectionCode,
+                controllerId: controllerId,
                 enableTransitions: document.getElementById('adEnableTransitions').checked,
                 transitionType: document.getElementById('adTransitionType').value,
                 transitionDuration: document.getElementById('adTransitionDuration').value
