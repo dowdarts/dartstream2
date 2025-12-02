@@ -1309,11 +1309,8 @@ document.getElementById('back-to-players').addEventListener('click', function() 
     }
 });
 
-// Connect button (no function for now)
-document.getElementById('connect-btn').addEventListener('click', function() {
-    // Will be used later to connect to TV scoreboard
-    console.log('Connect button clicked - functionality to be implemented');
-});
+// Connect button replaced with connection code display
+// No event listener needed anymore
 
 
 // Start Game
