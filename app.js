@@ -2258,11 +2258,16 @@ function startNextSet() {
     
     // Determine who starts this set (opposite of who started previous set)
     const firstSetStarter = gameState.matchSettings.firstLegStarter;
-    if (gameState.currentSet % 2 === 1) {
-        // Odd set - use original starter
+    
+    // Calculate which set we're starting (after incrementing currentSet)
+    // Set 1 uses firstSetStarter
+    // Set 2 uses opposite
+    // Set 3 uses firstSetStarter again, etc.
+    if ((gameState.currentSet - 1) % 2 === 0) {
+        // Odd-numbered sets (1, 3, 5...) - use original starter
         gameState.setStarter = firstSetStarter;
     } else {
-        // Even set - use opposite starter
+        // Even-numbered sets (2, 4, 6...) - use opposite starter
         gameState.setStarter = firstSetStarter === 1 ? 2 : 1;
     }
     
