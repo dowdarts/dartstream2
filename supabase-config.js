@@ -214,9 +214,11 @@ const GameStateSync = {
                 return;
             }
 
-            // Create match ID if not exists
-            if (!currentMatchId) {
-                currentMatchId = this.generateMatchId();
+            // Create match ID and connection code if not exists
+            if (!currentMatchId || !currentConnectionCode) {
+                currentConnectionCode = this.generateConnectionCode();
+                currentMatchId = 'match_' + currentConnectionCode + '_' + Date.now();
+                console.log('🎯 Connection code generated during sync:', currentConnectionCode);
             }
 
             // Prepare state object for scoreboard
@@ -275,7 +277,8 @@ const GameStateSync = {
             if (error) {
                 console.error('❌ Error syncing to Supabase:', error);
             } else {
-                console.log('✅ State synced to Supabase');
+                console.log('✅ State synced to Supabase with code:', currentConnectionCode);
+                console.log('📊 Game state:', scoreboardState);
             }
         } catch (error) {
             console.error('❌ Supabase sync error:', error);
