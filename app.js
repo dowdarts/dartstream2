@@ -1381,13 +1381,8 @@ function startGame() {
     gameState.turnTotal = 0;
     gameState.visitNumber = 1;
     
-    showScreen('game-screen');
-    updateGameScreen();
-    
-    // Initialize action button text on game start
-    updateActionButtonText();
-    
     // Start new Supabase match for scoreboard sync and display connection code
+    // MUST be called BEFORE updateGameScreen() so the code exists when syncing
     if (window.GameStateSync) {
         const connectionCode = window.GameStateSync.startNewMatch();
         
@@ -1400,6 +1395,12 @@ function startGame() {
         if (codeDisplay2) codeDisplay2.textContent = connectionCode;
         if (codeDisplay3) codeDisplay3.textContent = connectionCode;
     }
+    
+    showScreen('game-screen');
+    updateGameScreen();
+    
+    // Initialize action button text on game start
+    updateActionButtonText();
 }
 
 // ===== SCORING LOGIC - TO BE REWRITTEN =====
