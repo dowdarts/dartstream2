@@ -224,6 +224,7 @@ const GameStateSync = {
             const scoreboardState = {
                 matchId: currentMatchId,
                 timestamp: new Date().toISOString(),
+                gameStarted: true, // Required for match-central to show the match
                 
                 // Match settings
                 gameType: state.matchSettings?.gameType || '501',
@@ -233,6 +234,16 @@ const GameStateSync = {
                 // Current set/leg info
                 currentSet: state.currentSet || 1,
                 currentLeg: state.currentLeg || 1,
+                
+                // Match-central compatible fields
+                homePlayerName: state.players?.player1?.name || 'Home',
+                awayPlayerName: state.players?.player2?.name || 'Away',
+                homeScore: state.players?.player1?.score || 501,
+                awayScore: state.players?.player2?.score || 501,
+                legs: {
+                    home: state.players?.player1?.legWins || 0,
+                    away: state.players?.player2?.legWins || 0
+                },
                 
                 // Player 1 data
                 player1: {
