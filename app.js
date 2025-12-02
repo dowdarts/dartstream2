@@ -1822,23 +1822,13 @@ function getMinimumDartsToFinish(score) {
         return 2;
     }
     
-    // 111-170 range - most need 3 darts, some can be done in 2
+    // 111-170 range - all require 3 darts
+    // Maximum 2-dart finish is 110 (T20 + Bull)
     if (score >= 111 && score <= 170) {
-        // Scores that CAN be finished in 2 darts
-        const possible2Dart = [110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120,
-                               121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
-                               131, 132, 134, 136, 137, 138, 140,
-                               141, 142, 143, 144, 145, 146, 148, 149, 150,
-                               151, 152, 153, 154, 155, 156, 157, 158, 160,
-                               161, 164, 167, 170];
-        
-        if (possible2Dart.includes(score)) {
-            return 2;
-        }
         return 3;
     }
     
-    // Anything over 170 requires 3 darts
+    // Anything over 170 requires 3 darts (or is impossible)
     return 3;
 }
 
