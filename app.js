@@ -1753,8 +1753,8 @@ function handleLegWin() {
         // Update match stats
         player.legDarts += actualDarts;
         player.matchDarts += actualDarts;
-        player.legScore = startScore; // Full starting score
-        player.matchScore += startScore;
+        player.legScore = startScore; // Full starting score for this leg
+        // matchScore is already being tracked in submitTurn(), don't add again
         
         // Calculate match average
         if (player.matchDarts > 0) {
