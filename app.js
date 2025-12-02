@@ -2140,17 +2140,17 @@ function showSetCompleteModal(matchComplete) {
     // Set current set number
     setNumber.textContent = `Set ${String(gameState.currentSet).padStart(2, '0')}`;
     
-    // Show set scores (who won this set)
-    const player1WonSet = player1.legWins > player2.legWins;
-    homeScore.textContent = player1WonSet ? '1' : '0';
-    awayScore.textContent = player1WonSet ? '0' : '1';
+    // Show cumulative set scores (total sets won in match)
+    homeScore.textContent = player1.setWins;
+    awayScore.textContent = player2.setWins;
     
     // Update next set text
     const gameType = settings.gameType === '301' ? '301' : '501';
     const startType = settings.startType || 'SIDO';
     
     if (matchComplete) {
-        nextSetText.textContent = `Match Complete: ${player1.name} wins ${player1.setWins}-${player2.setWins}`;
+        const winner = player1.setWins > player2.setWins ? player1 : player2;
+        nextSetText.textContent = `Match Complete: ${winner.name} wins ${player1.setWins}-${player2.setWins}`;
         nextSetBtn.textContent = 'New Match';
     } else {
         nextSetText.textContent = `Next Set: Play ${gameType} ${startType} Again`;
