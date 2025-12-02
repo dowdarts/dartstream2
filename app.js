@@ -1619,8 +1619,8 @@ function updateInputDisplay() {
                 inputModeDisplay.textContent = 'Double-In';
                 console.log('Showing: Double-In');
             } else {
-                inputModeDisplay.textContent = 'Str';
-                console.log('Showing: Str');
+                inputModeDisplay.textContent = 'Straight-In';
+                console.log('Showing: Straight-In');
             }
         } else {
             // 501 and other games default to SIDO (Straight In, Double Out)
@@ -1628,8 +1628,8 @@ function updateInputDisplay() {
                 inputModeDisplay.textContent = 'Double-In';
                 console.log('Showing: Double-In');
             } else {
-                inputModeDisplay.textContent = 'Str';
-                console.log('Showing: Str');
+                inputModeDisplay.textContent = 'Straight-In';
+                console.log('Showing: Straight-In');
             }
         }
     } else {
