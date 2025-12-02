@@ -172,3 +172,107 @@ window.PlayerDB = PlayerDB;
 window.supabaseConfigReady = true;
 console.log('PlayerDB registered on window object');
 console.log('window.PlayerDB:', window.PlayerDB);
+
+// ===== GAME STATE SYNC FOR SCOREBOARD =====
+
+let currentMatchId = null;
+
+// Game State Sync Functions
+const GameStateSync = {
+    // Generate unique match ID
+    generateMatchId() {
+        return 'match_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    },
+
+    // Start a new match (generate new ID)
+    startNewMatch() {
+        currentMatchId = this.generateMatchId();
+        console.log('🎯 New match started:', currentMatchId);
+        return currentMatchId;
+    },
+
+    // End match (clear match ID)
+    endMatch() {
+        currentMatchId = null;
+        console.log('🏁 Match ended');
+    },
+
+    // Sync game state to Supabase for scoreboard
+    async syncGameState(state) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                console.log('⚠️ Supabase not connected, skipping sync');
+                return;
+            }
+
+            // Create match ID if not exists
+            if (!currentMatchId) {
+                currentMatchId = this.generateMatchId();
+            }
+
+            // Prepare state object for scoreboard
+            const scoreboardState = {
+                matchId: currentMatchId,
+                timestamp: new Date().toISOString(),
+                
+                // Match settings
+                gameType: state.matchSettings?.gameType || '501',
+                startType: state.matchSettings?.startType || 'SIDO',
+                startScore: state.matchSettings?.startScore || 501,
+                
+                // Current set/leg info
+                currentSet: state.currentSet || 1,
+                currentLeg: state.currentLeg || 1,
+                
+                // Player 1 data
+                player1: {
+                    name: state.players?.player1?.name || 'Player 1',
+                    score: state.players?.player1?.score || 501,
+                    legAvg: Math.round((state.players?.player1?.legAvg || 0) * 100) / 100,
+                    matchAvg: Math.round((state.players?.player1?.matchAvg || 0) * 100) / 100,
+                    legWins: state.players?.player1?.legWins || 0,
+                    setWins: state.players?.player1?.setWins || 0,
+                    turnHistory: state.players?.player1?.turnHistory || [],
+                    isActive: state.currentPlayer === 1
+                },
+                
+                // Player 2 data
+                player2: {
+                    name: state.players?.player2?.name || 'Player 2',
+                    score: state.players?.player2?.score || 501,
+                    legAvg: Math.round((state.players?.player2?.legAvg || 0) * 100) / 100,
+                    matchAvg: Math.round((state.players?.player2?.matchAvg || 0) * 100) / 100,
+                    legWins: state.players?.player2?.legWins || 0,
+                    setWins: state.players?.player2?.setWins || 0,
+                    turnHistory: state.players?.player2?.turnHistory || [],
+                    isActive: state.currentPlayer === 2
+                },
+                
+                // Game state
+                visitNumber: state.visitNumber || 1,
+                lastUpdate: Date.now()
+            };
+
+            // Upsert to Supabase
+            const { data, error } = await supabase
+                .from('game_states')
+                .upsert({
+                    id: currentMatchId,
+                    state: scoreboardState,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) {
+                console.error('❌ Error syncing to Supabase:', error);
+            } else {
+                console.log('✅ State synced to Supabase');
+            }
+        } catch (error) {
+            console.error('❌ Supabase sync error:', error);
+        }
+    }
+};
+
+// Make GameStateSync available globally
+window.GameStateSync = GameStateSync;

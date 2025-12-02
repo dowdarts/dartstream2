@@ -1389,6 +1389,11 @@ function startGame() {
     
     // Initialize action button text on game start
     updateActionButtonText();
+    
+    // Start new Supabase match for scoreboard sync
+    if (window.GameStateSync) {
+        window.GameStateSync.startNewMatch();
+    }
 }
 
 // ===== SCORING LOGIC - TO BE REWRITTEN =====
@@ -1511,6 +1516,11 @@ function updateGameScreen() {
     
     // Update action button text (UNDO vs Go Back)
     updateActionButtonText();
+    
+    // Sync game state to Supabase for scoreboard
+    if (window.GameStateSync) {
+        window.GameStateSync.syncGameState(gameState);
+    }
 }
 
 function updateAverages() {
@@ -2368,6 +2378,11 @@ function endMatch() {
     
     // Update player selection screen displays
     renderPlayerSelectionLists();
+    
+    // End Supabase match
+    if (window.GameStateSync) {
+        window.GameStateSync.endMatch();
+    }
     
     // Go back to player selection
     showScreen('player-selection-screen');
