@@ -239,8 +239,15 @@
             ⚠️ Not Connected
         </div>
         <div class="control-group">
-            <label class="control-label">Pairing Code</label>
-            <input type="text" class="control-input" id="pairingCode" placeholder="Enter 4-digit code" maxlength="4">
+            <label class="control-label">Your Controller Code</label>
+            <div style="background: rgba(250, 204, 21, 0.1); border: 2px solid #facc15; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 15px;">
+                <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #facc15;" id="controllerCodeDisplay">
+                    ----
+                </div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+                    Share this code with the scoreboard
+                </div>
+            </div>
         </div>
         <button class="btn btn-success" onclick="connectToScoreboard()">Connect to Scoreboard</button>
     </div>
@@ -359,6 +366,12 @@
             if (!connectionCode) {
                 connectionCode = generateCode();
                 localStorage.setItem('controller-code', connectionCode);
+            }
+            
+            // Display the controller code
+            const codeDisplay = document.getElementById('controllerCodeDisplay');
+            if (codeDisplay) {
+                codeDisplay.textContent = connectionCode;
             }
             
             // Set up BroadcastChannel
