@@ -1390,9 +1390,18 @@ function startGame() {
     // Initialize action button text on game start
     updateActionButtonText();
     
-    // Start new Supabase match for scoreboard sync
+    // Start new Supabase match for scoreboard sync and display connection code
     if (window.GameStateSync) {
-        window.GameStateSync.startNewMatch();
+        const connectionCode = window.GameStateSync.startNewMatch();
+        
+        // Update all connection code displays
+        const codeDisplay1 = document.getElementById('connection-code-display');
+        const codeDisplay2 = document.getElementById('connection-code-display-2');
+        const codeDisplay3 = document.getElementById('connection-code-display-3');
+        
+        if (codeDisplay1) codeDisplay1.textContent = connectionCode;
+        if (codeDisplay2) codeDisplay2.textContent = connectionCode;
+        if (codeDisplay3) codeDisplay3.textContent = connectionCode;
     }
 }
 

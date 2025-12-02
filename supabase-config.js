@@ -176,24 +176,32 @@ console.log('window.PlayerDB:', window.PlayerDB);
 // ===== GAME STATE SYNC FOR SCOREBOARD =====
 
 let currentMatchId = null;
+let currentConnectionCode = null;
 
 // Game State Sync Functions
 const GameStateSync = {
-    // Generate unique match ID
-    generateMatchId() {
-        return 'match_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // Generate unique 4-digit connection code
+    generateConnectionCode() {
+        return Math.floor(1000 + Math.random() * 9000).toString();
     },
 
-    // Start a new match (generate new ID)
+    // Get current connection code
+    getConnectionCode() {
+        return currentConnectionCode;
+    },
+
+    // Start a new match (generate new code)
     startNewMatch() {
-        currentMatchId = this.generateMatchId();
-        console.log('🎯 New match started:', currentMatchId);
-        return currentMatchId;
+        currentConnectionCode = this.generateConnectionCode();
+        currentMatchId = 'match_' + currentConnectionCode + '_' + Date.now();
+        console.log('🎯 New match started with code:', currentConnectionCode);
+        return currentConnectionCode;
     },
 
-    // End match (clear match ID)
+    // End match (clear match ID and code)
     endMatch() {
         currentMatchId = null;
+        currentConnectionCode = null;
         console.log('🏁 Match ended');
     },
 
@@ -254,12 +262,13 @@ const GameStateSync = {
                 lastUpdate: Date.now()
             };
 
-            // Upsert to Supabase
+            // Upsert to Supabase with connection code as game_id
             const { data, error } = await supabase
                 .from('game_states')
                 .upsert({
                     id: currentMatchId,
-                    state: scoreboardState,
+                    game_id: currentConnectionCode,
+                    game_state: scoreboardState,
                     updated_at: new Date().toISOString()
                 });
 
