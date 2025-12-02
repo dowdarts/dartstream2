@@ -1348,6 +1348,7 @@ function startGame() {
         // Continue with next set
         showScreen('game-screen');
         updateGameScreen();
+        updateActionButtonText();
         return;
     }
     
@@ -1385,6 +1386,9 @@ function startGame() {
     
     showScreen('game-screen');
     updateGameScreen();
+    
+    // Initialize action button text on game start
+    updateActionButtonText();
 }
 
 // ===== SCORING LOGIC - TO BE REWRITTEN =====
@@ -2260,6 +2264,7 @@ function startNewLeg() {
     
     // Update display
     updateGameScreen();
+    updateActionButtonText();
 }
 
 function endMatch() {
