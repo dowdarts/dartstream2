@@ -1401,6 +1401,13 @@ function deleteTurnFromHistory(player, turnIndex) {
     // Remove the turn from history
     playerData.turnHistory.splice(turnIndex, 1);
     
+    // Adjust visitNumber based on the longest turn history
+    // Visit number should be 1 + max(p1 turns, p2 turns)
+    const p1Turns = gameState.players.player1.turnHistory.length;
+    const p2Turns = gameState.players.player2.turnHistory.length;
+    const maxTurns = Math.max(p1Turns, p2Turns);
+    gameState.visitNumber = maxTurns + 1;
+    
     // Recalculate all stats from the beginning
     const startScore = gameState.matchSettings.startScore;
     let currentScore = startScore;
@@ -1442,7 +1449,7 @@ function deleteTurnFromHistory(player, turnIndex) {
         playerData.matchAvg = 0;
     }
     
-    console.log(`Deleted Player ${player} Turn ${turnIndex + 1}, recalculated all stats`);
+    console.log(`Deleted Player ${player} Turn ${turnIndex + 1}, visitNumber now ${gameState.visitNumber}, recalculated all stats`);
 }
 
 function recalculateScoresFromTurn(player, fromTurnIndex) {
