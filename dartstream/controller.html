@@ -239,14 +239,10 @@
             ⚠️ Not Connected
         </div>
         <div class="control-group">
-            <label class="control-label">Your Controller Code</label>
-            <div style="background: rgba(250, 204, 21, 0.1); border: 2px solid #facc15; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 15px;">
-                <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #facc15;" id="controllerCodeDisplay">
-                    ----
-                </div>
-                <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
-                    Share this code with the scoreboard
-                </div>
+            <label class="control-label">Scoreboard Connection Code</label>
+            <input type="text" class="control-input" id="scoreboardCode" placeholder="Enter 4-digit code from scoreboard" maxlength="4" style="font-size: 24px; text-align: center; letter-spacing: 4px; font-weight: bold;">
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px; text-align: center;">
+                Get this code from the Ad Settings panel in the scoreboard
             </div>
         </div>
         <button class="btn btn-success" onclick="connectToScoreboard()">Connect to Scoreboard</button>
@@ -361,17 +357,13 @@
 
         // Initialize BroadcastChannel for cross-tab communication
         function initializeController() {
-            // Generate or load connection code
-            connectionCode = localStorage.getItem('controller-code');
-            if (!connectionCode) {
-                connectionCode = generateCode();
-                localStorage.setItem('controller-code', connectionCode);
-            }
-            
-            // Display the controller code
-            const codeDisplay = document.getElementById('controllerCodeDisplay');
-            if (codeDisplay) {
-                codeDisplay.textContent = connectionCode;
+            // Load saved scoreboard code if any
+            connectionCode = localStorage.getItem('scoreboard-connection-code');
+            if (connectionCode) {
+                const codeInput = document.getElementById('scoreboardCode');
+                if (codeInput) {
+                    codeInput.value = connectionCode;
+                }
             }
             
             // Set up BroadcastChannel
@@ -395,8 +387,9 @@
             });
             
             // Try to connect automatically if we have a saved code
-            const savedScoreboardCode = document.getElementById('pairingCode').value;
-            if (savedScoreboardCode) {
+            const scoreboardCodeInput = document.getElementById('scoreboardCode');
+            if (scoreboardCodeInput && scoreboardCodeInput.value) {
+                connectionCode = scoreboardCodeInput.value;
                 setTimeout(() => pingScoreboard(), 500);
             }
         }
@@ -408,6 +401,10 @@
 
         // Ping scoreboard to check connection
         function pingScoreboard() {
+            if (!connectionCode) {
+                console.error('No connection code set');
+                return;
+            }
             sendToScoreboard({ 
                 type: 'ping',
                 controllerCode: connectionCode
@@ -439,24 +436,24 @@
 
         // Connect to scoreboard
         function connectToScoreboard() {
-            const code = document.getElementById('pairingCode').value;
-            if (code.length !== 4) {
-                alert('Please enter a 4-digit code');
+            const codeInput = document.getElementById('scoreboardCode');
+            if (!codeInput || !codeInput.value || codeInput.value.length !== 4) {
+                alert('Please enter a valid 4-digit connection code');
                 return;
             }
-
-            // Store connection info
-            localStorage.setItem('scoreboard-code', code);
             
-            // Ping scoreboard
+            connectionCode = codeInput.value;
+            localStorage.setItem('scoreboard-connection-code', connectionCode);
+            
             pingScoreboard();
+            updateConnectionStatus(false);
             
             // Check connection after a moment
             setTimeout(() => {
                 if (isConnected) {
                     alert('Connected to scoreboard!');
                 } else {
-                    alert('Could not connect. Make sure the scoreboard is open and has the same pairing code.');
+                    alert('Could not connect. Make sure the scoreboard is open.');
                 }
             }, 1000);
         }
