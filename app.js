@@ -2378,7 +2378,7 @@ function endMatch() {
     gameState.isEditingSettings = false;
     
     // Update player selection screen displays
-    updatePlayerSelectionDisplays();
+    renderPlayerSelectionLists();
     
     // Go back to player selection
     showScreen('player-selection-screen');
