@@ -1,8 +1,8 @@
 // Supabase Configuration
 console.log('supabase-config.js loading...');
 
-const SUPABASE_URL = 'https://namwnoscgymzuiiebxvk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbXdub3NjZ3ltenVpaWVieHZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MDg0NjQsImV4cCI6MjA3ODI4NDQ2NH0.uoz9L_nE-VZylXJvJNStdh5c4Ep7fUuwg0EWVCvkql0';
+const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
 
 // Initialize Supabase client
 function getSupabaseClient() {
