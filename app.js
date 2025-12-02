@@ -1700,13 +1700,18 @@ function confirmScore() {
     
     updateGameScreen();
     
-    // Check if player finished (reached 0 or below)
-    if (finalScore <= 0) {
+    // Check for impossible finishes (can't finish on a double)
+    const impossibleFinishes = [169, 168, 166, 165, 163, 162, 159];
+    const cannotCheckout = finalScore > 0 && finalScore <= 170 && 
+                          (impossibleFinishes.includes(finalScore) || finalScore === 1);
+    
+    // Check if player finished (reached 0 or below) or has impossible finish
+    if (finalScore <= 0 || cannotCheckout) {
         if (finalScore === 0) {
             // Player finished exactly - prompt for darts used
             handleLegWin();
         } else {
-            // Player went bust
+            // Player went bust (negative score or impossible finish)
             handleBust();
         }
     } else {
@@ -2350,8 +2355,10 @@ function updateGameAfterChange() {
 }
 
 function handleDualFunctionButton(button, defaultScore) {
-    // Dual-function buttons: 100 (×), 180 (0), 140 (+)
+    // Dual-function buttons: 100 (×), 180 (0/BUST), 140 (+)
     const hasInput = gameState.currentVisit.length > 0 || gameState.currentInput;
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
     
     if (button.id === 'btn-100-multiply') {
         if (hasInput) {
@@ -2365,6 +2372,9 @@ function handleDualFunctionButton(button, defaultScore) {
         if (hasInput) {
             // 0 mode - add zero
             addZero();
+        } else if (player.score < 170) {
+            // BUST mode - trigger bust immediately
+            handleBust();
         } else {
             // 180 mode - quick hit
             quickHitScore(180);
@@ -2382,6 +2392,8 @@ function handleDualFunctionButton(button, defaultScore) {
 
 function updateDualFunctionButtonDisplay() {
     const hasInput = gameState.currentVisit.length > 0 || gameState.currentInput || gameState.dartScores.length > 0;
+    const currentPlayerKey = `player${gameState.currentPlayer}`;
+    const player = gameState.players[currentPlayerKey];
     
     // Update button 100/×
     const btn100 = document.getElementById('btn-100-multiply');
@@ -2389,10 +2401,17 @@ function updateDualFunctionButtonDisplay() {
         btn100.textContent = hasInput ? '×' : '100';
     }
     
-    // Update button 180/0
+    // Update button 180/0/BUST
     const btn180 = document.getElementById('btn-180-zero');
     if (btn180) {
-        btn180.textContent = hasInput ? '0' : '180';
+        if (hasInput) {
+            btn180.textContent = '0';
+        } else if (player.score < 170) {
+            // Show BUST if player's score is under 170 (can't score 180 without busting)
+            btn180.textContent = 'BUST';
+        } else {
+            btn180.textContent = '180';
+        }
     }
     
     // Update button 140/+
