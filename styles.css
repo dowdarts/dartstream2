@@ -13,6 +13,8 @@ body {
     text-size-adjust: 100%;
     width: 100%;
     height: 100vh;
+    max-height: 100vh;
+    position: fixed;
 }
 
 #app {
@@ -953,7 +955,8 @@ body {
     display: flex;
     align-items: stretch;
     border-bottom: 3px solid #fff;
-    height: 60vh;
+    height: 50vh;
+    max-height: 500px;
 }
 
 .player-header {
@@ -1032,7 +1035,7 @@ body {
 }
 
 .player-name-large {
-    font-size: 48px;
+    font-size: clamp(24px, 5vw, 48px);
     font-weight: bold;
     margin-bottom: 10px;
     text-align: center;
@@ -1063,14 +1066,14 @@ body {
 }
 
 .avg-label {
-    font-size: 18px;
+    font-size: clamp(14px, 2vh, 18px);
     font-weight: bold;
     color: #ff0000 !important;
     line-height: 1.2;
 }
 
 .score-large {
-    font-size: 140px;
+    font-size: clamp(60px, 12vw, 140px);
     font-weight: bold;
     margin-bottom: 0;
     transition: color 0.2s, text-shadow 0.2s;
@@ -1538,7 +1541,8 @@ body {
 
 /* Game Screen */
 .scoring-area {
-    height: 100px;
+    height: clamp(80px, 12vh, 120px);
+    max-height: 120px;
     background: #000;
     display: flex;
     align-items: flex-start;
@@ -1751,22 +1755,24 @@ body {
 
 .number-pad {
     background: #1a1a1a;
-    padding: 8px;
+    padding: clamp(4px, 1vh, 8px);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: clamp(3px, 0.5vh, 6px);
+    height: auto;
 }
 
 .num-btn {
     background: linear-gradient(to bottom, #e8e8e8 0%, #c8c8c8 100%);
     border: 2px solid #888;
     border-radius: 6px;
-    padding: 12px;
-    font-size: 20px;
+    padding: clamp(8px, 1.5vh, 12px);
+    font-size: clamp(16px, 2.5vh, 20px);
     font-weight: bold;
     color: #000;
     cursor: pointer;
     transition: all 0.2s;
+    min-height: 40px;
 }
 
 .num-btn:hover {
@@ -1809,17 +1815,26 @@ body {
     background: linear-gradient(to bottom, #1e3a5f 0%, #0f1f3f 100%);
     border-color: #1e3a5f;
     color: #fff;
-    font-size: 24px;
+    font-size: clamp(18px, 3vh, 24px);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .scoreboard-header {
+        height: 45vh;
+        max-height: 400px;
+    }
+    
     .player-name-large {
-        font-size: 20px;
+        font-size: clamp(18px, 4vw, 24px);
     }
     
     .score-large {
-        font-size: 42px;
+        font-size: clamp(48px, 10vw, 72px);
+    }
+    
+    .scoring-area {
+        height: clamp(60px, 10vh, 100px);
     }
     
     .timer-box {
