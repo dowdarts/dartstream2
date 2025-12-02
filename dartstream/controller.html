@@ -348,7 +348,81 @@
     </div>
 
     <script>
-        let scoreboardWindow = null;
+        let controlChannel = null;
+        let connectionCode = null;
+        let isConnected = false;
+
+        // Initialize BroadcastChannel for cross-tab communication
+        function initializeController() {
+            // Generate or load connection code
+            connectionCode = localStorage.getItem('controller-code');
+            if (!connectionCode) {
+                connectionCode = generateCode();
+                localStorage.setItem('controller-code', connectionCode);
+            }
+            
+            // Set up BroadcastChannel
+            controlChannel = new BroadcastChannel('dartstream-control');
+            
+            // Listen for responses from scoreboard
+            controlChannel.addEventListener('message', function(event) {
+                handleScoreboardResponse(event.data);
+            });
+            
+            // Also listen for localStorage changes (for cross-computer via page refresh)
+            window.addEventListener('storage', function(e) {
+                if (e.key && e.key.startsWith('dartstream-response-')) {
+                    try {
+                        const response = JSON.parse(e.newValue);
+                        handleScoreboardResponse(response);
+                    } catch (err) {
+                        console.error('Error parsing response:', err);
+                    }
+                }
+            });
+            
+            // Try to connect automatically if we have a saved code
+            const savedScoreboardCode = document.getElementById('pairingCode').value;
+            if (savedScoreboardCode) {
+                setTimeout(() => pingScoreboard(), 500);
+            }
+        }
+
+        // Generate random 4-digit code
+        function generateCode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        // Ping scoreboard to check connection
+        function pingScoreboard() {
+            sendToScoreboard({ 
+                type: 'ping',
+                controllerCode: connectionCode
+            });
+        }
+
+        // Handle responses from scoreboard
+        function handleScoreboardResponse(data) {
+            if (data.type === 'pong' && data.controllerCode === connectionCode) {
+                updateConnectionStatus(true);
+            } else if (data.type === 'ack' && data.controllerCode === connectionCode) {
+                // Acknowledged command
+                console.log('Command acknowledged:', data.commandType);
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.textContent = '✅ Connected to Scoreboard';
+                statusEl.className = 'status-indicator status-connected';
+            } else {
+                statusEl.textContent = '⚠️ Not Connected';
+                statusEl.className = 'status-indicator status-disconnected';
+            }
+        }
 
         // Connect to scoreboard
         function connectToScoreboard() {
@@ -361,19 +435,29 @@
             // Store connection info
             localStorage.setItem('scoreboard-code', code);
             
-            // Update status
-            const statusEl = document.getElementById('connectionStatus');
-            statusEl.textContent = '✅ Connected';
-            statusEl.className = 'status-indicator status-connected';
+            // Ping scoreboard
+            pingScoreboard();
             
-            // Send message to scoreboard window
-            sendToScoreboard({ type: 'connect', code: code });
+            // Check connection after a moment
+            setTimeout(() => {
+                if (isConnected) {
+                    alert('Connected to scoreboard!');
+                } else {
+                    alert('Could not connect. Make sure the scoreboard is open and has the same pairing code.');
+                }
+            }, 1000);
         }
 
         // Update scoreboard settings
         function updateScoreboardSettings() {
+            if (!isConnected) {
+                alert('Not connected to scoreboard. Please connect first.');
+                return;
+            }
+            
             const settings = {
                 type: 'updateScoreboard',
+                controllerCode: connectionCode,
                 header: document.getElementById('headerText').value,
                 group: document.getElementById('footerGroup').value,
                 event: document.getElementById('footerEvent').value,
@@ -397,6 +481,11 @@
 
         // Handle ad image upload
         function handleAdImageUpload(event) {
+            if (!isConnected) {
+                alert('Not connected to scoreboard. Please connect first.');
+                return;
+            }
+            
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -408,6 +497,7 @@
                     // Send to scoreboard
                     sendToScoreboard({
                         type: 'updateAdImage',
+                        controllerCode: connectionCode,
                         image: e.target.result
                     });
                     
@@ -420,13 +510,26 @@
 
         // Toggle ad visibility
         function toggleAd() {
-            sendToScoreboard({ type: 'toggleAd' });
+            if (!isConnected) {
+                alert('Not connected to scoreboard. Please connect first.');
+                return;
+            }
+            sendToScoreboard({ 
+                type: 'toggleAd',
+                controllerCode: connectionCode
+            });
         }
 
         // Update ad settings
         function updateAdSettings() {
+            if (!isConnected) {
+                alert('Not connected to scoreboard. Please connect first.');
+                return;
+            }
+            
             const settings = {
                 type: 'updateAdSettings',
+                controllerCode: connectionCode,
                 enableTransitions: document.getElementById('adEnableTransitions').checked,
                 transitionType: document.getElementById('adTransitionType').value,
                 transitionDuration: document.getElementById('adTransitionDuration').value
@@ -442,19 +545,29 @@
 
         // Send message to scoreboard window
         function sendToScoreboard(message) {
-            // Use localStorage as communication channel
-            const channel = 'dartstream-controller-' + Date.now();
+            // Send via BroadcastChannel (same browser, different tabs)
+            if (controlChannel) {
+                controlChannel.postMessage(message);
+            }
+            
+            // Also save to localStorage with timestamp (for cross-browser/computer communication)
+            const channel = 'dartstream-control-' + Date.now();
             localStorage.setItem(channel, JSON.stringify(message));
             
-            // Trigger storage event
-            window.dispatchEvent(new StorageEvent('storage', {
-                key: channel,
-                newValue: JSON.stringify(message)
-            }));
+            // Clean up old messages
+            setTimeout(() => {
+                localStorage.removeItem(channel);
+            }, 5000);
         }
 
         // Load saved settings on page load
         window.addEventListener('DOMContentLoaded', function() {
+            // Initialize controller
+            initializeController();
+            
+            // Start periodic ping
+            setInterval(pingScoreboard, 5000);
+            
             // Load scoreboard settings
             const savedSettings = localStorage.getItem('scoreboard-settings');
             if (savedSettings) {
