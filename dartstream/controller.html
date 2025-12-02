@@ -344,8 +344,8 @@
         </div>
 
         <div class="button-group">
-            <button class="btn btn-success" onclick="toggleAd()">▶️ Show Ad</button>
-            <button class="btn btn-danger" onclick="toggleAd()">⏹️ Hide Ad</button>
+            <button class="btn btn-success" onclick="showAd()">▶️ Show Ad</button>
+            <button class="btn btn-danger" onclick="hideAd()">⏹️ Hide Ad</button>
             <button class="btn btn-primary" onclick="updateAdSettings()">💾 Update Ad Settings</button>
         </div>
     </div>
@@ -386,6 +386,23 @@
                     }
                 }
             });
+            
+            // Poll localStorage for responses (for OBS dock compatibility)
+            setInterval(function() {
+                const keys = Object.keys(localStorage);
+                keys.forEach(key => {
+                    if (key.startsWith('dartstream-response-')) {
+                        try {
+                            const response = JSON.parse(localStorage.getItem(key));
+                            if (response && response.controllerId === controllerId) {
+                                handleScoreboardResponse(response);
+                            }
+                        } catch (err) {
+                            console.error('Error parsing localStorage response:', err);
+                        }
+                    }
+                });
+            }, 100); // Poll every 100ms for fast response
             
             // Try to connect automatically if we have a saved code
             const scoreboardCodeInput = document.getElementById('scoreboardCode');
@@ -532,6 +549,30 @@
                 controllerId: controllerId
             });
         }
+        
+        // Show ad
+        function showAd() {
+            if (!isConnected) {
+                alert('Not connected to scoreboard. Please connect first.');
+                return;
+            }
+            sendToScoreboard({ 
+                type: 'showAd',
+                controllerId: controllerId
+            });
+        }
+        
+        // Hide ad
+        function hideAd() {
+            if (!isConnected) {
+                alert('Not connected to scoreboard. Please connect first.');
+                return;
+            }
+            sendToScoreboard({ 
+                type: 'hideAd',
+                controllerId: controllerId
+            });
+        }
 
         // Update ad settings
         function updateAdSettings() {
@@ -560,12 +601,24 @@
         function sendToScoreboard(message) {
             // Send via BroadcastChannel (same browser, different tabs)
             if (controlChannel) {
-                controlChannel.postMessage(message);
+                try {
+                    controlChannel.postMessage(message);
+                } catch (e) {
+                    console.warn('BroadcastChannel failed:', e);
+                }
             }
             
             // Also save to localStorage with timestamp (for cross-browser/computer communication)
             const channel = 'dartstream-control-' + Date.now();
             localStorage.setItem(channel, JSON.stringify(message));
+            
+            // Trigger a custom storage event for same-window communication (for OBS docks)
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: channel,
+                newValue: JSON.stringify(message),
+                url: window.location.href,
+                storageArea: localStorage
+            }));
             
             // Clean up old messages
             setTimeout(() => {
