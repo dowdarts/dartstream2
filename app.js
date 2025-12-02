@@ -1562,18 +1562,8 @@ function updateActionButtonText() {
     const actionBtn = document.getElementById('action-btn');
     if (!actionBtn) return;
     
-    // Check if this is a fresh game (no scores entered by anyone)
-    const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
-    const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
-    const noCurrentInput = !gameState.currentInput && gameState.currentVisit.length === 0 && gameState.dartScores.length === 0;
-    
-    if (player1Fresh && player2Fresh && noCurrentInput) {
-        // Fresh game, no inputs - show "Go Back" text
-        actionBtn.textContent = 'SELECT STARTING PLAYER';
-    } else {
-        // Game has started - show "UNDO" text
-        actionBtn.textContent = 'UNDO';
-    }
+    // Always show UNDO - functionality stays the same regardless
+    actionBtn.textContent = 'UNDO';
 }
 
 function updateInputDisplay() {
@@ -2584,6 +2574,33 @@ window.addEventListener('DOMContentLoaded', async function() {
         } else if (gameState.dartScores.length > 0) {
             // Remove last dart score from calculator
             gameState.dartScores.pop();
+            updateGameScreen();
+        }
+    });
+    
+    // Player name click handlers - allow changing starting player when no scores entered
+    document.getElementById('player1-display')?.addEventListener('click', function() {
+        const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
+        const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
+        const noCurrentInput = !gameState.currentInput && gameState.currentVisit.length === 0 && gameState.dartScores.length === 0;
+        
+        if (player1Fresh && player2Fresh && noCurrentInput) {
+            // Set player 1 as starting player
+            gameState.currentPlayer = 1;
+            gameState.legStarter = 1;
+            updateGameScreen();
+        }
+    });
+    
+    document.getElementById('player2-display')?.addEventListener('click', function() {
+        const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
+        const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
+        const noCurrentInput = !gameState.currentInput && gameState.currentVisit.length === 0 && gameState.dartScores.length === 0;
+        
+        if (player1Fresh && player2Fresh && noCurrentInput) {
+            // Set player 2 as starting player
+            gameState.currentPlayer = 2;
+            gameState.legStarter = 2;
             updateGameScreen();
         }
     });

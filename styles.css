@@ -968,6 +968,12 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.player-header:hover {
+    opacity: 0.9;
 }
 
 .player-info {
