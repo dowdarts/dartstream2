@@ -1504,6 +1504,9 @@ function updateGameScreen() {
     
     // Update averages display
     updateAverages();
+    
+    // Update action button text (UNDO vs Go Back)
+    updateActionButtonText();
 }
 
 function updateAverages() {
@@ -1548,6 +1551,24 @@ function updateLegSetScores() {
         const p1Sets = gameState.players.player1.setWins || 0;
         const p2Sets = gameState.players.player2.setWins || 0;
         setScoreDisplay.textContent = `${p1Sets} - ${p2Sets}`;
+    }
+}
+
+function updateActionButtonText() {
+    const actionBtn = document.getElementById('action-btn');
+    if (!actionBtn) return;
+    
+    // Check if this is a fresh game (no scores entered by anyone)
+    const player1Fresh = gameState.players.player1.legScore === 0 && gameState.players.player1.legDarts === 0;
+    const player2Fresh = gameState.players.player2.legScore === 0 && gameState.players.player2.legDarts === 0;
+    const noCurrentInput = !gameState.currentInput && gameState.currentVisit.length === 0 && gameState.dartScores.length === 0;
+    
+    if (player1Fresh && player2Fresh && noCurrentInput) {
+        // Fresh game, no inputs - show "Go Back" text
+        actionBtn.textContent = 'SELECT STARTING PLAYER';
+    } else {
+        // Game has started - show "UNDO" text
+        actionBtn.textContent = 'UNDO';
     }
 }
 
