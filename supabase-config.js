@@ -214,11 +214,10 @@ const GameStateSync = {
                 return;
             }
 
-            // Create match ID and connection code if not exists
+            // Only sync if we have a connection code (startNewMatch must be called first)
             if (!currentMatchId || !currentConnectionCode) {
-                currentConnectionCode = this.generateConnectionCode();
-                currentMatchId = 'match_' + currentConnectionCode + '_' + Date.now();
-                console.log('🎯 Connection code generated during sync:', currentConnectionCode);
+                console.log('⚠️ No connection code - call startNewMatch() first');
+                return;
             }
 
             // Prepare state object for scoreboard
