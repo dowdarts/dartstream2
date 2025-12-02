@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DartStream Controller</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -355,6 +356,8 @@
         let connectionCode = null;
         let controllerId = null;
         let isConnected = false;
+        let supabaseClient = null;
+        let supabaseControllerChannel = null;
 
         // Initialize BroadcastChannel for cross-tab communication
         function initializeController() {
@@ -465,6 +468,9 @@
             connectionCode = codeInput.value;
             localStorage.setItem('scoreboard-connection-code', connectionCode);
             
+            // Initialize Supabase for remote communication
+            setupSupabaseConnection();
+            
             pingScoreboard();
             updateConnectionStatus(false);
             
@@ -476,6 +482,35 @@
                     alert('Could not connect. Make sure the scoreboard is open.');
                 }
             }, 1000);
+        }
+        
+        // Set up Supabase connection for remote communication
+        async function setupSupabaseConnection() {
+            const supabaseUrl = 'https://kswwbqumgsdissnwuiab.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+            
+            if (!window.supabase) {
+                console.error('Supabase library not loaded');
+                return;
+            }
+            
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            
+            // Set up channel for this controller code
+            const channelName = `controller:${connectionCode}`;
+            supabaseControllerChannel = supabaseClient.channel(channelName);
+            
+            supabaseControllerChannel
+                .on('broadcast', { event: 'controller-response' }, (payload) => {
+                    console.log('Received remote response:', payload);
+                    handleScoreboardResponse(payload.payload);
+                })
+                .subscribe((status) => {
+                    console.log('Controller channel status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Remote controller ready');
+                    }
+                });
         }
 
         // Update scoreboard settings
@@ -608,7 +643,7 @@
                 }
             }
             
-            // Also save to localStorage with timestamp (for cross-browser/computer communication)
+            // Also save to localStorage with timestamp (for local/OBS dock communication)
             const channel = 'dartstream-control-' + Date.now();
             localStorage.setItem(channel, JSON.stringify(message));
             
@@ -620,7 +655,16 @@
                 storageArea: localStorage
             }));
             
-            // Clean up old messages
+            // Send via Supabase for remote communication (USA to Canada, etc.)
+            if (supabaseControllerChannel && connectionCode) {
+                supabaseControllerChannel.send({
+                    type: 'broadcast',
+                    event: 'controller-command',
+                    payload: message
+                });
+            }
+            
+            // Clean up old localStorage messages
             setTimeout(() => {
                 localStorage.removeItem(channel);
             }, 5000);
