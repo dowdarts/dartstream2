@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Test</title>
+</head>
+<body>
+    <h1>Asset Loading Test</h1>
+    <div id="root"></div>
+    
+    <script type="module" crossorigin src="/dartstream1/assets/index-CxJ_BBG7.js"></script>
+    <script>
+        console.log('Page loaded');
+        setTimeout(() => {
+            console.log('Root element:', document.getElementById('root'));
+            console.log('Root innerHTML:', document.getElementById('root').innerHTML);
+        }, 2000);
+    </script>
+</body>
+</html>

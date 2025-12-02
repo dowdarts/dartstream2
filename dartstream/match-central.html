@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DartStream - Match Central</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow-y: auto;
+        }
+
+        .header {
+            background: rgba(0,0,0,0.5);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 3px solid #facc15;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .status-bar {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .refresh-btn {
+            background: #facc15;
+            color: #1a1a2e;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .refresh-btn:hover {
+            background: #fcd34d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .manual-text {
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .match-card {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .match-card:hover {
+            border-color: #facc15;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(250, 204, 21, 0.2);
+        }
+
+        .match-code {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #facc15;
+            margin-bottom: 1rem;
+            text-align: center;
+            letter-spacing: 0.5rem;
+        }
+
+        .match-info {
+            margin-bottom: 1rem;
+        }
+
+        .match-players {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .score {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #facc15;
+        }
+
+        .match-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #334155;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .legs-score {
+            font-weight: bold;
+        }
+
+        .select-btn {
+            width: 100%;
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .select-btn:hover {
+            background: #059669;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #94a3b8;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .manual-connect {
+            background: rgba(0,0,0,0.3);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .manual-connect h3 {
+            margin-bottom: 1rem;
+            color: #facc15;
+        }
+
+        .code-input {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.5rem;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: white;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            width: 200px;
+            margin-right: 1rem;
+        }
+
+        .connect-btn {
+            background: #facc15;
+            color: #1a1a2e;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .connect-btn:hover {
+            background: #fcd34d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DartStream Match Central</h1>
+        <p>Select a live match to display on your scoreboard</p>
+    </div>
+
+    <div class="container">
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Listening for active matches...</span>
+            </div>
+            <button class="refresh-btn" onclick="refreshMatches()">Refresh</button>
+        </div>
+
+        <div id="matchesGrid" class="matches-grid">
+            <!-- Matches will be populated here -->
+        </div>
+
+        <div id="emptyState" class="empty-state hidden">
+            <div class="empty-state-icon"></div>
+            <h2>No Active Matches</h2>
+            <p>Waiting for scoring apps to create matches...</p>
+        </div>
+
+        <div class="manual-connect">
+            <h3>Manual Connection</h3>
+            <p class="manual-text">Enter a 4-digit code to connect directly</p>
+            <input type="text" id="manualCode" class="code-input" placeholder="0000" maxlength="4" onkeypress="if(event.key === 'Enter') connectManually()">
+            <button class="connect-btn" onclick="connectManually()">Connect</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://svbjrjevxopwmtytfaik.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2YmpyamV2eG9wd210eXRmYWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxODYwMDUsImV4cCI6MjA3OTc2MjAwNX0.Bp411h3ui0Zl07jcimevtlphZ53-WX12TYTbr-6ZSIY';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let activeMatches = {};
+
+        async function loadMatches() {
+            try {
+                // Get all games from database
+                const { data, error } = await supabase
+                    .from('game_states')
+                    .select('*')
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Clear old matches and update with fresh data
+                activeMatches = {};
+                
+                if (data && data.length > 0) {
+                    const now = new Date();
+                    const TEN_MINUTES_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
+                    const ONE_HOUR_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+                    
+                    data.forEach(game => {
+                        if (game.game_state) {
+                            const gameState = game.game_state;
+                            const createdAt = new Date(game.created_at);
+                            const updatedAt = new Date(game.updated_at);
+                            const timeSinceCreation = now - createdAt;
+                            const timeSinceUpdate = now - updatedAt;
+                            
+                            // Filter criteria for active games:
+                            // 1. gameStarted must be true (game is active)
+                            // 2. updated within last 10 minutes (not stale/timed out)
+                            // 3. created within last hour (not old/expired)
+                            const isGameActive = gameState.gameStarted === true;
+                            const isRecentlyUpdated = timeSinceUpdate < TEN_MINUTES_MS;
+                            const isRecentlyCreated = timeSinceCreation < ONE_HOUR_MS;
+                            
+                            if (isGameActive && isRecentlyUpdated && isRecentlyCreated) {
+                                activeMatches[game.game_id] = {
+                                    code: game.game_id,
+                                    data: gameState,
+                                    updatedAt: game.updated_at,
+                                    createdAt: game.created_at
+                                };
+                            } else {
+                                console.log(`Filtering out game ${game.game_id}:`, {
+                                    gameStarted: gameState.gameStarted,
+                                    isRecentlyUpdated,
+                                    isRecentlyCreated,
+                                    timeSinceCreation: Math.round(timeSinceCreation / 1000 / 60) + ' minutes ago',
+                                    timeSinceUpdate: Math.round(timeSinceUpdate / 1000 / 60) + ' minutes ago'
+                                });
+                            }
+                        }
+                    });
+                }
+
+                displayMatches();
+            } catch (error) {
+                console.error('Error loading matches:', error);
+            }
+        }
+
+        function displayMatches() {
+            const grid = document.getElementById('matchesGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            const matchKeys = Object.keys(activeMatches);
+            
+            if (matchKeys.length === 0) {
+                grid.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            grid.innerHTML = '';
+
+            matchKeys.forEach(code => {
+                const match = activeMatches[code];
+                const data = match.data;
+                
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.onclick = () => selectMatch(code);
+                
+                const homeScore = data.homeScore || 501;
+                const awayScore = data.awayScore || 501;
+                const homeLegs = data.legs?.home || 0;
+                const awayLegs = data.legs?.away || 0;
+                const homeName = data.homePlayerName || 'Home';
+                const awayName = data.awayPlayerName || 'Away';
+                
+                card.innerHTML = `
+                    <div class="match-code">${code}</div>
+                    <div class="match-info">
+                        <div class="match-players">
+                            <span class="player-name">${homeName.toUpperCase()}</span>
+                            <span class="score">${homeScore}</span>
+                        </div>
+                        <div class="match-players">
+                            <span class="player-name">${awayName.toUpperCase()}</span>
+                            <span class="score">${awayScore}</span>
+                        </div>
+                    </div>
+                    <div class="match-meta">
+                        <span class="legs-score">LEGS: ${homeLegs} - ${awayLegs}</span>
+                        <span>${new Date(match.updatedAt).toLocaleTimeString()}</span>
+                    </div>
+                    <button class="select-btn" onclick="event.stopPropagation(); selectMatch('${code}')">
+                        Display on Scoreboard
+                    </button>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function selectMatch(code) {
+            // Store selected code and redirect to scoreboard
+            sessionStorage.setItem('selected-match-code', code);
+            window.location.href = 'scoreboard.html?autoconnect=' + code;
+        }
+
+        function connectManually() {
+            const code = document.getElementById('manualCode').value.trim();
+            if (code.length === 4) {
+                selectMatch(code);
+            } else {
+                alert('Please enter a 4-digit code');
+            }
+        }
+
+        function refreshMatches() {
+            loadMatches();
+        }
+
+        // Subscribe to realtime changes
+        const subscription = supabase
+            .channel('match-central')
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'game_states' },
+                (payload) => {
+                    console.log('Match update received:', payload);
+                    loadMatches();
+                }
+            )
+            .subscribe();
+
+        // Initial load
+        loadMatches();
+
+        // Auto-refresh every 5 seconds
+        setInterval(loadMatches, 5000);
+
+        window.refreshMatches = refreshMatches;
+        window.connectManually = connectManually;
+        window.selectMatch = selectMatch;
+    </script>
+</body>
+</html>
