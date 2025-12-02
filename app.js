@@ -1394,6 +1394,57 @@ function applyEditedScore() {
     updateGameScreen();
 }
 
+function deleteTurnFromHistory(player, turnIndex) {
+    const playerKey = `player${player}`;
+    const playerData = gameState.players[playerKey];
+    
+    // Remove the turn from history
+    playerData.turnHistory.splice(turnIndex, 1);
+    
+    // Recalculate all stats from the beginning
+    const startScore = gameState.matchSettings.startScore;
+    let currentScore = startScore;
+    let legScore = 0;
+    let legDarts = 0;
+    let matchScore = playerData.matchScore - (playerData.legScore || 0); // Keep match score from previous legs
+    let matchDarts = playerData.matchDarts - (playerData.legDarts || 0); // Keep match darts from previous legs
+    
+    // Recalculate from all remaining turns
+    for (let i = 0; i < playerData.turnHistory.length; i++) {
+        const turn = playerData.turnHistory[i];
+        if (turn) {
+            currentScore -= turn.total;
+            legScore += turn.total;
+            legDarts += turn.darts || 3; // Assume 3 darts per turn
+            matchScore += turn.total;
+            matchDarts += turn.darts || 3;
+        }
+    }
+    
+    // Update player state
+    playerData.score = currentScore;
+    playerData.preTurnScore = currentScore;
+    playerData.legScore = legScore;
+    playerData.legDarts = legDarts;
+    playerData.matchScore = matchScore;
+    playerData.matchDarts = matchDarts;
+    
+    // Recalculate averages
+    if (legDarts > 0) {
+        playerData.legAvg = (legScore / legDarts) * 3;
+    } else {
+        playerData.legAvg = 0;
+    }
+    
+    if (matchDarts > 0) {
+        playerData.matchAvg = (matchScore / matchDarts) * 3;
+    } else {
+        playerData.matchAvg = 0;
+    }
+    
+    console.log(`Deleted Player ${player} Turn ${turnIndex + 1}, recalculated all stats`);
+}
+
 function recalculateScoresFromTurn(player, fromTurnIndex) {
     const playerKey = `player${player}`;
     const playerData = gameState.players[playerKey];
@@ -1690,12 +1741,8 @@ function updateActionButtonText() {
     const actionBtn = document.getElementById('action-btn');
     if (!actionBtn) return;
     
-    // Show RETURN PLAY when in edit mode with empty input and sequential undo
-    if (gameState.isEditMode && gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
-        actionBtn.textContent = 'RETURN PLAY';
-    } else {
-        actionBtn.textContent = 'UNDO';
-    }
+    // Always show UNDO - turn deletion happens automatically
+    actionBtn.textContent = 'UNDO';
 }
 
 function updateInputDisplay() {
@@ -2818,26 +2865,28 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     // Action button - undo or back to starting player
     document.getElementById('action-btn')?.addEventListener('click', function() {
-        // RETURN PLAY mode - only in sequential undo with empty input
-        if (gameState.isEditMode && gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
-            // Return to the turn after the edited one
-            const playerKey = `player${gameState.editModePlayer}`;
-            const player = gameState.players[playerKey];
-            
-            // Exit edit mode and restore normal gameplay
-            exitEditMode();
-            
-            // Set current player to the turn after the edited turn
-            // This simulates returning to where the game was
-            gameState.currentPlayer = gameState.editModePlayer;
-            
-            updateGameScreen();
-            return;
-        }
-        
         // UNDO in edit mode with input - remove last digit
         if (gameState.isEditMode && gameState.currentInput.length > 0) {
             gameState.currentInput = gameState.currentInput.slice(0, -1);
+            
+            // If input is now empty in SEQUENTIAL mode, delete the turn and return to that player's turn
+            if (gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
+                const deletedPlayer = gameState.editModePlayer;
+                const deletedTurnIndex = gameState.editModeTurnIndex;
+                
+                // Delete the turn from history
+                deleteTurnFromHistory(deletedPlayer, deletedTurnIndex);
+                
+                // Exit edit mode
+                exitEditMode();
+                
+                // Return to that player's turn (as if they never shot)
+                gameState.currentPlayer = deletedPlayer;
+                
+                updateGameScreen();
+                return;
+            }
+            
             updateGameScreen();
             return;
         }
@@ -2850,7 +2899,7 @@ window.addEventListener('DOMContentLoaded', async function() {
             return;
         }
         
-        // UNDO in sequential edit mode with empty input - go to previous turn
+        // UNDO in sequential edit mode with empty input - shouldn't happen anymore (deleted above)
         if (gameState.isEditMode && gameState.currentInput.length === 0 && gameState.isSequentialUndo) {
             const currentPlayer = gameState.editModePlayer;
             const currentTurnIndex = gameState.editModeTurnIndex;
