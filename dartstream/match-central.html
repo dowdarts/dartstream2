@@ -284,9 +284,32 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
         let activeMatches = {};
 
+        async function cleanupOldGames() {
+            try {
+                const twoHoursAgo = new Date(Date.now() - (2 * 60 * 60 * 1000)).toISOString();
+                
+                // Delete games that haven't been updated in 2 hours
+                const { data, error } = await supabase
+                    .from('game_states')
+                    .delete()
+                    .lt('updated_at', twoHoursAgo);
+
+                if (error) {
+                    console.error('Error cleaning up old games:', error);
+                } else {
+                    console.log('🧹 Cleaned up old games (2+ hours inactive)');
+                }
+            } catch (error) {
+                console.error('Cleanup error:', error);
+            }
+        }
+
         async function loadMatches() {
             try {
-                // Get all games from database
+                // Clean up old games first
+                await cleanupOldGames();
+                
+                // Get all games from database (only active ones will remain)
                 const { data, error } = await supabase
                     .from('game_states')
                     .select('*')
@@ -298,42 +321,14 @@
                 activeMatches = {};
                 
                 if (data && data.length > 0) {
-                    const now = new Date();
-                    const TEN_MINUTES_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
-                    const ONE_HOUR_MS = 60 * 60 * 1000; // 1 hour in milliseconds
-                    
                     data.forEach(game => {
-                        if (game.game_state) {
-                            const gameState = game.game_state;
-                            const createdAt = new Date(game.created_at);
-                            const updatedAt = new Date(game.updated_at);
-                            const timeSinceCreation = now - createdAt;
-                            const timeSinceUpdate = now - updatedAt;
-                            
-                            // Filter criteria for active games:
-                            // 1. gameStarted must be true (game is active)
-                            // 2. updated within last 10 minutes (not stale/timed out)
-                            // 3. created within last hour (not old/expired)
-                            const isGameActive = gameState.gameStarted === true;
-                            const isRecentlyUpdated = timeSinceUpdate < TEN_MINUTES_MS;
-                            const isRecentlyCreated = timeSinceCreation < ONE_HOUR_MS;
-                            
-                            if (isGameActive && isRecentlyUpdated && isRecentlyCreated) {
-                                activeMatches[game.game_id] = {
-                                    code: game.game_id,
-                                    data: gameState,
-                                    updatedAt: game.updated_at,
-                                    createdAt: game.created_at
-                                };
-                            } else {
-                                console.log(`Filtering out game ${game.game_id}:`, {
-                                    gameStarted: gameState.gameStarted,
-                                    isRecentlyUpdated,
-                                    isRecentlyCreated,
-                                    timeSinceCreation: Math.round(timeSinceCreation / 1000 / 60) + ' minutes ago',
-                                    timeSinceUpdate: Math.round(timeSinceUpdate / 1000 / 60) + ' minutes ago'
-                                });
-                            }
+                        if (game.game_state && game.game_state.gameStarted === true) {
+                            activeMatches[game.game_id] = {
+                                code: game.game_id,
+                                data: game.game_state,
+                                updatedAt: game.updated_at,
+                                createdAt: game.created_at
+                            };
                         }
                     });
                 }
@@ -430,11 +425,14 @@
             )
             .subscribe();
 
-        // Initial load
+        // Initial load and cleanup
         loadMatches();
 
         // Auto-refresh every 5 seconds
         setInterval(loadMatches, 5000);
+        
+        // Run cleanup every 5 minutes (cleanup happens in loadMatches, but this ensures it runs even if page is idle)
+        setInterval(cleanupOldGames, 5 * 60 * 1000);
 
         window.refreshMatches = refreshMatches;
         window.connectManually = connectManually;
