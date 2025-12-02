@@ -1721,6 +1721,14 @@ function handleBust() {
     
     alert(`BUST! Score reverts to ${player.preTurnScore}`);
     
+    // Add bust entry to history with the turn total that caused the bust
+    player.turnHistory.push({
+        darts: [gameState.turnTotal],
+        total: gameState.turnTotal,
+        scoreAfter: player.preTurnScore, // Score stays the same after bust
+        bust: true
+    });
+    
     // Revert score
     player.score = player.preTurnScore;
     gameState.currentVisit = [];
@@ -2435,7 +2443,9 @@ function updateScoreHistory() {
         // Check if player 1 has completed this turn
         const p1TurnIndex = visit - 1;
         if (p1TurnIndex < p1History.length) {
-            p1Column.innerHTML = `<div class="darts">${p1History[p1TurnIndex].total}</div>`;
+            const turnData = p1History[p1TurnIndex];
+            const displayText = turnData.bust ? `${turnData.total} (BUST)` : turnData.total;
+            p1Column.innerHTML = `<div class="darts">${displayText}</div>`;
         } else if (isCurrentTurn && gameState.currentPlayer === 1 && gameState.currentVisit.length > 0) {
             // Player 1 is currently throwing
             p1Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
@@ -2464,7 +2474,9 @@ function updateScoreHistory() {
         // Check if player 2 has completed this turn
         const p2TurnIndex = visit - 1;
         if (p2TurnIndex < p2History.length) {
-            p2Column.innerHTML = `<div class="darts">${p2History[p2TurnIndex].total}</div>`;
+            const turnData = p2History[p2TurnIndex];
+            const displayText = turnData.bust ? `${turnData.total} (BUST)` : turnData.total;
+            p2Column.innerHTML = `<div class="darts">${displayText}</div>`;
         } else if (isCurrentTurn && gameState.currentPlayer === 2 && gameState.currentVisit.length > 0) {
             // Player 2 is currently throwing
             p2Column.innerHTML = `<div class="darts">${gameState.turnTotal}</div>`;
