@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DartStream Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .controller-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #facc15;
+        }
+
+        .controller-header h1 {
+            color: #facc15;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .controller-header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .control-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(250, 204, 21, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-section h2 {
+            color: #facc15;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            display: block;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(250, 204, 21, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: #facc15;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .control-select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(250, 204, 21, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .control-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            color: #cbd5e1;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .checkbox-label:hover {
+            background: rgba(250, 204, 21, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #facc15 0%, #fbbf24 100%);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(250, 204, 21, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .status-connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 2px solid #10b981;
+        }
+
+        .status-disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 2px solid #ef4444;
+        }
+
+        .file-upload-area {
+            border: 2px dashed rgba(250, 204, 21, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-area:hover {
+            border-color: #facc15;
+            background: rgba(250, 204, 21, 0.05);
+        }
+
+        .file-upload-area input {
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 2px solid rgba(250, 204, 21, 0.3);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="controller-header">
+        <h1>🎮 DartStream Controller</h1>
+        <p>Control your scoreboard and advertisements from OBS</p>
+    </div>
+
+    <!-- Connection Section -->
+    <div class="control-section">
+        <h2>🔌 Connection</h2>
+        <div class="status-indicator status-disconnected" id="connectionStatus">
+            ⚠️ Not Connected
+        </div>
+        <div class="control-group">
+            <label class="control-label">Pairing Code</label>
+            <input type="text" class="control-input" id="pairingCode" placeholder="Enter 4-digit code" maxlength="4">
+        </div>
+        <button class="btn btn-success" onclick="connectToScoreboard()">Connect to Scoreboard</button>
+    </div>
+
+    <!-- Scoreboard Controls -->
+    <div class="control-section">
+        <h2>📊 Scoreboard Settings</h2>
+        
+        <div class="control-group">
+            <label class="control-label">Match Header</label>
+            <input type="text" class="control-input" id="headerText" placeholder="Best of 7">
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Group</label>
+            <input type="text" class="control-input" id="footerGroup" placeholder="Group A">
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Event</label>
+            <input type="text" class="control-input" id="footerEvent" placeholder="PDC World Championship">
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Format</label>
+            <input type="text" class="control-input" id="footerFormat" placeholder="501 • Double Out">
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Column Visibility</label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showFlags" checked>
+                Show Flags
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showIndicator" checked>
+                Show Throw Indicator
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showSets" checked>
+                Show Sets
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showLegs" checked>
+                Show Legs
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showAvg" checked>
+                Show Average
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showDarts" checked>
+                Show Darts
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="showScore" checked>
+                Show Score
+            </label>
+        </div>
+
+        <button class="btn btn-primary" onclick="updateScoreboardSettings()">💾 Update Scoreboard</button>
+    </div>
+
+    <!-- Advertisement Controls -->
+    <div class="control-section">
+        <h2>📺 Advertisement Controls</h2>
+        
+        <div class="control-group">
+            <label class="control-label">Upload Ad Image</label>
+            <div class="file-upload-area" onclick="document.getElementById('adImageUpload').click()">
+                <p>📁 Click to upload image</p>
+                <input type="file" id="adImageUpload" accept="image/*" onchange="handleAdImageUpload(event)">
+                <img id="adPreview" class="preview-image hidden" alt="Ad Preview">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="checkbox-label">
+                <input type="checkbox" class="control-checkbox" id="adEnableTransitions">
+                Enable Slide Transitions
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Transition Type</label>
+            <select class="control-select" id="adTransitionType">
+                <option value="slide-left">Slide Left</option>
+                <option value="slide-right">Slide Right</option>
+                <option value="slide-up">Slide Up</option>
+                <option value="slide-down">Slide Down</option>
+                <option value="fade">Fade In/Out</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Transition Duration (seconds)</label>
+            <input type="number" class="control-input" id="adTransitionDuration" value="1" min="0.1" max="5" step="0.1">
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-success" onclick="toggleAd()">▶️ Show Ad</button>
+            <button class="btn btn-danger" onclick="toggleAd()">⏹️ Hide Ad</button>
+            <button class="btn btn-primary" onclick="updateAdSettings()">💾 Update Ad Settings</button>
+        </div>
+    </div>
+
+    <script>
+        let scoreboardWindow = null;
+
+        // Connect to scoreboard
+        function connectToScoreboard() {
+            const code = document.getElementById('pairingCode').value;
+            if (code.length !== 4) {
+                alert('Please enter a 4-digit code');
+                return;
+            }
+
+            // Store connection info
+            localStorage.setItem('scoreboard-code', code);
+            
+            // Update status
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = '✅ Connected';
+            statusEl.className = 'status-indicator status-connected';
+            
+            // Send message to scoreboard window
+            sendToScoreboard({ type: 'connect', code: code });
+        }
+
+        // Update scoreboard settings
+        function updateScoreboardSettings() {
+            const settings = {
+                type: 'updateScoreboard',
+                header: document.getElementById('headerText').value,
+                group: document.getElementById('footerGroup').value,
+                event: document.getElementById('footerEvent').value,
+                format: document.getElementById('footerFormat').value,
+                showFlags: document.getElementById('showFlags').checked,
+                showIndicator: document.getElementById('showIndicator').checked,
+                showSets: document.getElementById('showSets').checked,
+                showLegs: document.getElementById('showLegs').checked,
+                showAvg: document.getElementById('showAvg').checked,
+                showDarts: document.getElementById('showDarts').checked,
+                showScore: document.getElementById('showScore').checked
+            };
+
+            sendToScoreboard(settings);
+            
+            // Save to localStorage
+            localStorage.setItem('scoreboard-settings', JSON.stringify(settings));
+            
+            alert('Scoreboard settings updated!');
+        }
+
+        // Handle ad image upload
+        function handleAdImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('adPreview');
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    
+                    // Send to scoreboard
+                    sendToScoreboard({
+                        type: 'updateAdImage',
+                        image: e.target.result
+                    });
+                    
+                    // Save to localStorage
+                    localStorage.setItem('ad-image', e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Toggle ad visibility
+        function toggleAd() {
+            sendToScoreboard({ type: 'toggleAd' });
+        }
+
+        // Update ad settings
+        function updateAdSettings() {
+            const settings = {
+                type: 'updateAdSettings',
+                enableTransitions: document.getElementById('adEnableTransitions').checked,
+                transitionType: document.getElementById('adTransitionType').value,
+                transitionDuration: document.getElementById('adTransitionDuration').value
+            };
+
+            sendToScoreboard(settings);
+            
+            // Save to localStorage
+            localStorage.setItem('ad-settings', JSON.stringify(settings));
+            
+            alert('Ad settings updated!');
+        }
+
+        // Send message to scoreboard window
+        function sendToScoreboard(message) {
+            // Use localStorage as communication channel
+            const channel = 'dartstream-controller-' + Date.now();
+            localStorage.setItem(channel, JSON.stringify(message));
+            
+            // Trigger storage event
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: channel,
+                newValue: JSON.stringify(message)
+            }));
+        }
+
+        // Load saved settings on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Load scoreboard settings
+            const savedSettings = localStorage.getItem('scoreboard-settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (settings.header) document.getElementById('headerText').value = settings.header;
+                if (settings.group) document.getElementById('footerGroup').value = settings.group;
+                if (settings.event) document.getElementById('footerEvent').value = settings.event;
+                if (settings.format) document.getElementById('footerFormat').value = settings.format;
+                document.getElementById('showFlags').checked = settings.showFlags !== false;
+                document.getElementById('showIndicator').checked = settings.showIndicator !== false;
+                document.getElementById('showSets').checked = settings.showSets !== false;
+                document.getElementById('showLegs').checked = settings.showLegs !== false;
+                document.getElementById('showAvg').checked = settings.showAvg !== false;
+                document.getElementById('showDarts').checked = settings.showDarts !== false;
+                document.getElementById('showScore').checked = settings.showScore !== false;
+            }
+
+            // Load ad settings
+            const savedAdSettings = localStorage.getItem('ad-settings');
+            if (savedAdSettings) {
+                const adSettings = JSON.parse(savedAdSettings);
+                document.getElementById('adEnableTransitions').checked = adSettings.enableTransitions || false;
+                document.getElementById('adTransitionType').value = adSettings.transitionType || 'slide-left';
+                document.getElementById('adTransitionDuration').value = adSettings.transitionDuration || '1';
+            }
+
+            // Load ad image
+            const savedAdImage = localStorage.getItem('ad-image');
+            if (savedAdImage) {
+                const preview = document.getElementById('adPreview');
+                preview.src = savedAdImage;
+                preview.classList.remove('hidden');
+            }
+
+            // Check for saved code
+            const savedCode = localStorage.getItem('scoreboard-code');
+            if (savedCode) {
+                document.getElementById('pairingCode').value = savedCode;
+            }
+        });
+    </script>
+</body>
+</html>
