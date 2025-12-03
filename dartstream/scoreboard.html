@@ -1322,6 +1322,7 @@
         let lastHomeScore = null;
         let lastAwayScore = null;
         let currentDisplayPlayer = 'home';
+        let currentGameCode = null; // Track current game code for auto-save
 
         // Resize functionality
         function initResize() {
@@ -1469,7 +1470,8 @@
             const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
 
             try {
-                console.log('?? Attempting to connect with code:', code);
+                console.log('🔌 Attempting to connect with code:', code);
+                currentGameCode = code; // Save the game code for auto-save
                 supabaseClient = createClient(supabaseUrl, supabaseKey);
                 
                 const { data, error } = await supabaseClient
@@ -1545,8 +1547,50 @@
                 });
         }
 
+        // Auto-save game state to localStorage
+        function saveGameState(data) {
+            try {
+                const gameState = {
+                    data: data,
+                    timestamp: Date.now(),
+                    gameCode: currentGameCode
+                };
+                localStorage.setItem('dartstream-game-state', JSON.stringify(gameState));
+                console.log('💾 Game state auto-saved');
+            } catch (error) {
+                console.error('Failed to save game state:', error);
+            }
+        }
+
+        // Auto-restore game state from localStorage
+        function restoreGameState() {
+            try {
+                const saved = localStorage.getItem('dartstream-game-state');
+                if (!saved) return null;
+
+                const gameState = JSON.parse(saved);
+                
+                // Check if saved state is from within last 24 hours
+                const hoursSinceLastSave = (Date.now() - gameState.timestamp) / (1000 * 60 * 60);
+                if (hoursSinceLastSave > 24) {
+                    console.log('⏰ Saved game state is older than 24 hours, ignoring');
+                    localStorage.removeItem('dartstream-game-state');
+                    return null;
+                }
+
+                console.log('📂 Found saved game state from', new Date(gameState.timestamp).toLocaleString());
+                return gameState;
+            } catch (error) {
+                console.error('Failed to restore game state:', error);
+                return null;
+            }
+        }
+
         function updateScoreBug(data) {
             console.log('Score bug received update:', data);
+
+            // Auto-save the game state
+            saveGameState(data);
 
             // Update player names from new structure
             if (data.player1?.name) {
@@ -1719,7 +1763,7 @@
         // Settings Panel Functions
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
-            const scoreBug = document\.querySelector('.score-bug-overlay');
+            const scoreBug = document.querySelector('.score-bug-overlay');
             const isOpening = panel.classList.contains('hidden');
             
             panel.classList.toggle('hidden');
@@ -1795,7 +1839,7 @@
             const savedLeft = sessionStorage.getItem('score-bug-left');
             const savedTop = sessionStorage.getItem('score-bug-top');
             
-            const scoreBug = document\.querySelector('.score-bug-overlay');
+            const scoreBug = document.querySelector('.score-bug-overlay');
             if (savedWidth) scoreBug.style.width = savedWidth;
             if (savedHeight) scoreBug.style.height = savedHeight;
             if (savedLeft) scoreBug.style.left = savedLeft;
@@ -1817,7 +1861,7 @@
 
         // Load and apply column visibility settings
         function loadColumnVisibility() {
-            const scoreBugOverlay = document\.querySelector('.score-bug-overlay');
+            const scoreBugOverlay = document.querySelector('.score-bug-overlay');
             
             // Load saved preferences (default to checked/visible)
             const showFlags = sessionStorage.getItem('show-flags') !== 'false';
@@ -1904,7 +1948,7 @@
             sessionStorage.setItem('keep-resize-mode', keepResizeMode);
             
             // Save current score bug size
-            const scoreBug = document\.querySelector('.score-bug-overlay');
+            const scoreBug = document.querySelector('.score-bug-overlay');
             const currentWidth = scoreBug.style.width;
             const currentHeight = scoreBug.style.height;
             const currentLeft = scoreBug.style.left;
@@ -2026,6 +2070,44 @@
         loadSettings();
         loadAdSettings();
 
+        // Check for saved game state and offer to restore
+        function checkSavedGameState() {
+            const savedState = restoreGameState();
+            if (savedState && savedState.data) {
+                const timeSaved = new Date(savedState.timestamp).toLocaleTimeString();
+                const shouldRestore = confirm(
+                    `Found a saved game from ${timeSaved}.\n\n` +
+                    `Players: ${savedState.data.player1?.name || 'Player 1'} vs ${savedState.data.player2?.name || 'Player 2'}\n` +
+                    `Scores: ${savedState.data.player1?.score || 0} - ${savedState.data.player2?.score || 0}\n\n` +
+                    `Would you like to restore this game?`
+                );
+
+                if (shouldRestore) {
+                    console.log('📂 Restoring saved game state');
+                    currentGameCode = savedState.gameCode;
+                    
+                    // Update the display with saved state
+                    updateScoreBug(savedState.data);
+                    
+                    // Show connection status
+                    document.getElementById('connectionStatus').textContent = '📂 Restored from save';
+                    document.getElementById('connectionStatus').style.color = '#10b981';
+                    
+                    // If we have a game code, try to reconnect
+                    if (savedState.gameCode) {
+                        document.getElementById('pairingCode').value = savedState.gameCode;
+                        setTimeout(() => {
+                            console.log('🔄 Attempting to reconnect to game...');
+                            connectWithCode();
+                        }, 1000);
+                    }
+                } else {
+                    // User declined, clear the saved state
+                    localStorage.removeItem('dartstream-game-state');
+                }
+            }
+        }
+
         // Check for auto-connect from match central
         function checkAutoConnect() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -2040,7 +2122,8 @@
             }
         }
 
-        // Run auto-connect check on page load
+        // Run checks on page load
+        checkSavedGameState();
         checkAutoConnect();
 
         // Ad Settings Variables
@@ -2590,7 +2673,7 @@
                     }
                     
                     // Update column visibility
-                    const scoreBugOverlay = document\.querySelector('.score-bug-overlay');
+                    const scoreBugOverlay = document.querySelector('.score-bug-overlay');
                     overlay.classList.toggle('hide-flags', !message.showFlags);
                     overlay.classList.toggle('hide-indicator', !message.showIndicator);
                     overlay.classList.toggle('hide-sets', !message.showSets);
@@ -2656,3 +2739,4 @@
     </div> <!-- End content-wrapper -->
 </body>
 </html>
+
