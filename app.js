@@ -2868,10 +2868,10 @@ function updateThrowIndicator() {
     player1Indicator.classList.remove('active');
     player2Indicator.classList.remove('active');
     
-    // Show indicator for whoever started this leg
-    if (gameState.legStarter === 1) {
+    // Show indicator for current player's turn
+    if (gameState.currentPlayer === 1) {
         player1Indicator.classList.add('active');
-    } else if (gameState.legStarter === 2) {
+    } else if (gameState.currentPlayer === 2) {
         player2Indicator.classList.add('active');
     }
 }
