@@ -271,6 +271,8 @@ const GameStateSync = {
                 
                 // Game state
                 visitNumber: state.visitNumber || 1,
+                legStarter: state.legStarter || null,
+                currentPlayer: state.currentPlayer || 1,
                 lastUpdate: Date.now()
             };
 

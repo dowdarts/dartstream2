@@ -587,12 +587,10 @@
         
         // Toggle ad
         function toggleAd() {
-            console.log('🔄 Toggle Ad clicked, isConnected:', isConnected, 'controllerId:', controllerId);
             if (!isConnected) {
                 alert('Not connected to score bug. Please connect first.');
                 return;
             }
-            console.log('📤 Sending toggleAd command...');
             sendToScoreBug({ 
                 type: 'toggleAd',
                 controllerId: controllerId
