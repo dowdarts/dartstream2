@@ -345,8 +345,7 @@
         </div>
 
         <div class="button-group">
-            <button class="btn btn-success" onclick="showAd()">▶️ Show Ad</button>
-            <button class="btn btn-danger" onclick="hideAd()">⏹️ Hide Ad</button>
+            <button class="btn btn-success" onclick="toggleAd()">🔄 Toggle Ad</button>
             <button class="btn btn-primary" onclick="updateAdSettings()">💾 Update Ad Settings</button>
         </div>
     </div>
@@ -586,26 +585,14 @@
             });
         }
         
-        // Show ad
-        function showAd() {
+        // Toggle ad
+        function toggleAd() {
             if (!isConnected) {
                 alert('Not connected to score bug. Please connect first.');
                 return;
             }
             sendToScoreBug({ 
-                type: 'showAd',
-                controllerId: controllerId
-            });
-        }
-        
-        // Hide ad
-        function hideAd() {
-            if (!isConnected) {
-                alert('Not connected to score bug. Please connect first.');
-                return;
-            }
-            sendToScoreBug({ 
-                type: 'hideAd',
+                type: 'toggleAd',
                 controllerId: controllerId
             });
         }
