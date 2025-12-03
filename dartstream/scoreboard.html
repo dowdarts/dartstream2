@@ -1739,7 +1739,7 @@
 
         // Update player name with flag
         function updatePlayerName(player, name) {
-            const flag = sessionStorage.getItem(`scoreboard-${player}-flag`) || '';
+            const flag = sessionStorage.getItem(`score-bug-${player}-flag`) || '';
             const nameElement = document.getElementById(`${player}Name`);
             const flagContainer = document.getElementById(`${player}FlagContainer`);
             
@@ -1749,8 +1749,8 @@
             // Add flag image if selected
             if (flag) {
                 const flagImg = document.createElement('img');
-                // Use score-bug-app path for gh-pages deployment
-                flagImg.src = `score-bug-app/${flag}`;
+                // Use scoreboard-app path for gh-pages deployment
+                flagImg.src = `scoreboard-app/${flag}`;
                 flagImg.alt = 'Flag';
                 flagImg.className = 'flag-icon';
                 flagContainer.appendChild(flagImg);
@@ -2070,6 +2070,29 @@
         loadSettings();
         loadAdSettings();
 
+        // Check for auto-connect from match central
+        function checkAutoConnect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoConnectCode = urlParams.get('autoconnect');
+            
+            if (autoConnectCode && autoConnectCode.length === 4) {
+                console.log('🎯 Auto-connecting to match:', autoConnectCode);
+                // Auto-fill the code and connect
+                document.getElementById('pairingCode').value = autoConnectCode;
+                
+                // Show connecting status
+                document.getElementById('connectionStatus').textContent = '🔄 Auto-connecting from Match Central...';
+                document.getElementById('connectionStatus').style.color = '#facc15';
+                
+                setTimeout(() => {
+                    connectWithCode();
+                }, 500);
+                
+                return true; // Indicate that auto-connect is happening
+            }
+            return false;
+        }
+
         // Check for saved game state and offer to restore
         function checkSavedGameState() {
             const savedState = restoreGameState();
@@ -2108,23 +2131,12 @@
             }
         }
 
-        // Check for auto-connect from match central
-        function checkAutoConnect() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const autoConnectCode = urlParams.get('autoconnect');
-            
-            if (autoConnectCode && autoConnectCode.length === 4) {
-                // Auto-fill the code and connect
-                document.getElementById('pairingCode').value = autoConnectCode;
-                setTimeout(() => {
-                    connectWithCode();
-                }, 500);
-            }
+        // Run checks on page load - auto-connect takes priority
+        const isAutoConnecting = checkAutoConnect();
+        if (!isAutoConnecting) {
+            // Only check for saved state if not auto-connecting
+            checkSavedGameState();
         }
-
-        // Run checks on page load
-        checkSavedGameState();
-        checkAutoConnect();
 
         // Ad Settings Variables
         let adTransitionType = 'slide-left';
@@ -2532,7 +2544,12 @@
         
         // Set up Supabase Realtime channel for controller commands
         function setupSupabaseControllerChannel() {
-            if (!supabaseClient) return;
+            // Initialize Supabase client if not already initialized
+            if (!supabaseClient) {
+                const supabaseUrl = 'https://kswwbqumgsdissnwuiab.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+                supabaseClient = createClient(supabaseUrl, supabaseKey);
+            }
             
             const channelName = `controller:${scoreBugConnectionCode}`;
             const controllerChannel = supabaseClient.channel(channelName);
