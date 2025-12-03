@@ -426,9 +426,10 @@
                 console.error('No connection code set');
                 return;
             }
+            console.log('🏓 Pinging scoreboard with code:', connectionCode);
             sendToScoreBug({ 
                 type: 'ping',
-                scoreBugCode: connectionCode,
+                scoreboardCode: connectionCode,
                 controllerId: controllerId
             });
         }
