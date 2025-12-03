@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #facc15;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .settings-label {
+            display: block;
+            color: #cbd5e1;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .settings-input,
+        .settings-select {
+            width: 100%;
+            padding: 10px;
+            background: #334155;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .settings-checkbox {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6366f1;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #4f46e5;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .ad-preview {
+            margin-top: 15px;
+            max-width: 100%;
+            max-height: 200px;
+            border: 2px solid #475569;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .ad-preview.visible {
+            display: block;
+        }
+
+        .settings-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-close {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+        }
+
+        .btn-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.4);
+        }
+
+        .divider {
+            height: 1px;
+            background: #475569;
+            margin: 20px 0;
+        }
+
+        .section-title {
+            color: #facc15;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>🎨 Ad Settings</h2>
+
+    <div class="section-title">📷 Ad Image</div>
+    <div class="file-input-wrapper">
+        <label for="adImageUpload" class="file-input-label">📁 Choose Image</label>
+        <input type="file" id="adImageUpload" class="file-input" accept="image/png,image/jpeg,image/jpg" onchange="loadAdImage(event)">
+    </div>
+    <img id="adPreview" class="ad-preview" alt="Ad Preview">
+
+    <div class="divider"></div>
+
+    <div class="section-title">🎬 Transitions</div>
+    <label class="settings-label">
+        <input type="checkbox" id="adEnableTransitions" class="settings-checkbox">
+        Enable Slide Transitions
+    </label>
+
+    <label class="settings-label">Transition Type</label>
+    <select class="settings-select" id="adTransitionType">
+        <option value="slide-left">Slide Left</option>
+        <option value="slide-right">Slide Right</option>
+        <option value="slide-up">Slide Up</option>
+        <option value="slide-down">Slide Down</option>
+        <option value="fade">Fade In/Out</option>
+    </select>
+
+    <label class="settings-label">Transition Duration (seconds)</label>
+    <input type="number" class="settings-input" id="adTransitionDuration" value="1" min="0.1" max="5" step="0.1">
+
+    <div class="divider"></div>
+
+    <div class="section-title">📐 Positioning</div>
+    <label class="settings-label">
+        <input type="checkbox" id="adResizeMode" class="settings-checkbox">
+        Enable Resize/Move Mode for Ad
+    </label>
+
+    <div class="settings-buttons">
+        <button class="btn btn-save" onclick="saveSettings()">💾 Save</button>
+        <button class="btn btn-close" onclick="window.close()">❌ Close</button>
+    </div>
+
+    <script>
+        // Load settings on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+        });
+
+        function loadSettings() {
+            // Check if opener exists (parent window)
+            const storage = window.opener ? window.opener.sessionStorage : sessionStorage;
+            
+            const savedTransitionType = storage.getItem('ad-transition-type') || 'slide-left';
+            const savedTransitionDuration = storage.getItem('ad-transition-duration') || '1';
+            const savedEnableTransitions = storage.getItem('ad-enable-transitions') === 'true';
+            const savedResizeEnabled = storage.getItem('ad-resize-enabled') === 'true';
+            const savedImage = storage.getItem('ad-bar-image');
+            
+            document.getElementById('adTransitionType').value = savedTransitionType;
+            document.getElementById('adTransitionDuration').value = savedTransitionDuration;
+            document.getElementById('adEnableTransitions').checked = savedEnableTransitions;
+            document.getElementById('adResizeMode').checked = savedResizeEnabled;
+            
+            // Load preview image if exists
+            if (savedImage) {
+                const preview = document.getElementById('adPreview');
+                preview.src = savedImage;
+                preview.classList.add('visible');
+            }
+        }
+
+        function loadAdImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('adPreview');
+                    preview.src = e.target.result;
+                    preview.classList.add('visible');
+                    
+                    // Save to sessionStorage of both windows
+                    sessionStorage.setItem('ad-bar-image', e.target.result);
+                    if (window.opener) {
+                        window.opener.sessionStorage.setItem('ad-bar-image', e.target.result);
+                        
+                        // Update the image in the parent window
+                        const adImage = window.opener.document.getElementById('adImage');
+                        const adPlaceholder = window.opener.document.getElementById('adPlaceholder');
+                        if (adImage) {
+                            adImage.src = e.target.result;
+                            adImage.classList.remove('ad-image-hidden');
+                        }
+                        if (adPlaceholder) {
+                            adPlaceholder.classList.add('ad-image-hidden');
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveSettings() {
+            const transitionType = document.getElementById('adTransitionType').value;
+            const transitionDuration = document.getElementById('adTransitionDuration').value;
+            const enableTransitions = document.getElementById('adEnableTransitions').checked;
+            const resizeEnabled = document.getElementById('adResizeMode').checked;
+            
+            // Save to sessionStorage
+            sessionStorage.setItem('ad-transition-type', transitionType);
+            sessionStorage.setItem('ad-transition-duration', transitionDuration);
+            sessionStorage.setItem('ad-enable-transitions', enableTransitions);
+            sessionStorage.setItem('ad-resize-enabled', resizeEnabled);
+            
+            // If opened from scoreboard, save to parent window's sessionStorage and apply changes
+            if (window.opener) {
+                window.opener.sessionStorage.setItem('ad-transition-type', transitionType);
+                window.opener.sessionStorage.setItem('ad-transition-duration', transitionDuration);
+                window.opener.sessionStorage.setItem('ad-enable-transitions', enableTransitions);
+                window.opener.sessionStorage.setItem('ad-resize-enabled', resizeEnabled);
+                
+                // Apply settings to the ad bar in parent window
+                const adBar = window.opener.document.getElementById('adBar');
+                if (adBar) {
+                    // Update transition class
+                    adBar.classList.remove('slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade');
+                    if (enableTransitions) {
+                        adBar.classList.add(transitionType);
+                        adBar.style.transition = `all ${transitionDuration}s ease-in-out`;
+                    } else {
+                        adBar.style.transition = 'none';
+                    }
+                    
+                    // Update resize mode
+                    if (resizeEnabled) {
+                        adBar.classList.add('resize-mode');
+                        // Update global variable in parent
+                        window.opener.adResizeEnabled = true;
+                    } else {
+                        adBar.classList.remove('resize-mode');
+                        window.opener.adResizeEnabled = false;
+                    }
+                }
+            }
+            
+            alert('Settings saved successfully!');
+        }
+    </script>
+</body>
+</html>
