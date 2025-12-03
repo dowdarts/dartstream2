@@ -2,6 +2,7 @@
 const gameState = {
     currentScreen: 'player-selection-screen',
     gameMode: null,
+    matchActive: false, // Track if match is in progress
     players: {
         player1: { 
             name: 'Home', 
@@ -76,6 +77,58 @@ const gameState = {
     },
     playerLibrary: []
 };
+
+// ===== AUTO-SAVE AND RESTORE FUNCTIONALITY =====
+
+// Save game state to localStorage
+function saveGameState() {
+    if (!gameState.matchActive) return; // Only save if match is active
+    
+    try {
+        const savedState = {
+            gameState: {
+                ...gameState,
+                // Exclude functions and non-serializable data
+                playerLibrary: undefined
+            },
+            timestamp: Date.now()
+        };
+        localStorage.setItem('dartstream-active-match', JSON.stringify(savedState));
+        console.log('💾 Match auto-saved');
+    } catch (error) {
+        console.error('Failed to save game state:', error);
+    }
+}
+
+// Restore game state from localStorage
+function restoreGameState() {
+    try {
+        const saved = localStorage.getItem('dartstream-active-match');
+        if (!saved) return null;
+
+        const savedState = JSON.parse(saved);
+        
+        // Check if saved state is from within last 24 hours
+        const hoursSinceLastSave = (Date.now() - savedState.timestamp) / (1000 * 60 * 60);
+        if (hoursSinceLastSave > 24) {
+            console.log('⏰ Saved match is older than 24 hours, clearing');
+            localStorage.removeItem('dartstream-active-match');
+            return null;
+        }
+
+        console.log('📂 Found saved match from', new Date(savedState.timestamp).toLocaleString());
+        return savedState.gameState;
+    } catch (error) {
+        console.error('Failed to restore game state:', error);
+        return null;
+    }
+}
+
+// Clear saved game state
+function clearSavedGameState() {
+    localStorage.removeItem('dartstream-active-match');
+    console.log('🗑️ Cleared saved match');
+}
 
 // Initialize default player library
 async function initializePlayerLibrary() {
@@ -1563,6 +1616,10 @@ function startGame() {
         if (codeDisplay3) codeDisplay3.textContent = connectionCode;
     }
     
+    // Mark match as active and save state
+    gameState.matchActive = true;
+    saveGameState();
+    
     showScreen('game-screen');
     updateGameScreen();
     
@@ -1575,6 +1632,11 @@ function startGame() {
 // Ready for new implementation
 
 function updateGameScreen() {
+    // Auto-save game state when screen updates
+    if (gameState.matchActive) {
+        saveGameState();
+    }
+    
     // Update player displays
     const player1Display = document.getElementById('player1-display');
     const player2Display = document.getElementById('player2-display');
@@ -2525,6 +2587,10 @@ function startNewLeg() {
 }
 
 function endMatch() {
+    // Mark match as inactive and clear saved state
+    gameState.matchActive = false;
+    clearSavedGameState();
+    
     // Reset all match data
     const startScore = gameState.matchSettings.startScore || 501;
     
@@ -2831,6 +2897,43 @@ window.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM loaded, initializing...');
     
     await initializePlayerLibrary();
+    
+    // Check for saved game state
+    const savedState = restoreGameState();
+    if (savedState) {
+        const timeSaved = new Date(savedState.timestamp || Date.now()).toLocaleTimeString();
+        const shouldRestore = confirm(
+            `Found a saved match from ${timeSaved}.\n\n` +
+            `${savedState.players.player1.name} (${savedState.players.player1.score}) vs ${savedState.players.player2.name} (${savedState.players.player2.score})\n` +
+            `Legs: ${savedState.players.player1.legWins} - ${savedState.players.player2.legWins}\n` +
+            `Sets: ${savedState.players.player1.setWins} - ${savedState.players.player2.setWins}\n\n` +
+            `Would you like to continue this match?`
+        );
+
+        if (shouldRestore) {
+            console.log('📂 Restoring saved match');
+            
+            // Restore all game state (except playerLibrary which we already loaded)
+            Object.assign(gameState, savedState);
+            gameState.matchActive = true;
+            
+            // Show the game screen directly
+            showScreen('game-screen');
+            updateGameScreen();
+            updateActionButtonText();
+            
+            // Reconnect to Supabase if needed
+            if (window.GameStateSync) {
+                window.GameStateSync.syncState();
+            }
+            
+            return; // Skip normal initialization
+        } else {
+            // User declined, clear the saved state
+            clearSavedGameState();
+        }
+    }
+    
     renderPlayerSelectionLists();
     showScreen('player-selection-screen');
     
