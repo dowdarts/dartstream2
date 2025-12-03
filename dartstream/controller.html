@@ -466,7 +466,7 @@
             }
             
             connectionCode = codeInput.value;
-            localStorage.setItem('score bug-connection-code', connectionCode);
+            localStorage.setItem('scoreboard-connection-code', connectionCode);
             
             // Initialize Supabase for remote communication
             setupSupabaseConnection();
@@ -539,9 +539,9 @@
             sendToScoreBug(settings);
             
             // Save to localStorage
-            localStorage.setItem('score bug-settings', JSON.stringify(settings));
+            localStorage.setItem('scoreboard-settings', JSON.stringify(settings));
             
-            alert('score bug settings updated!');
+            alert('Scoreboard settings updated!');
         }
 
         // Handle ad image upload
@@ -634,18 +634,22 @@
 
         // Send message to score bug window
         function sendToScoreBug(message) {
+            console.log('📤 Sending to scoreboard:', message);
+            
             // Send via BroadcastChannel (same browser, different tabs)
             if (controlChannel) {
                 try {
                     controlChannel.postMessage(message);
+                    console.log('✅ Sent via BroadcastChannel');
                 } catch (e) {
-                    console.warn('BroadcastChannel failed:', e);
+                    console.warn('❌ BroadcastChannel failed:', e);
                 }
             }
             
             // Also save to localStorage with timestamp (for local/OBS dock communication)
             const channel = 'dartstream-control-' + Date.now();
             localStorage.setItem(channel, JSON.stringify(message));
+            console.log('✅ Sent via localStorage:', channel);
             
             // Trigger a custom storage event for same-window communication (for OBS docks)
             window.dispatchEvent(new StorageEvent('storage', {
@@ -678,8 +682,8 @@
             // Start periodic ping
             setInterval(pingScoreBug, 5000);
             
-            // Load score bug settings
-            const savedSettings = localStorage.getItem('score bug-settings');
+            // Load scoreboard settings
+            const savedSettings = localStorage.getItem('scoreboard-settings');
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
                 if (settings.header) document.getElementById('headerText').value = settings.header;
