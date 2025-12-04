@@ -2980,7 +2980,7 @@ window.addEventListener('DOMContentLoaded', async function() {
             
             // Reconnect to Supabase if needed
             if (window.GameStateSync) {
-                window.GameStateSync.syncState();
+                window.GameStateSync.syncGameState(gameState);
             }
             
             return; // Skip normal initialization
