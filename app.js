@@ -2012,24 +2012,32 @@ function confirmScore() {
     
     updateGameScreen();
     
-    // Check for impossible finishes (can't finish on a double)
-    const impossibleFinishes = [169, 168, 166, 165, 163, 162, 159];
-    const cannotCheckout = finalScore > 0 && finalScore <= 170 && 
-                          (impossibleFinishes.includes(finalScore) || finalScore === 1);
-    
-    // Check if player finished (reached 0 or below) or has impossible finish
-    if (finalScore <= 0 || cannotCheckout) {
-        if (finalScore === 0) {
-            // Player finished exactly - prompt for darts used
-            handleLegWin();
-        } else {
-            // Player went bust (negative score or impossible finish)
-            handleBust();
-        }
-    } else {
-        // Normal turn - submit after brief delay
-        setTimeout(() => submitTurn(), 300);
+    // Check if player finished (reached exactly 0)
+    if (finalScore === 0) {
+        handleLegWin();
+        return;
     }
+    
+    // Check if player went bust (negative score)
+    if (finalScore < 0) {
+        handleBust();
+        return;
+    }
+    
+    // Check for impossible finishes only if score is low enough to be finishing
+    // (170 is max checkout, so only check impossibles below that)
+    const impossibleFinishes = [169, 168, 166, 165, 163, 162, 159];
+    if (finalScore === 1 || (finalScore > 1 && finalScore <= 170 && impossibleFinishes.includes(finalScore))) {
+        // Only call it a bust if they left themselves on an impossible finish
+        // This means their score BEFORE this turn was checkable, but now it's not
+        if (player.preTurnScore <= 170) {
+            handleBust();
+            return;
+        }
+    }
+    
+    // Normal turn - submit after brief delay
+    setTimeout(() => submitTurn(), 300);
 }
 
 function handleBust() {
