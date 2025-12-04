@@ -815,6 +815,52 @@ function updateStartingPlayerScreen() {
     // Update game format display
     updateGameFormatDisplay();
     updateLegsFormatDisplay();
+    
+    // Generate connection code for scoreboard sync BEFORE game starts
+    if (window.GameStateSync) {
+        const connectionCode = window.GameStateSync.startNewMatch();
+        
+        // Update connection code display on starting player screen
+        const codeDisplay2 = document.getElementById('connection-code-display-2');
+        if (codeDisplay2) {
+            codeDisplay2.textContent = connectionCode;
+        }
+        
+        // Also prepare the game state data for scoreboard to connect early
+        const initialState = {
+            player1: {
+                name: gameState.players.player1.name,
+                score: startScore,
+                legAvg: 0,
+                matchAvg: 0,
+                legWins: 0,
+                setWins: 0,
+                turnHistory: [],
+                isActive: false
+            },
+            player2: {
+                name: gameState.players.player2.name,
+                score: startScore,
+                legAvg: 0,
+                matchAvg: 0,
+                legWins: 0,
+                setWins: 0,
+                turnHistory: [],
+                isActive: false
+            },
+            gameType: gameState.matchSettings.gameType || '501',
+            startType: gameState.matchSettings.startType || 'SIDO',
+            startScore: startScore,
+            currentSet: 1,
+            currentLeg: 1,
+            visitNumber: 1,
+            gameStarted: false, // Not started yet, just connected
+            legStarter: null
+        };
+        
+        // Sync initial state so scoreboard can connect
+        window.GameStateSync.syncGameState(initialState);
+    }
 }
 
 function updateGameFormatDisplay() {
@@ -1611,18 +1657,16 @@ function startGame() {
     gameState.turnTotal = 0;
     gameState.visitNumber = 1;
     
-    // Start new Supabase match for scoreboard sync and display connection code
-    // MUST be called BEFORE updateGameScreen() so the code exists when syncing
+    // Connection code already generated on starting player screen
+    // Just update the displays on game screen
     if (window.GameStateSync) {
-        const connectionCode = window.GameStateSync.startNewMatch();
+        const connectionCode = window.GameStateSync.getConnectionCode();
         
         // Update all connection code displays
         const codeDisplay1 = document.getElementById('connection-code-display');
-        const codeDisplay2 = document.getElementById('connection-code-display-2');
         const codeDisplay3 = document.getElementById('connection-code-display-3');
         
         if (codeDisplay1) codeDisplay1.textContent = connectionCode;
-        if (codeDisplay2) codeDisplay2.textContent = connectionCode;
         if (codeDisplay3) codeDisplay3.textContent = connectionCode;
     }
     
