@@ -3109,11 +3109,62 @@ window.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
-    console.log('All scoring event handlers attached');
+    // Keyboard event handler
+    document.addEventListener('keydown', function(event) {
+        // Ignore keyboard input if in a modal or input field
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.tagName === 'SELECT') {
+            return;
+        }
+        
+        // Ignore if not on game screen
+        const gameScreen = document.getElementById('game-screen');
+        if (!gameScreen || !gameScreen.classList.contains('active')) {
+            return;
+        }
+        
+        const key = event.key;
+        
+        // Number keys 0-9
+        if (key >= '0' && key <= '9') {
+            event.preventDefault();
+            addDigit(key);
+        }
+        // Enter key - submit score
+        else if (key === 'Enter') {
+            event.preventDefault();
+            if (gameState.isEditMode) {
+                applyEditedScore();
+            } else if (gameState.currentInput) {
+                submitScore();
+            } else {
+                // If no input, quick-hit 0 (MISS)
+                quickHitScore(0);
+            }
+        }
+        // Backspace - remove last digit or undo
+        else if (key === 'Backspace') {
+            event.preventDefault();
+            // Same logic as action button
+            if (gameState.isEditMode && gameState.currentInput.length > 0) {
+                gameState.currentInput = gameState.currentInput.slice(0, -1);
+                updateGameScreen();
+            } else if (gameState.currentInput.length > 0) {
+                gameState.currentInput = gameState.currentInput.slice(0, -1);
+                updateGameScreen();
+            } else if (gameState.dartScores.length > 0) {
+                gameState.dartScores.pop();
+                updateGameScreen();
+            } else {
+                // Trigger undo - click the action button
+                document.getElementById('action-btn')?.click();
+            }
+        }
+    });
     
-    // Number pad scoring and keyboard handlers removed - will be rewritten
-    console.log('Player library initialized, ready for scoring logic');
+    console.log('All scoring event handlers attached');
+    console.log('Keyboard shortcuts enabled: 0-9 for numbers, Enter to submit, Backspace to undo');
 });
 
 
 // All duplicate event handlers removed - scoring logic will be rewritten
+
