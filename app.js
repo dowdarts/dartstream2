@@ -2372,18 +2372,19 @@ function showGoodShotPrompt(score) {
 }
 
 function switchPlayer() {
+    // Increment visit number BEFORE switching if we're about to switch back to the leg starter
+    // This ensures the visit increments after both players have thrown
+    const nextPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+    if (nextPlayer === gameState.legStarter) {
+        gameState.visitNumber++;
+    }
+    
     // Switch to next player
-    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+    gameState.currentPlayer = nextPlayer;
     
     // Store pre-turn score for new player
     const newPlayerKey = `player${gameState.currentPlayer}`;
     gameState.players[newPlayerKey].preTurnScore = gameState.players[newPlayerKey].score;
-    
-    // Increment visit number when switching back to the leg starter
-    // This way both players throw in the same visit number
-    if (gameState.currentPlayer === gameState.legStarter) {
-        gameState.visitNumber++;
-    }
     
     updateGameScreen();
 }
