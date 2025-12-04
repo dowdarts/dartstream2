@@ -2939,8 +2939,10 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     // Attach number button event handlers
     const numButtons = document.querySelectorAll('.num-btn[data-score]');
+    console.log('Found number buttons:', numButtons.length);
     numButtons.forEach(btn => {
         btn.addEventListener('click', function() {
+            console.log('Button clicked:', this.getAttribute('data-score'));
             const score = this.getAttribute('data-score');
             
             // Check if this is a dual-function button
