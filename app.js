@@ -2379,9 +2379,9 @@ function switchPlayer() {
     const newPlayerKey = `player${gameState.currentPlayer}`;
     gameState.players[newPlayerKey].preTurnScore = gameState.players[newPlayerKey].score;
     
-    // Increment visit number only when switching TO player 1
+    // Increment visit number when switching back to the leg starter
     // This way both players throw in the same visit number
-    if (gameState.currentPlayer === 1) {
+    if (gameState.currentPlayer === gameState.legStarter) {
         gameState.visitNumber++;
     }
     
