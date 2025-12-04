@@ -3248,7 +3248,7 @@ window.addEventListener('DOMContentLoaded', async function() {
     console.log('Keyboard shortcuts enabled: 0-9 for numbers, Enter to submit, Backspace to undo');
     
     // Start heartbeat to keep match visible in Match Central
-    // Send heartbeat every 10 seconds when game is active
+    // Send heartbeat every 1 minute when game is active
     setInterval(() => {
         const gameScreen = document.getElementById('game-screen');
         if (gameScreen && gameScreen.classList.contains('active')) {
@@ -3256,7 +3256,7 @@ window.addEventListener('DOMContentLoaded', async function() {
                 window.GameStateSync.sendHeartbeat();
             }
         }
-    }, 10000); // Every 10 seconds
+    }, 60000); // Every 1 minute
 });
 
 

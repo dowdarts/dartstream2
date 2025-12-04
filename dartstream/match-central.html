@@ -286,14 +286,14 @@
 
         async function cleanupOldGames() {
             try {
-                // Get all games older than 1 minute
-                const oneMinuteAgo = new Date(Date.now() - (60 * 1000)).toISOString();
+                // Get all games older than 3 minutes
+                const threeMinutesAgo = new Date(Date.now() - (3 * 60 * 1000)).toISOString();
                 
                 // First select them to see what we're deleting
                 const { data: oldGames } = await supabase
                     .from('game_states')
                     .select('game_id')
-                    .lt('updated_at', oneMinuteAgo);
+                    .lt('updated_at', threeMinutesAgo);
                 
                 if (oldGames && oldGames.length > 0) {
                     console.log(`🧹 Attempting to delete ${oldGames.length} old games`);
@@ -327,16 +327,16 @@
                 if (error) throw error;
                 
                 const now = Date.now();
-                const fifteenSecondsAgo = now - (15 * 1000);
+                const twoMinutesAgo = now - (2 * 60 * 1000);
                 
                 let deletedCount = 0;
                 
-                // Delete any match not updated in last 15 seconds
+                // Delete any match not updated in last 2 minutes
                 for (const game of data || []) {
                     const lastUpdate = new Date(game.updated_at).getTime();
                     const secondsAgo = Math.floor((now - lastUpdate) / 1000);
                     
-                    if (lastUpdate < fifteenSecondsAgo) {
+                    if (lastUpdate < twoMinutesAgo) {
                         const { error: deleteError } = await supabase
                             .from('game_states')
                             .delete()
@@ -382,7 +382,7 @@
                 
                 if (data && data.length > 0) {
                     const now = Date.now();
-                    const fifteenSecondsAgo = now - (15 * 1000);
+                    const twoMinutesAgo = now - (2 * 60 * 1000);
                     
                     data.forEach(game => {
                         const lastUpdate = new Date(game.updated_at).getTime();
@@ -391,8 +391,8 @@
                         console.log(`🎯 Match ${game.game_id}: updated ${secondsAgo}s ago (${new Date(game.updated_at).toLocaleTimeString()})`);
                         
                         if (game.game_state && game.game_state.gameStarted === true) {
-                            // Only show matches updated in the last 15 seconds (active browser)
-                            if (lastUpdate >= fifteenSecondsAgo) {
+                            // Only show matches updated in the last 2 minutes (active browser with 1 min heartbeat)
+                            if (lastUpdate >= twoMinutesAgo) {
                                 activeMatches[game.game_id] = {
                                     code: game.game_id,
                                     data: game.game_state,
