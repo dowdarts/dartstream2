@@ -1500,22 +1500,15 @@ function deleteTurnFromHistory(player, turnIndex) {
     // Remove the turn from history
     playerData.turnHistory.splice(turnIndex, 1);
     
-    // Adjust visitNumber based on the turn histories
-    // Visit number should reflect the current round both players are in
+    // Adjust visitNumber based on completed rounds
+    // Visit number represents which round we're in
+    // A complete round = both players have thrown equal times
     const p1Turns = gameState.players.player1.turnHistory.length;
     const p2Turns = gameState.players.player2.turnHistory.length;
+    const completedRounds = Math.min(p1Turns, p2Turns);
     
-    // If both players have equal turns, we're at the start of a new visit
-    // If player 1 has more, we're mid-visit (player 2 hasn't thrown yet)
-    if (p1Turns === p2Turns) {
-        gameState.visitNumber = p1Turns + 1;
-    } else if (p1Turns > p2Turns) {
-        // Player 1 has thrown in current visit, player 2 hasn't
-        gameState.visitNumber = p1Turns;
-    } else {
-        // This shouldn't happen (p2 can't have more turns than p1)
-        gameState.visitNumber = p2Turns + 1;
-    }
+    // Current visit = completed rounds + 1
+    gameState.visitNumber = completedRounds + 1;
     
     // Recalculate all stats from the beginning
     const startScore = gameState.matchSettings.startScore;
@@ -3049,6 +3042,14 @@ window.addEventListener('DOMContentLoaded', async function() {
                 // Return to that player's turn (as if they never shot)
                 gameState.currentPlayer = deletedPlayer;
                 
+                // Recalculate visit number based on completed rounds
+                // Visit number = number of complete rounds + 1
+                // A round is complete when both players have thrown equal times
+                const p1Turns = gameState.players.player1.turnHistory.length;
+                const p2Turns = gameState.players.player2.turnHistory.length;
+                const completedRounds = Math.min(p1Turns, p2Turns);
+                gameState.visitNumber = completedRounds + 1;
+                
                 updateGameScreen();
                 return;
             }
@@ -3217,8 +3218,45 @@ window.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
+    // Generate New Code button handler
+    document.getElementById('generate-new-code-btn')?.addEventListener('click', function() {
+        // Generate new code and update all displays
+        const newCode = window.GameStateSync.generateNewCode();
+        
+        const displays = [
+            'connection-code-display',
+            'connection-code-display-2',
+            'connection-code-display-3'
+        ];
+        
+        displays.forEach(displayId => {
+            const display = document.getElementById(displayId);
+            if (display) {
+                display.textContent = newCode;
+            }
+        });
+        
+        console.log('🔄 Manual code regeneration:', newCode);
+        
+        // Sync initial state with new code
+        if (window.GameStateSync && window.GameStateSync.syncGameState) {
+            window.GameStateSync.syncGameState(gameState);
+        }
+    });
+    
     console.log('All scoring event handlers attached');
     console.log('Keyboard shortcuts enabled: 0-9 for numbers, Enter to submit, Backspace to undo');
+    
+    // Start heartbeat to keep match visible in Match Central
+    // Send heartbeat every 10 seconds when game is active
+    setInterval(() => {
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen && gameScreen.classList.contains('active')) {
+            if (window.GameStateSync && window.GameStateSync.sendHeartbeat) {
+                window.GameStateSync.sendHeartbeat();
+            }
+        }
+    }, 10000); // Every 10 seconds
 });
 
 

@@ -190,19 +190,70 @@ const GameStateSync = {
         return currentConnectionCode;
     },
 
-    // Start a new match (generate new code)
-    startNewMatch() {
-        currentConnectionCode = this.generateConnectionCode();
+    // Get or create session connection code (one code per browser session)
+    getOrCreateSessionCode() {
+        // Check if we already have a session code
+        let sessionCode = sessionStorage.getItem('dartstream-session-code');
+        
+        if (!sessionCode) {
+            // Generate new code and store in session
+            sessionCode = this.generateConnectionCode();
+            sessionStorage.setItem('dartstream-session-code', sessionCode);
+            console.log('🎯 Generated new session code:', sessionCode);
+        } else {
+            console.log('🔄 Reusing session code:', sessionCode);
+        }
+        
+        currentConnectionCode = sessionCode;
         currentMatchId = 'match_' + currentConnectionCode + '_' + Date.now();
-        console.log('🎯 New match started with code:', currentConnectionCode);
+        
         return currentConnectionCode;
     },
 
-    // End match (clear match ID and code)
+    // Start a new match (reuse session code or generate if first time)
+    startNewMatch() {
+        return this.getOrCreateSessionCode();
+    },
+
+    // Generate new code (for manual refresh)
+    generateNewCode() {
+        // Clear old session code
+        sessionStorage.removeItem('dartstream-session-code');
+        // Generate new one
+        currentConnectionCode = this.generateConnectionCode();
+        sessionStorage.setItem('dartstream-session-code', currentConnectionCode);
+        currentMatchId = 'match_' + currentConnectionCode + '_' + Date.now();
+        console.log('🔄 Manually generated new code:', currentConnectionCode);
+        return currentConnectionCode;
+    },
+
+    // End match (clear match ID but keep session code)
     endMatch() {
         currentMatchId = null;
-        currentConnectionCode = null;
-        console.log('🏁 Match ended');
+        // Don't clear currentConnectionCode - keep it for next match
+        console.log('🏁 Match ended, code preserved for session');
+    },
+
+    // Send heartbeat to keep match visible in Match Central
+    async sendHeartbeat() {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase || !currentMatchId || !currentConnectionCode) {
+                return;
+            }
+
+            // Just update the timestamp to show the match is still active
+            await supabase
+                .from('game_states')
+                .update({ 
+                    updated_at: new Date().toISOString()
+                })
+                .eq('game_id', currentConnectionCode);
+            
+            console.log('💓 Heartbeat sent');
+        } catch (error) {
+            console.error('Heartbeat error:', error);
+        }
     },
 
     // Sync game state to Supabase for scoreboard
