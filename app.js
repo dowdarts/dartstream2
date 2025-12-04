@@ -1454,12 +1454,22 @@ function deleteTurnFromHistory(player, turnIndex) {
     // Remove the turn from history
     playerData.turnHistory.splice(turnIndex, 1);
     
-    // Adjust visitNumber based on the longest turn history
-    // Visit number should be 1 + max(p1 turns, p2 turns)
+    // Adjust visitNumber based on the turn histories
+    // Visit number should reflect the current round both players are in
     const p1Turns = gameState.players.player1.turnHistory.length;
     const p2Turns = gameState.players.player2.turnHistory.length;
-    const maxTurns = Math.max(p1Turns, p2Turns);
-    gameState.visitNumber = maxTurns + 1;
+    
+    // If both players have equal turns, we're at the start of a new visit
+    // If player 1 has more, we're mid-visit (player 2 hasn't thrown yet)
+    if (p1Turns === p2Turns) {
+        gameState.visitNumber = p1Turns + 1;
+    } else if (p1Turns > p2Turns) {
+        // Player 1 has thrown in current visit, player 2 hasn't
+        gameState.visitNumber = p1Turns;
+    } else {
+        // This shouldn't happen (p2 can't have more turns than p1)
+        gameState.visitNumber = p2Turns + 1;
+    }
     
     // Recalculate all stats from the beginning
     const startScore = gameState.matchSettings.startScore;
