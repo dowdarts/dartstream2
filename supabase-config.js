@@ -7,12 +7,17 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize Supabase client
 function getSupabaseClient() {
     if (!window.supabaseClient) {
-        if (typeof window.supabase === 'undefined') {
-            console.error('Supabase library not loaded');
+        if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+            console.error('Supabase library not loaded yet');
             return null;
         }
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('Supabase client initialized');
+        try {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase client initialized');
+        } catch (error) {
+            console.error('Error initializing Supabase client:', error);
+            return null;
+        }
     }
     return window.supabaseClient;
 }
