@@ -2880,22 +2880,22 @@ function updateScoreHistory() {
         const isEditingP2 = gameState.isEditMode && gameState.editModePlayer === 2 && gameState.editModeTurnIndex === (visit - 1);
         
         if (isEditingP1 || isEditingP2) {
-            // Show arrow for the turn being edited
+            // Show yellow arrow for the turn being edited
             if (isEditingP1) {
                 turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffd700;">← ${visit}</span>`;
             } else {
                 turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffd700;">${visit} →</span>`;
             }
         } else if (isCurrentTurn) {
-            // Show arrow for current player
+            // Show white arrow for current player (normal bright)
             if (gameState.currentPlayer === 1) {
-                turnColumn.innerHTML = `<span class="turn-arrow">← ${visit}</span>`;
+                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffffff;">← ${visit}</span>`;
             } else {
-                turnColumn.innerHTML = `<span class="turn-arrow">${visit} →</span>`;
+                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffffff;">${visit} →</span>`;
             }
         } else {
-            // Just show turn number for completed turns
-            turnColumn.innerHTML = `<span class="turn-number">${visit}</span>`;
+            // Show faded gray for completed turns
+            turnColumn.innerHTML = `<span class="turn-number" style="color: #666666;">${visit}</span>`;
         }
         
         // Player 2 column
