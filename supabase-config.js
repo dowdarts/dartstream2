@@ -327,21 +327,36 @@ const GameStateSync = {
                 lastUpdate: Date.now()
             };
 
-            // Upsert to Supabase with connection code as game_id
-            const { data, error } = await supabase
+            // First, try to update existing row
+            const { data: updateData, error: updateError } = await supabase
                 .from('game_states')
-                .upsert({
-                    game_id: currentConnectionCode,
+                .update({
                     game_state: scoreboardState,
                     updated_at: new Date().toISOString()
-                }, {
-                    onConflict: 'game_id'
-                });
+                })
+                .eq('game_id', currentConnectionCode)
+                .select();
 
-            if (error) {
-                console.error('❌ Error syncing to Supabase:', error);
+            // If no rows were updated, insert a new one
+            if (updateError || !updateData || updateData.length === 0) {
+                const { data: insertData, error: insertError } = await supabase
+                    .from('game_states')
+                    .insert({
+                        id: currentMatchId,
+                        game_id: currentConnectionCode,
+                        game_state: scoreboardState,
+                        updated_at: new Date().toISOString()
+                    })
+                    .select();
+
+                if (insertError) {
+                    console.error('❌ Error inserting to Supabase:', insertError);
+                } else {
+                    console.log('✅ State inserted to Supabase with code:', currentConnectionCode);
+                    console.log('📊 Game state:', scoreboardState);
+                }
             } else {
-                console.log('✅ State synced to Supabase with code:', currentConnectionCode);
+                console.log('✅ State updated in Supabase with code:', currentConnectionCode);
                 console.log('📊 Game state:', scoreboardState);
             }
         } catch (error) {
