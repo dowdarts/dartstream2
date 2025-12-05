@@ -394,26 +394,25 @@ async function createTournament() {
         const tiebreakerPriority = Array.from(document.querySelectorAll('.tiebreaker-item'))
             .map(item => item.dataset.field);
         
-        // Create tournament - use rpc to bypass schema cache issue
+        // Create tournament - insert without num_groups first to bypass cache
         const tournamentData = {
             name: name.trim(),
             status: TOURNAMENT_STATUS.SETUP,
             scoring_method: scoringMethod,
             game_format: gameFormat,
             num_boards: numBoards,
-            num_groups: numGroups,
             players_advancing: playersAdvancing,
             tie_breaker_priority: tiebreakerPriority
         };
         
-        // Insert without .select() to avoid column validation
+        // Insert tournament
         const { data: insertData, error: insertError } = await client
             .from(TABLES.TOURNAMENTS)
             .insert([tournamentData]);
         
         if (insertError) throw insertError;
         
-        // Fetch the created tournament by name
+        // Fetch the created tournament
         const { data: tournament, error: fetchError } = await client
             .from(TABLES.TOURNAMENTS)
             .select('*')
@@ -423,6 +422,17 @@ async function createTournament() {
             .single();
         
         if (fetchError) throw fetchError;
+        
+        // Now update with num_groups using raw update
+        const { error: updateError } = await client
+            .from(TABLES.TOURNAMENTS)
+            .update({ num_groups: numGroups })
+            .eq('id', tournament.id);
+        
+        if (updateError) throw updateError;
+        
+        // Update local object
+        tournament.num_groups = numGroups;
         
         // Calculate group sizes and assign players
         const groupSizes = calculateOptimalGroupSizes(tournamentState.selectedPlayers.length, numGroups);
