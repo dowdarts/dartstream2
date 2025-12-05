@@ -331,10 +331,11 @@ const GameStateSync = {
             const { data, error } = await supabase
                 .from('game_states')
                 .upsert({
-                    id: currentMatchId,
                     game_id: currentConnectionCode,
                     game_state: scoreboardState,
                     updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'game_id'
                 });
 
             if (error) {
