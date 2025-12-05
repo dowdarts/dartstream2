@@ -48,6 +48,11 @@ function initializeEventListeners() {
     // Add player button
     document.getElementById('add-player-btn')?.addEventListener('click', showAddPlayerModal);
     
+    // Add player modal controls
+    document.getElementById('close-add-player-modal')?.addEventListener('click', closeAddPlayerModal);
+    document.getElementById('add-player-cancel')?.addEventListener('click', closeAddPlayerModal);
+    document.getElementById('add-player-submit')?.addEventListener('click', submitNewPlayer);
+    
     // Create tournament button
     document.getElementById('create-tournament-btn')?.addEventListener('click', createTournament);
     
@@ -174,13 +179,36 @@ function renderPlayersList(players) {
 }
 
 function showAddPlayerModal() {
-    const firstName = prompt('Enter player first name:');
-    if (!firstName || !firstName.trim()) return;
+    document.getElementById('new-player-firstname').value = '';
+    document.getElementById('new-player-lastname').value = '';
+    document.getElementById('add-player-modal').classList.add('active');
+    document.getElementById('new-player-firstname').focus();
     
-    const lastName = prompt('Enter player last name:');
-    if (!lastName || !lastName.trim()) return;
+    // Add Enter key support
+    const handleEnter = (e) => {
+        if (e.key === 'Enter') {
+            submitNewPlayer();
+        }
+    };
+    document.getElementById('new-player-firstname').addEventListener('keypress', handleEnter);
+    document.getElementById('new-player-lastname').addEventListener('keypress', handleEnter);
+}
+
+function closeAddPlayerModal() {
+    document.getElementById('add-player-modal').classList.remove('active');
+}
+
+async function submitNewPlayer() {
+    const firstName = document.getElementById('new-player-firstname').value.trim();
+    const lastName = document.getElementById('new-player-lastname').value.trim();
     
-    addPlayer(firstName.trim(), lastName.trim());
+    if (!firstName || !lastName) {
+        showError('Please enter both first and last name');
+        return;
+    }
+    
+    await addPlayer(firstName, lastName);
+    closeAddPlayerModal();
 }
 
 async function addPlayer(firstName, lastName) {

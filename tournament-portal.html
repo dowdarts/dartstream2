@@ -353,6 +353,42 @@
         </div>
     </div>
 
+    <!-- Add Player Modal -->
+    <div id="add-player-modal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2>Add New Player</h2>
+                <button class="close-modal" id="close-add-player-modal">✕</button>
+            </div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input 
+                        type="text" 
+                        id="new-player-firstname" 
+                        class="player-input" 
+                        placeholder="Enter first name"
+                        autocomplete="off"
+                        autocapitalize="words">
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input 
+                        type="text" 
+                        id="new-player-lastname" 
+                        class="player-input" 
+                        placeholder="Enter last name"
+                        autocomplete="off"
+                        autocapitalize="words">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-primary" id="add-player-submit">Add Player</button>
+                    <button class="btn-secondary" id="add-player-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="tournament-config.js"></script>
     <script src="tournament-app.js"></script>
