@@ -2855,7 +2855,8 @@ function updateScoreHistory() {
         if (p1TurnIndex < p1History.length) {
             const turnData = p1History[p1TurnIndex];
             const displayText = turnData.bust ? `${turnData.total} (BUST)` : turnData.total;
-            p1Column.innerHTML = `<div class="darts">${displayText}</div>`;
+            const isEditingThisTurn = gameState.isEditMode && gameState.editModePlayer === 1 && gameState.editModeTurnIndex === p1TurnIndex;
+            p1Column.innerHTML = `<div class="darts" style="color: ${isEditingThisTurn ? '#ffd700' : 'inherit'}">${displayText}</div>`;
             // Make clickable if it's a completed turn
             p1Column.style.cursor = 'pointer';
             p1Column.addEventListener('click', () => {
@@ -2874,7 +2875,18 @@ function updateScoreHistory() {
         const turnColumn = document.createElement('div');
         turnColumn.className = 'turn-info';
         
-        if (isCurrentTurn) {
+        // Check if this turn is being edited
+        const isEditingP1 = gameState.isEditMode && gameState.editModePlayer === 1 && gameState.editModeTurnIndex === (visit - 1);
+        const isEditingP2 = gameState.isEditMode && gameState.editModePlayer === 2 && gameState.editModeTurnIndex === (visit - 1);
+        
+        if (isEditingP1 || isEditingP2) {
+            // Show arrow for the turn being edited
+            if (isEditingP1) {
+                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffd700;">← ${visit}</span>`;
+            } else {
+                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffd700;">${visit} →</span>`;
+            }
+        } else if (isCurrentTurn) {
             // Show arrow for current player
             if (gameState.currentPlayer === 1) {
                 turnColumn.innerHTML = `<span class="turn-arrow">← ${visit}</span>`;
@@ -2895,7 +2907,8 @@ function updateScoreHistory() {
         if (p2TurnIndex < p2History.length) {
             const turnData = p2History[p2TurnIndex];
             const displayText = turnData.bust ? `${turnData.total} (BUST)` : turnData.total;
-            p2Column.innerHTML = `<div class="darts">${displayText}</div>`;
+            const isEditingThisTurn = gameState.isEditMode && gameState.editModePlayer === 2 && gameState.editModeTurnIndex === p2TurnIndex;
+            p2Column.innerHTML = `<div class="darts" style="color: ${isEditingThisTurn ? '#ffd700' : 'inherit'}">${displayText}</div>`;
             // Make clickable if it's a completed turn
             p2Column.style.cursor = 'pointer';
             p2Column.addEventListener('click', () => {
