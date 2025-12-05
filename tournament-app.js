@@ -394,21 +394,16 @@ async function createTournament() {
         const tiebreakerPriority = Array.from(document.querySelectorAll('.tiebreaker-item'))
             .map(item => item.dataset.field);
         
-        // Create tournament - insert without num_groups first to bypass cache
-        const tournamentData = {
-            name: name.trim(),
-            status: TOURNAMENT_STATUS.SETUP,
-            scoring_method: scoringMethod,
-            game_format: gameFormat,
-            num_boards: numBoards,
-            players_advancing: playersAdvancing,
-            tie_breaker_priority: tiebreakerPriority
-        };
-        
-        // Insert tournament
+        // Create tournament with ONLY basic columns to bypass stale cache
+        // Only use: name, status, scoring_method, game_format
         const { data: insertData, error: insertError } = await client
             .from(TABLES.TOURNAMENTS)
-            .insert([tournamentData]);
+            .insert([{
+                name: name.trim(),
+                status: TOURNAMENT_STATUS.SETUP,
+                scoring_method: scoringMethod,
+                game_format: gameFormat
+            }]);
         
         if (insertError) throw insertError;
         
@@ -423,16 +418,24 @@ async function createTournament() {
         
         if (fetchError) throw fetchError;
         
-        // Now update with num_groups using raw update
+        // Now update with all other fields using raw update
         const { error: updateError } = await client
             .from(TABLES.TOURNAMENTS)
-            .update({ num_groups: numGroups })
+            .update({ 
+                num_boards: numBoards,
+                num_groups: numGroups,
+                players_advancing: playersAdvancing,
+                tie_breaker_priority: tiebreakerPriority
+            })
             .eq('id', tournament.id);
         
         if (updateError) throw updateError;
         
         // Update local object
+        tournament.num_boards = numBoards;
         tournament.num_groups = numGroups;
+        tournament.players_advancing = playersAdvancing;
+        tournament.tie_breaker_priority = tiebreakerPriority;
         
         // Calculate group sizes and assign players
         const groupSizes = calculateOptimalGroupSizes(tournamentState.selectedPlayers.length, numGroups);
