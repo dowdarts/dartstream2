@@ -2998,6 +2998,9 @@ window.addEventListener('DOMContentLoaded', async function() {
             updateGameScreen();
             updateActionButtonText();
             
+            // Initialize event handlers (same as normal game flow)
+            initializeEventHandlers();
+            
             return; // Skip normal initialization
         } else {
             // User declined, clear the saved state
@@ -3008,6 +3011,12 @@ window.addEventListener('DOMContentLoaded', async function() {
     renderPlayerSelectionLists();
     showScreen('player-selection-screen');
     
+    // Initialize event handlers for normal game start
+    initializeEventHandlers();
+});
+
+// Initialize all game event handlers
+function initializeEventHandlers() {
     // Attach number button event handlers
     const numButtons = document.querySelectorAll('.num-btn[data-score]');
     console.log('Found number buttons:', numButtons.length);
@@ -3281,7 +3290,7 @@ window.addEventListener('DOMContentLoaded', async function() {
             }
         }
     }, 60000); // Every 1 minute
-});
+}
 
 
 // All duplicate event handlers removed - scoring logic will be rewritten
