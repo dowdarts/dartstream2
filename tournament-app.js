@@ -390,12 +390,8 @@ async function createTournament() {
     if (!client) return;
     
     try {
-        // Get tiebreaker priority order
-        const tiebreakerPriority = Array.from(document.querySelectorAll('.tiebreaker-item'))
-            .map(item => item.dataset.field);
-        
-        // Create tournament with ONLY basic columns to bypass stale cache
-        // Only use: name, status, scoring_method, game_format
+        // Create tournament with ONLY the columns PostgREST knows about
+        // Just use name, status, scoring_method, game_format - everything else uses defaults
         const { data: insertData, error: insertError } = await client
             .from(TABLES.TOURNAMENTS)
             .insert([{
@@ -418,27 +414,14 @@ async function createTournament() {
         
         if (fetchError) throw fetchError;
         
-        // Now update with all other fields using raw update
-        const { error: updateError } = await client
-            .from(TABLES.TOURNAMENTS)
-            .update({ 
-                num_boards: numBoards,
-                num_groups: numGroups,
-                players_advancing: playersAdvancing,
-                tie_breaker_priority: tiebreakerPriority
-            })
-            .eq('id', tournament.id);
-        
-        if (updateError) throw updateError;
-        
-        // Update local object
-        tournament.num_boards = numBoards;
-        tournament.num_groups = numGroups;
-        tournament.players_advancing = playersAdvancing;
-        tournament.tie_breaker_priority = tiebreakerPriority;
+        // Use default values for everything else (they're set in the database)
+        // num_boards defaults to 2, num_groups defaults to 2, players_advancing defaults to 2
+        const actualNumBoards = tournament.num_boards || 2;
+        const actualNumGroups = tournament.num_groups || 2;
+        const actualPlayersAdvancing = tournament.players_advancing || 2;
         
         // Calculate group sizes and assign players
-        const groupSizes = calculateOptimalGroupSizes(tournamentState.selectedPlayers.length, numGroups);
+        const groupSizes = calculateOptimalGroupSizes(tournamentState.selectedPlayers.length, actualNumGroups);
         const shuffled = [...tournamentState.selectedPlayers].sort(() => Math.random() - 0.5);
         const groupLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         
@@ -465,7 +448,7 @@ async function createTournament() {
         
         // Create board records with connection codes
         const boards = [];
-        for (let i = 1; i <= numBoards; i++) {
+        for (let i = 1; i <= actualNumBoards; i++) {
             boards.push({
                 tournament_id: tournament.id,
                 board_number: i,
@@ -482,7 +465,7 @@ async function createTournament() {
         if (boardsError) throw boardsError;
         
         // Generate round robin matches for all groups
-        await generateRoundRobinMatchesAllGroups(tournament.id, groupSizes, groupLabels, shuffled, numBoards);
+        await generateRoundRobinMatchesAllGroups(tournament.id, groupSizes, groupLabels, shuffled, actualNumBoards);
         
         showSuccess('Tournament created successfully!');
         tournamentState.selectedPlayers = [];
