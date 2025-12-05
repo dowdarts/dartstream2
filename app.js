@@ -2099,6 +2099,12 @@ function handleLegWin() {
         // Set score to exactly 0
         player.score = 0;
         
+        // Store checkout information for scoreboard
+        player.lastCheckout = {
+            score: gameState.turnTotal,
+            darts: actualDarts
+        };
+        
         // Award leg win
         player.legWins++;
         
@@ -2613,6 +2619,7 @@ function startNewLeg() {
     gameState.players.player1.legDarts = 0;
     gameState.players.player1.legScore = 0;
     gameState.players.player1.legAvg = 0;
+    gameState.players.player1.lastCheckout = null;
     gameState.players.player1.turnHistory = [];
     
     gameState.players.player2.score = startScore;
@@ -2620,6 +2627,7 @@ function startNewLeg() {
     gameState.players.player2.legDarts = 0;
     gameState.players.player2.legScore = 0;
     gameState.players.player2.legAvg = 0;
+    gameState.players.player2.lastCheckout = null;
     gameState.players.player2.turnHistory = [];
     
     // Reset game state
