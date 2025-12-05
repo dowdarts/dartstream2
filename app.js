@@ -1524,9 +1524,10 @@ function deleteTurnFromHistory(player, turnIndex) {
         if (turn) {
             currentScore -= turn.total;
             legScore += turn.total;
-            legDarts += turn.darts || 3; // Assume 3 darts per turn
+            const dartsUsed = (typeof turn.darts === 'number' ? turn.darts : 3);
+            legDarts += dartsUsed;
             matchScore += turn.total;
-            matchDarts += turn.darts || 3;
+            matchDarts += dartsUsed;
         }
     }
     
@@ -1570,7 +1571,7 @@ function recalculateScoresFromTurn(player, fromTurnIndex) {
         if (turn) {
             currentScore -= turn.total;
             legScore += turn.total;
-            legDarts += turn.darts;
+            legDarts += (typeof turn.darts === 'number' ? turn.darts : 3);
         }
     }
     
@@ -2048,7 +2049,7 @@ function handleBust() {
     
     // Add bust entry to history with the turn total that caused the bust
     player.turnHistory.push({
-        darts: [gameState.turnTotal],
+        darts: 3, // Assume 3 darts were used on a bust
         total: gameState.turnTotal,
         scoreAfter: player.preTurnScore, // Score stays the same after bust
         bust: true
@@ -2076,18 +2077,19 @@ function handleLegWin() {
         // Validate input
         const actualDarts = Math.min(Math.max(finishDarts, 1), 3);
         
-        // Calculate total darts for this leg
+        // Add the checkout score to totals
+        player.legScore += gameState.turnTotal;
+        player.matchScore += gameState.turnTotal;
+        
+        // Calculate total darts for this leg (including checkout darts)
         const totalDartsThisLeg = player.legDarts + actualDarts;
         
         // Calculate leg average: (points scored / darts thrown) * 3
-        const startScore = gameState.matchSettings.startScore || 501;
-        player.legAvg = (startScore / totalDartsThisLeg) * 3;
+        player.legAvg = (player.legScore / totalDartsThisLeg) * 3;
         
         // Update match stats
         player.legDarts += actualDarts;
         player.matchDarts += actualDarts;
-        player.legScore = startScore; // Full starting score for this leg
-        // matchScore is already being tracked in submitTurn(), don't add again
         
         // Calculate match average
         if (player.matchDarts > 0) {
@@ -2102,7 +2104,7 @@ function handleLegWin() {
         
         // Save to history
         player.turnHistory.push({
-            darts: [gameState.turnTotal],
+            darts: actualDarts, // Number of darts used to checkout
             total: gameState.turnTotal,
             scoreAfter: 0
         });
@@ -2329,7 +2331,7 @@ function submitTurn() {
     
     // Save to history
     player.turnHistory.push({
-        darts: [gameState.turnTotal], // Store total score
+        darts: 3, // Assuming 3 darts per turn
         total: gameState.turnTotal,
         scoreAfter: player.score
     });
