@@ -1,0 +1,125 @@
+🎯 Darts League Tracker & Tournament Portal Development Plan
+This plan outlines the steps for building a dual-interface application (Tournament Portal and Scoring App) using React (or Angular/Vue) for the frontend and Supabase (PostgreSQL) for the backend, focusing on real-time data integrity and complex stat calculation.
+Phase 1: Supabase Backend Architecture (Data & Structure)
+The core principle here is to use two types of tables:
+Transactional Tables: Stores individual match and game results (high frequency inserts).
+Aggregate Tables: Stores running totals for each player (low frequency updates, but critical integrity).
+1.1 Core Database Entities (Tables)
+Entity Name
+Purpose
+Key Data Stored (Conceptual)
+players
+Global player profiles, created by the Director. Players do not need to sign in.
+id, username, is_active, created_by_user_id
+stats_global
+Player's lifetime aggregate stats across all games.
+player_id, total_darts, total_score, total_180s, total_140s, total_100s
+tournaments
+The main event metadata. Includes configuration settings.
+id, name, status, director_id, scoring_method (e.g., 'MATCH_WIN', 'POINT_PER_LEG'), tie_breaker_priority (JSON array of fields)
+tournament_players
+Links players to a tournament and their group.
+tournament_id, player_id, group_name (A or B), seed
+tournament_matches
+The complete schedule and result tracker.
+id, tournament_id, board_id, player1_id, player2_id, stage (RR, QF, SF, F), status, winner_id, leg_data (JSONB for auditing)
+tournament_stats
+Critical: Running totals specific to this tournament (for group standings).
+tournament_id, player_id, points (New Column for point-based scoring), matches_won, legs_won, legs_lost, darts_thrown, score_thrown
+
+1.2 The Real-Time Leaderboard View (PostgreSQL Views)
+To handle the "Professional Stats Display" and prevent the client from performing complex math, we use a PostgreSQL View.
+Action: Execute SQL to create a view that joins the players table with the aggregate tables (stats_global and tournament_stats) and performs the calculations.
+Calculated Metric
+Supabase View Logic
+Global 3-Dart Avg
+total_score / (total_darts / 3)
+Tournament 3-Dart Avg
+score_thrown / (darts_thrown / 3)
+Wins/Losses
+Derived from matches_won and total tournament_matches records.
+Head-to-Head W/L
+Requires a more complex View/Function to count wins against specific opponents.
+Group Standings Rank
+Dynamic ORDER BY based on tournaments.tie_breaker_priority
+
+Phase 2: Supabase Backend Logic (Edge Functions & Real-time)
+This is the most critical phase for data integrity, mimicking the role of database triggers and ensuring atomicity.
+2.1 Atomic Match Submission (Supabase Edge Function)
+A single Edge Function (written in TypeScript/Deno) acts as the secure intermediary between the Scoring App and the database.
+Purpose: To prevent data corruption, all updates (marking the match complete, updating the global stats, and updating the tournament stats) must occur in a single, atomic database transaction.
+Action: Create a Supabase Edge Function (e.g., submit_match) that:
+Receives: tournament_match_id, winner_id, loser_id, leg_score_winner, leg_score_loser, and raw dart statistics (180s, 140s, etc.).
+Validation: Verifies the tournament_match_id is currently status = 'In Progress'.
+Executes Transaction:
+Scoring Logic Check: Retrieve the tournament's scoring_method from the tournaments table.
+Updates tournament_matches status to 'Complete' and records the winner_id.
+UPSERT (Update/Insert) the winner's and loser's records in stats_global by atomically adding the new match scores/darts/high scores.
+UPSERT the winner's and loser's records in tournament_stats based on the scoring_method:
+If 'POINT_PER_LEG': Increment the points column by the leg_score_winner/leg_score_loser.
+If 'MATCH_WIN': Increment matches_won by 1 for the winner.
+Advances Knockout Stage: If the match was a QF or SF, the function automatically populates the player1_id or player2_id of the next match in the bracket.
+2.2 Real-time Communication Setup
+Action: Utilize Supabase's Real-time feature:
+Frontend views (Portal and TV display) subscribe to changes in the player_leaderboard_view and tournament_matches tables. Any match completion immediately updates the live standings and bracket without refreshing the page.
+Phase 3: Frontend Development - The Tournament Portal (Director/TV)
+This interface is the "brain" of the operation, handling scheduling and visualization.
+3.1 Tournament Creation & Round Robin Scheduling
+Director View Component:
+Player Management: An interface allowing the director to easily add new players (populating the global players table) and select the 10 participants for the current tournament.
+Configuration Inputs (New):
+Scoring Method Selector: Radio buttons/dropdown to choose between 'MATCH_WIN' (default 1 point per match win) and 'POINT_PER_LEG' (points equal to legs won).
+Tie-Breaker Rule Editor: A drag-and-drop or ordered list interface to set the priority of tie-breaker fields (e.g., 1. Legs Won, 2. Head-to-Head Record, 3. 3-Dart Average). This populates the tournaments.tie_breaker_priority JSON array.
+Grouping Logic: Divide the 10 players into Group A and Group B (5 players each).
+Round Robin Algorithm: Implement the Circle Method or a simple generator to create the 10 matches for Group A and 10 for Group B.
+Board Assignment Logic (Critical):
+Determine the number of boards/tablets (e.g., 2 boards).
+The scheduler must assign a board_id (e.g., 'Board 1', 'Board 2') to each match in the tournament_matches table. This creates a separate schedule for each board.
+Database Insert: Save all 20 matches (with assigned board_ids) to the tournament_matches table, along with the chosen scoring and tie-breaker configurations to the tournaments table.
+3.2 Live Match Scheduling & Push
+Director Control Panel Component:
+Displays all status = 'Pending' matches, grouped by board_id.
+Action: When the director clicks "Start Match" for a pending match on 'Board 1', the client performs a single Supabase update on that match row, setting status = 'In Progress'. This is the signal for the tablet.
+3.3 Knockout Bracket Generation
+Action: This logic runs only after all Round Robin matches are status = 'Complete'.
+Fetch Standings: Query the real-time tournament_stats view for all calculated stats.
+Dynamic Tie-Breaker Logic: The seeding algorithm must read the tournaments.tie_breaker_priority setting and sort the players using the custom rules (e.g., if set to ['points', 'legs_won', 'average']).
+Seeding: Identify the top 4 players from Group A (A1-A4) and Group B (B1-B4).
+Bracket Insert: Insert the Quarter Final matches into tournament_matches: (A1 vs B4), (A2 vs B3), (B1 vs A4), (B2 vs A3).
+Real-time Update: The bracket visualization automatically updates as Edge Functions populate the subsequent matches based on winners.
+3.4 Professional Stats Display (TV View)
+Action: Build dynamic, responsive components that use Supabase Real-time subscriptions:
+Group Standings Table: Shows ranking based on the custom scoring method (Points or Match Wins), Legs W/L, and Tournament 3-Dart Average, updated instantly via the tournament_stats view.
+Overall Standing/Leaderboard: Shows the Global 3-Dart Average and Lifetime High Scores via the stats_global view.
+Head-to-Head Tracker: A separate component that queries the tournament_matches table, aggregates the results, and displays the W/L record between two selected players.
+Phase 4: Frontend Development - The Scoring App (Tablet)
+This interface is streamlined for match input and is board-specific.
+4.1 Board Assignment & Match Listener
+Setup:
+The app starts by asking for a board_id (e.g., "Board 1" or "Board 2"). This is stored locally (e.g., in React state).
+Action: The app sets up a Supabase Real-time listener on the tournament_matches table, filtering for matches where status = 'In Progress' AND board_id = [local_board_id].
+When a match is found, the scoring interface loads immediately with the two players' names and the tournament_match_id.
+4.2 Detailed Scoring and Data Collection
+Scoring Component:
+Allows the user to input the outcome of a leg/match:
+Winner/Loser identification.
+Total Darts thrown by the winner (for 3-dart average calculation).
+Total Score thrown by the loser up to the checkout.
+Counts for 180s, 140+, and 100+ scored by both players.
+Final match score (e.g., Winner 3 Legs, Loser 1 Leg).
+Match Submission: When the final score is confirmed, the client packages the raw data into the required JSON structure and sends it to the submit_match Edge Function (Phase 2.1).
+Implementation Checklist (for VS Studio/Copilot)
+Here are the high-level tasks to execute in order:
+Supabase CLI/Dashboard: Define the conceptual tables from Phase 1.1 including the new configuration fields and implement the Row-Level Security (RLS) policies.
+Supabase CLI/Dashboard: Implement the complex player_leaderboard_view (SQL View) for real-time stats (Phase 1.2).
+VS Code: Develop the submit_match Edge Function (Phase 2.1), ensuring it reads the tournament's scoring_method and updates the tournament_stats table appropriately.
+VS Code (Frontend - Tournament Portal):
+Develop the Player Management Interface for the Director.
+Develop the Tournament Setup Form (Phase 3.1) with the Scoring Method and Tie-Breaker Rule configuration logic.
+Develop the Director Control Panel for pushing the 'In Progress' status (Phase 3.2).
+Develop the Live Standings and Professional Stats Visualization components (Phase 3.4) using Supabase Real-time subscriptions.
+VS Code (Frontend - Scoring App):
+Develop the Board Assignment component (Phase 4.1).
+Develop the real-time match listener and the core data collection component (Phase 4.1/4.2).
+Implement the function to call the submit_match Edge Function (Phase 4.2).
+This structured approach ensures that the complex tournament management logic (scheduling, bracket advancement) is centralized in the Portal, while the critical, high-frequency data logging is handled securely and atomically by the Supabase Edge Function.

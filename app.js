@@ -294,6 +294,11 @@ document.getElementById('manage-library')?.addEventListener('click', function() 
     renderPlayerLibrary();
 });
 
+// Tournament Portal Link
+document.getElementById('tournament-portal-link')?.addEventListener('click', function() {
+    window.location.href = 'tournament-portal.html';
+});
+
 // Reset Picks buttons
 document.getElementById('reset-picks-left')?.addEventListener('click', function() {
     leftSelectedDisplay.textContent = 'Select player from list below';

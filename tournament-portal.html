@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>DartStream - Tournament Portal</title>
+    <link rel="stylesheet" href="tournament-styles.css">
+</head>
+<body>
+    <div id="tournament-app">
+        <!-- Main Selection Screen -->
+        <div id="portal-selection-screen" class="screen active">
+            <div class="portal-header">
+                <img src="dartstream-logo.png" alt="DartStream" class="portal-logo">
+                <h1>Tournament Portal</h1>
+                <p class="subtitle">Professional Darts Tournament Management</p>
+            </div>
+            
+            <div class="portal-options">
+                <button class="portal-option-btn director" id="director-portal-btn">
+                    <div class="option-icon">🎯</div>
+                    <h2>Tournament Director</h2>
+                    <p>Create tournaments, manage players, control matches</p>
+                </button>
+                
+                <button class="portal-option-btn tablet" id="scoring-tablet-btn">
+                    <div class="option-icon">📱</div>
+                    <h2>Scoring Tablet</h2>
+                    <p>Board-specific match scoring interface</p>
+                </button>
+                
+                <button class="portal-option-btn display" id="tv-display-btn">
+                    <div class="option-icon">📺</div>
+                    <h2>TV Display</h2>
+                    <p>Live standings, brackets, and stats</p>
+                </button>
+            </div>
+            
+            <div class="portal-footer">
+                <button class="back-to-main-btn" id="back-to-main-app">← Back to Main Scoring App</button>
+            </div>
+        </div>
+
+        <!-- Tournament Director Portal -->
+        <div id="director-portal-screen" class="screen">
+            <div class="director-header">
+                <button class="back-btn" id="back-from-director">← Back</button>
+                <h1>Tournament Director</h1>
+            </div>
+            
+            <div class="director-content">
+                <div class="director-sidebar">
+                    <nav class="director-nav">
+                        <button class="nav-btn active" data-section="overview">Overview</button>
+                        <button class="nav-btn" data-section="players">Players</button>
+                        <button class="nav-btn" data-section="create">Create Tournament</button>
+                        <button class="nav-btn" data-section="matches">Match Control</button>
+                        <button class="nav-btn" data-section="standings">Standings</button>
+                        <button class="nav-btn" data-section="bracket">Bracket</button>
+                    </nav>
+                </div>
+                
+                <div class="director-main">
+                    <!-- Overview Section -->
+                    <div id="section-overview" class="director-section active">
+                        <h2>Tournament Overview</h2>
+                        <div id="tournament-list" class="tournament-list">
+                            <div class="empty-state">
+                                <p>No active tournaments</p>
+                                <button class="create-tournament-quick-btn">Create Your First Tournament</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Players Section -->
+                    <div id="section-players" class="director-section">
+                        <h2>Player Management</h2>
+                        <div class="players-controls">
+                            <button class="add-player-btn" id="add-player-btn">+ Add New Player</button>
+                            <input type="text" class="search-input" id="player-search" placeholder="Search players...">
+                        </div>
+                        <div id="players-list" class="players-grid">
+                            <!-- Players will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Create Tournament Section -->
+                    <div id="section-create" class="director-section">
+                        <h2>Create New Tournament</h2>
+                        <div class="create-tournament-form">
+                            <div class="form-group">
+                                <label>Tournament Name</label>
+                                <input type="text" id="tournament-name" placeholder="e.g., Weekly League Night">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Scoring Method</label>
+                                <select id="scoring-method">
+                                    <option value="MATCH_WIN">Match Win (1 point per match)</option>
+                                    <option value="POINT_PER_LEG">Point Per Leg (points = legs won)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Game Format</label>
+                                <select id="game-format">
+                                    <option value="501">501 SIDO</option>
+                                    <option value="301">301 DIDO</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Number of Boards/Tablets</label>
+                                <input type="number" id="num-boards" value="2" min="1" max="10">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Select 10 Players</label>
+                                <div id="player-selection" class="player-selection">
+                                    <!-- Players will be loaded here for selection -->
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Tie-Breaker Priority (Drag to reorder)</label>
+                                <div id="tiebreaker-priority" class="tiebreaker-list">
+                                    <div class="tiebreaker-item" draggable="true" data-field="points">1. Points/Wins</div>
+                                    <div class="tiebreaker-item" draggable="true" data-field="legs_won">2. Legs Won</div>
+                                    <div class="tiebreaker-item" draggable="true" data-field="head_to_head">3. Head-to-Head</div>
+                                    <div class="tiebreaker-item" draggable="true" data-field="average">4. 3-Dart Average</div>
+                                </div>
+                            </div>
+                            
+                            <button class="create-btn" id="create-tournament-btn">Create Tournament</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Match Control Section -->
+                    <div id="section-matches" class="director-section">
+                        <h2>Match Control</h2>
+                        <div id="match-boards" class="match-boards">
+                            <!-- Board-specific match controls will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Standings Section -->
+                    <div id="section-standings" class="director-section">
+                        <h2>Tournament Standings</h2>
+                        <div id="standings-display" class="standings-container">
+                            <!-- Standings tables will be displayed here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Bracket Section -->
+                    <div id="section-bracket" class="director-section">
+                        <h2>Knockout Bracket</h2>
+                        <div id="bracket-display" class="bracket-container">
+                            <!-- Bracket visualization will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scoring Tablet Interface -->
+        <div id="scoring-tablet-screen" class="screen">
+            <div class="tablet-header">
+                <button class="back-btn" id="back-from-tablet">← Back</button>
+                <h1>Scoring Tablet</h1>
+                <div id="board-id-display" class="board-id">Board Not Set</div>
+            </div>
+            
+            <div class="tablet-content">
+                <!-- Board Selection -->
+                <div id="board-selection" class="board-selection active">
+                    <h2>Select Your Board</h2>
+                    <div id="board-options" class="board-options">
+                        <!-- Board buttons will be generated here -->
+                    </div>
+                </div>
+                
+                <!-- Waiting for Match -->
+                <div id="waiting-for-match" class="waiting-state">
+                    <div class="waiting-icon">⏳</div>
+                    <h2>Waiting for Match Assignment</h2>
+                    <p>The tournament director will assign your next match</p>
+                    <div class="board-info">
+                        <strong>Board:</strong> <span id="current-board-name">-</span>
+                    </div>
+                </div>
+                
+                <!-- Active Match Scoring -->
+                <div id="active-match-scoring" class="match-scoring">
+                    <div class="match-info">
+                        <div class="tournament-name" id="tablet-tournament-name">Tournament Name</div>
+                        <div class="match-stage" id="tablet-match-stage">Round Robin - Group A</div>
+                    </div>
+                    
+                    <div class="match-players">
+                        <div class="match-player player1">
+                            <div class="player-name" id="tablet-player1-name">Player 1</div>
+                            <div class="legs-won" id="tablet-player1-legs">0</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="match-player player2">
+                            <div class="player-name" id="tablet-player2-name">Player 2</div>
+                            <div class="legs-won" id="tablet-player2-legs">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="current-leg-scoring">
+                        <h3>Current Leg</h3>
+                        <div class="leg-stats">
+                            <div class="stat-group">
+                                <label>Winner</label>
+                                <select id="leg-winner">
+                                    <option value="">Select Winner</option>
+                                </select>
+                            </div>
+                            <div class="stat-group">
+                                <label>Winner's Darts Thrown</label>
+                                <input type="number" id="winner-darts" min="0" placeholder="Total darts">
+                            </div>
+                            <div class="stat-group">
+                                <label>Loser's Score Thrown</label>
+                                <input type="number" id="loser-score" min="0" placeholder="Score thrown">
+                            </div>
+                        </div>
+                        
+                        <div class="high-scores">
+                            <h4>High Scores (Winner)</h4>
+                            <div class="high-score-inputs">
+                                <div class="stat-input">
+                                    <label>180s</label>
+                                    <input type="number" id="winner-180s" min="0" value="0">
+                                </div>
+                                <div class="stat-input">
+                                    <label>140+</label>
+                                    <input type="number" id="winner-140s" min="0" value="0">
+                                </div>
+                                <div class="stat-input">
+                                    <label>100+</label>
+                                    <input type="number" id="winner-100s" min="0" value="0">
+                                </div>
+                            </div>
+                            
+                            <h4>High Scores (Loser)</h4>
+                            <div class="high-score-inputs">
+                                <div class="stat-input">
+                                    <label>180s</label>
+                                    <input type="number" id="loser-180s" min="0" value="0">
+                                </div>
+                                <div class="stat-input">
+                                    <label>140+</label>
+                                    <input type="number" id="loser-140s" min="0" value="0">
+                                </div>
+                                <div class="stat-input">
+                                    <label>100+</label>
+                                    <input type="number" id="loser-100s" min="0" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="submit-leg-btn" id="submit-leg-btn">Submit Leg</button>
+                    </div>
+                    
+                    <div class="match-actions">
+                        <button class="complete-match-btn" id="complete-match-btn">Complete Match</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TV Display -->
+        <div id="tv-display-screen" class="screen">
+            <div class="tv-header">
+                <button class="back-btn" id="back-from-tv">← Back</button>
+                <h1>Live Tournament Display</h1>
+            </div>
+            
+            <div class="tv-content">
+                <div class="tv-standings">
+                    <h2>Group Standings</h2>
+                    <div id="tv-standings" class="standings-tables">
+                        <!-- Live standings will be displayed here -->
+                    </div>
+                </div>
+                
+                <div class="tv-bracket">
+                    <h2>Knockout Bracket</h2>
+                    <div id="tv-bracket-display" class="bracket-visual">
+                        <!-- Bracket will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="tournament-config.js"></script>
+    <script src="tournament-app.js"></script>
+</body>
+</html>
