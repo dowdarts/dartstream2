@@ -2973,15 +2973,30 @@ window.addEventListener('DOMContentLoaded', async function() {
             Object.assign(gameState, savedState);
             gameState.matchActive = true;
             
+            // Get or create connection code for Supabase sync
+            if (window.GameStateSync) {
+                // This will reuse existing session code or create new one
+                const connectionCode = window.GameStateSync.startNewMatch();
+                
+                // Update connection code displays
+                const codeDisplay1 = document.getElementById('connection-code-display');
+                const codeDisplay2 = document.getElementById('connection-code-display-2');
+                const codeDisplay3 = document.getElementById('connection-code-display-3');
+                
+                if (codeDisplay1) codeDisplay1.textContent = connectionCode;
+                if (codeDisplay2) codeDisplay2.textContent = connectionCode;
+                if (codeDisplay3) codeDisplay3.textContent = connectionCode;
+                
+                // Sync the restored state to Supabase
+                window.GameStateSync.syncGameState(gameState);
+                
+                console.log('🔗 Reconnected to scoreboard with code:', connectionCode);
+            }
+            
             // Show the game screen directly
             showScreen('game-screen');
             updateGameScreen();
             updateActionButtonText();
-            
-            // Reconnect to Supabase if needed
-            if (window.GameStateSync) {
-                window.GameStateSync.syncGameState(gameState);
-            }
             
             return; // Skip normal initialization
         } else {
