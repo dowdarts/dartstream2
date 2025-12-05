@@ -2,7 +2,7 @@
 // This file handles the Supabase connection for the tournament system
 
 const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbn d1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE0Mjg3ODksImV4cCI6MjA0NzAwNDc4OX0.lfzJu0H0w2qkDYGC6cAd8aLlRRsHJI4bsAGN_QNxiIo';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
 
 // Initialize Supabase client for tournament features
 let tournamentSupabase = null;
