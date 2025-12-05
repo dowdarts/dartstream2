@@ -123,14 +123,22 @@ function generateBoardConnectionCode() {
 
 // Player Management
 async function loadPlayers() {
+    console.log('Loading players...');
     const client = getTournamentSupabaseClient();
-    if (!client) return;
+    if (!client) {
+        console.error('Supabase client not available');
+        showError('Database connection not available. Please refresh the page.');
+        return;
+    }
     
     try {
+        console.log('Fetching from table:', TABLES.PLAYERS);
         const { data, error } = await client
             .from(TABLES.PLAYERS)
             .select('*')
             .order('first_name');
+        
+        console.log('Players fetch result:', { data, error });
         
         if (error) throw error;
         
@@ -140,17 +148,22 @@ async function loadPlayers() {
             fullName: `${p.first_name} ${p.last_name}`
         }));
         
+        console.log('Processed players:', players.length);
         tournamentState.activePlayers = players;
         renderPlayersList(players);
     } catch (error) {
         console.error('Error loading players:', error);
-        showError('Failed to load players');
+        showError('Failed to load players: ' + error.message);
     }
 }
 
 function renderPlayersList(players) {
+    console.log('Rendering players list:', players.length);
     const container = document.getElementById('players-list');
-    if (!container) return;
+    if (!container) {
+        console.error('players-list container not found');
+        return;
+    }
     
     if (players.length === 0) {
         container.innerHTML = '<div class="empty-state"><p>No players found. Add your first player to get started.</p></div>';
@@ -176,13 +189,24 @@ function renderPlayersList(players) {
             </div>
         </div>
     `).join('');
+    console.log('Players rendered successfully');
 }
 
 function showAddPlayerModal() {
-    document.getElementById('new-player-firstname').value = '';
-    document.getElementById('new-player-lastname').value = '';
-    document.getElementById('add-player-modal').classList.add('active');
-    document.getElementById('new-player-firstname').focus();
+    console.log('Opening add player modal');
+    const firstNameInput = document.getElementById('new-player-firstname');
+    const lastNameInput = document.getElementById('new-player-lastname');
+    const modal = document.getElementById('add-player-modal');
+    
+    if (!firstNameInput || !lastNameInput || !modal) {
+        console.error('Modal elements not found');
+        return;
+    }
+    
+    firstNameInput.value = '';
+    lastNameInput.value = '';
+    modal.classList.add('active');
+    firstNameInput.focus();
     
     // Add Enter key support
     const handleEnter = (e) => {
@@ -190,8 +214,8 @@ function showAddPlayerModal() {
             submitNewPlayer();
         }
     };
-    document.getElementById('new-player-firstname').addEventListener('keypress', handleEnter);
-    document.getElementById('new-player-lastname').addEventListener('keypress', handleEnter);
+    firstNameInput.addEventListener('keypress', handleEnter);
+    lastNameInput.addEventListener('keypress', handleEnter);
 }
 
 function closeAddPlayerModal() {
@@ -199,8 +223,11 @@ function closeAddPlayerModal() {
 }
 
 async function submitNewPlayer() {
+    console.log('Submitting new player');
     const firstName = document.getElementById('new-player-firstname').value.trim();
     const lastName = document.getElementById('new-player-lastname').value.trim();
+    
+    console.log('Player details:', { firstName, lastName });
     
     if (!firstName || !lastName) {
         showError('Please enter both first and last name');
@@ -212,14 +239,22 @@ async function submitNewPlayer() {
 }
 
 async function addPlayer(firstName, lastName) {
+    console.log('Adding player to database:', firstName, lastName);
     const client = getTournamentSupabaseClient();
-    if (!client) return;
+    if (!client) {
+        console.error('No Supabase client available');
+        showError('Database connection not available');
+        return;
+    }
     
     try {
+        console.log('Inserting into table:', TABLES.PLAYERS);
         const { data, error } = await client
             .from(TABLES.PLAYERS)
             .insert([{ first_name: firstName, last_name: lastName }])
             .select();
+        
+        console.log('Insert result:', { data, error });
         
         if (error) throw error;
         
@@ -227,7 +262,7 @@ async function addPlayer(firstName, lastName) {
         loadPlayers();
     } catch (error) {
         console.error('Error adding player:', error);
-        showError('Failed to add player');
+        showError('Failed to add player: ' + error.message);
     }
 }
 
