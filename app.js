@@ -2395,6 +2395,11 @@ function switchPlayer() {
     gameState.players[newPlayerKey].preTurnScore = gameState.players[newPlayerKey].score;
     
     updateGameScreen();
+    
+    // Sync state to scoreboard after player switch
+    if (window.GameStateSync && window.GameStateSync.syncGameState) {
+        window.GameStateSync.syncGameState(gameState);
+    }
 }
 
 function checkSetWin() {
