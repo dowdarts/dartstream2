@@ -2343,6 +2343,11 @@ function submitTurn() {
     // Update display to show new averages
     updateGameScreen();
     
+    // Sync BEFORE switching - shows score with current player still active
+    if (window.GameStateSync && window.GameStateSync.syncGameState) {
+        window.GameStateSync.syncGameState(gameState);
+    }
+    
     // Switch to next player
     switchPlayer();
 }
