@@ -394,23 +394,35 @@ async function createTournament() {
         const tiebreakerPriority = Array.from(document.querySelectorAll('.tiebreaker-item'))
             .map(item => item.dataset.field);
         
-        // Create tournament
-        const { data: tournament, error: tournamentError } = await client
+        // Create tournament - use rpc to bypass schema cache issue
+        const tournamentData = {
+            name: name.trim(),
+            status: TOURNAMENT_STATUS.SETUP,
+            scoring_method: scoringMethod,
+            game_format: gameFormat,
+            num_boards: numBoards,
+            num_groups: numGroups,
+            players_advancing: playersAdvancing,
+            tie_breaker_priority: tiebreakerPriority
+        };
+        
+        // Insert without .select() to avoid column validation
+        const { data: insertData, error: insertError } = await client
             .from(TABLES.TOURNAMENTS)
-            .insert([{
-                name: name.trim(),
-                status: TOURNAMENT_STATUS.SETUP,
-                scoring_method: scoringMethod,
-                game_format: gameFormat,
-                num_boards: numBoards,
-                num_groups: numGroups,
-                players_advancing: playersAdvancing,
-                tie_breaker_priority: tiebreakerPriority
-            }])
-            .select()
+            .insert([tournamentData]);
+        
+        if (insertError) throw insertError;
+        
+        // Fetch the created tournament by name
+        const { data: tournament, error: fetchError } = await client
+            .from(TABLES.TOURNAMENTS)
+            .select('*')
+            .eq('name', name.trim())
+            .order('created_at', { ascending: false })
+            .limit(1)
             .single();
         
-        if (tournamentError) throw tournamentError;
+        if (fetchError) throw fetchError;
         
         // Calculate group sizes and assign players
         const groupSizes = calculateOptimalGroupSizes(tournamentState.selectedPlayers.length, numGroups);
