@@ -32,7 +32,8 @@ const TABLES = {
     TOURNAMENT_PLAYERS: 'tournament_players',
     MATCHES: 'tournament_matches',
     TOURNAMENT_STATS: 'tournament_stats',
-    GLOBAL_STATS: 'stats_global'
+    GLOBAL_STATS: 'stats_global',
+    BOARDS: 'tournament_boards'
 };
 
 // Tournament status constants

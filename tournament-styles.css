@@ -1162,6 +1162,39 @@ body {
     text-align: center;
 }
 
+/* Connection Code Display */
+.connection-code-display {
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.connection-code-display label {
+    display: block;
+    font-size: 16px;
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+
+.code-value {
+    font-size: 48px;
+    font-weight: bold;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 8px;
+    margin: 15px 0;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.code-instructions {
+    font-size: 14px;
+    color: #888;
+    margin-top: 10px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .director-content {

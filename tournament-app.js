@@ -111,6 +111,11 @@ function switchDirectorSection(sectionId) {
     }
 }
 
+// Generate 4-digit connection code for boards
+function generateBoardConnectionCode() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
 // Player Management
 async function loadPlayers() {
     const client = getTournamentSupabaseClient();
@@ -362,6 +367,24 @@ async function createTournament() {
             .insert(tournamentPlayers);
         
         if (playersError) throw playersError;
+        
+        // Create board records with connection codes
+        const boards = [];
+        for (let i = 1; i <= numBoards; i++) {
+            boards.push({
+                tournament_id: tournament.id,
+                board_number: i,
+                board_name: `Board ${i}`,
+                connection_code: generateBoardConnectionCode(),
+                is_active: true
+            });
+        }
+        
+        const { error: boardsError } = await client
+            .from(TABLES.BOARDS)
+            .insert(boards);
+        
+        if (boardsError) throw boardsError;
         
         // Generate round robin matches for all groups
         await generateRoundRobinMatchesAllGroups(tournament.id, groupSizes, groupLabels, shuffled, numBoards);
@@ -758,3 +781,89 @@ async function finalizeGroupsAndGenerateBracket() {
     // TODO: Implement bracket generation based on group standings and players_advancing setting
     showSuccess('Bracket generation will be implemented next');
 }
+
+// Board Management for Tablets
+async function showBoardSelection() {
+    if (!tournamentState.currentTournament) {
+        // Show tournament selection first
+        await loadTournamentsForTablet();
+        return;
+    }
+    
+    const client = getTournamentSupabaseClient();
+    if (!client) return;
+    
+    try {
+        const { data, error } = await client
+            .from(TABLES.BOARDS)
+            .select('*')
+            .eq('tournament_id', tournamentState.currentTournament)
+            .order('board_number');
+        
+        if (error) throw error;
+        
+        renderBoardOptions(data || []);
+    } catch (error) {
+        console.error('Error loading boards:', error);
+        showError('Failed to load boards');
+    }
+}
+
+function renderBoardOptions(boards) {
+    const container = document.getElementById('board-options');
+    if (!container) return;
+    
+    container.innerHTML = boards.map(board => `
+        <button class="board-option-btn" onclick="selectBoard(${board.board_number})">
+            ${board.board_name}
+        </button>
+    `).join('');
+}
+
+async function selectBoard(boardNumber) {
+    tournamentState.currentBoard = boardNumber;
+    
+    const client = getTournamentSupabaseClient();
+    if (!client) return;
+    
+    try {
+        // Get board details including connection code
+        const { data, error } = await client
+            .from(TABLES.BOARDS)
+            .select('*')
+            .eq('tournament_id', tournamentState.currentTournament)
+            .eq('board_number', boardNumber)
+            .single();
+        
+        if (error) throw error;
+        
+        // Store connection code in session
+        sessionStorage.setItem('tournamentBoardCode', data.connection_code);
+        
+        // Update UI
+        document.getElementById('current-board-name').textContent = data.board_name;
+        document.getElementById('board-connection-code').textContent = data.connection_code;
+        document.getElementById('board-id-display').textContent = data.board_name;
+        
+        // Hide board selection, show waiting for match
+        document.getElementById('board-selection').classList.remove('active');
+        document.getElementById('waiting-for-match').classList.add('active');
+        
+        // Start listening for match assignments
+        subscribeToMatchAssignments(boardNumber);
+    } catch (error) {
+        console.error('Error selecting board:', error);
+        showError('Failed to select board');
+    }
+}
+
+async function subscribeToMatchAssignments(boardNumber) {
+    // TODO: Implement real-time subscription to match assignments for this board
+    console.log('Subscribed to match assignments for board', boardNumber);
+}
+
+async function loadTournamentsForTablet() {
+    // TODO: Show tournament selection modal for tablets
+    console.log('Loading tournaments for tablet selection');
+}
+

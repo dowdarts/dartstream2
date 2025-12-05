@@ -42,9 +42,23 @@ CREATE TABLE IF NOT EXISTS tournaments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT valid_status CHECK (status IN ('setup', 'round_robin', 'knockout', 'complete')),
     CONSTRAINT valid_scoring_method CHECK (scoring_method IN ('MATCH_WIN', 'POINT_PER_LEG')),
-    CONSTRAINT valid_num_boards CHECK (num_boards > 0 AND num_boards <= 10),
+    CONSTRAINT valid_num_boards CHECK (num_boards > 0 AND num_boards <= 99),
     CONSTRAINT valid_num_groups CHECK (num_groups > 0 AND num_groups <= 8),
     CONSTRAINT valid_players_advancing CHECK (players_advancing > 0 AND players_advancing <= 8)
+);
+
+-- Tournament Boards (Tracks each physical board/tablet with connection codes)
+CREATE TABLE IF NOT EXISTS tournament_boards (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+    board_number INTEGER NOT NULL,
+    board_name TEXT NOT NULL,
+    connection_code TEXT UNIQUE,
+    is_active BOOLEAN DEFAULT true,
+    last_heartbeat TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT unique_tournament_board UNIQUE (tournament_id, board_number)
 );
 
 -- Tournament Players (Links players to specific tournament and group)
@@ -107,6 +121,8 @@ CREATE INDEX IF NOT EXISTS idx_tournament_matches_status ON tournament_matches(s
 CREATE INDEX IF NOT EXISTS idx_tournament_players_tournament ON tournament_players(tournament_id);
 CREATE INDEX IF NOT EXISTS idx_tournament_stats_tournament ON tournament_stats(tournament_id);
 CREATE INDEX IF NOT EXISTS idx_stats_global_player ON stats_global(player_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_boards_code ON tournament_boards(connection_code);
+CREATE INDEX IF NOT EXISTS idx_tournament_boards_tournament ON tournament_boards(tournament_id);
 
 -- Leaderboard View (Calculated Stats)
 CREATE OR REPLACE VIEW tournament_leaderboard AS
@@ -159,6 +175,7 @@ ALTER TABLE tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tournament_boards ENABLE ROW LEVEL SECURITY;
 
 -- Allow anonymous read access to all tables (adjust based on your security requirements)
 CREATE POLICY "Allow anonymous read access" ON tournament_players_global FOR SELECT USING (true);
@@ -167,6 +184,7 @@ CREATE POLICY "Allow anonymous read access" ON tournaments FOR SELECT USING (tru
 CREATE POLICY "Allow anonymous read access" ON tournament_players FOR SELECT USING (true);
 CREATE POLICY "Allow anonymous read access" ON tournament_matches FOR SELECT USING (true);
 CREATE POLICY "Allow anonymous read access" ON tournament_stats FOR SELECT USING (true);
+CREATE POLICY "Allow anonymous read access" ON tournament_boards FOR SELECT USING (true);
 
 -- Allow anonymous insert/update for tournament operations
 CREATE POLICY "Allow anonymous insert" ON tournament_players_global FOR INSERT WITH CHECK (true);
@@ -180,6 +198,8 @@ CREATE POLICY "Allow anonymous insert" ON tournament_matches FOR INSERT WITH CHE
 CREATE POLICY "Allow anonymous update" ON tournament_matches FOR UPDATE USING (true);
 CREATE POLICY "Allow anonymous insert" ON tournament_stats FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow anonymous update" ON tournament_stats FOR UPDATE USING (true);
+CREATE POLICY "Allow anonymous insert" ON tournament_boards FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow anonymous update" ON tournament_boards FOR UPDATE USING (true);
 
 -- Trigger to update timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
