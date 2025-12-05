@@ -35,12 +35,16 @@ CREATE TABLE IF NOT EXISTS tournaments (
     scoring_method TEXT NOT NULL DEFAULT 'MATCH_WIN',
     game_format TEXT DEFAULT '501',
     num_boards INTEGER DEFAULT 2,
+    num_groups INTEGER DEFAULT 2,
+    players_advancing INTEGER DEFAULT 2,
     tie_breaker_priority JSONB DEFAULT '["points", "legs_won", "head_to_head", "average"]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT valid_status CHECK (status IN ('setup', 'round_robin', 'knockout', 'complete')),
     CONSTRAINT valid_scoring_method CHECK (scoring_method IN ('MATCH_WIN', 'POINT_PER_LEG')),
-    CONSTRAINT valid_num_boards CHECK (num_boards > 0 AND num_boards <= 10)
+    CONSTRAINT valid_num_boards CHECK (num_boards > 0 AND num_boards <= 10),
+    CONSTRAINT valid_num_groups CHECK (num_groups > 0 AND num_groups <= 8),
+    CONSTRAINT valid_players_advancing CHECK (players_advancing > 0 AND players_advancing <= 8)
 );
 
 -- Tournament Players (Links players to specific tournament and group)
@@ -52,7 +56,7 @@ CREATE TABLE IF NOT EXISTS tournament_players (
     seed INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT unique_tournament_player UNIQUE (tournament_id, player_id),
-    CONSTRAINT valid_group CHECK (group_name IN ('A', 'B'))
+    CONSTRAINT valid_group CHECK (group_name IN ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'))
 );
 
 -- Tournament Matches
@@ -91,6 +95,7 @@ CREATE TABLE IF NOT EXISTS tournament_stats (
     total_180s INTEGER DEFAULT 0,
     total_140s INTEGER DEFAULT 0,
     total_100s INTEGER DEFAULT 0,
+    manual_ranking INTEGER,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT unique_tournament_player_stats UNIQUE (tournament_id, player_id)
 );

@@ -115,9 +115,36 @@
                             </div>
                             
                             <div class="form-group">
-                                <label>Select 10 Players</label>
+                                <label>Select Players (2-64 players)</label>
+                                <div class="player-count-display">
+                                    Selected: <strong id="selected-player-count">0</strong> players
+                                </div>
                                 <div id="player-selection" class="player-selection">
                                     <!-- Players will be loaded here for selection -->
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Group Configuration</label>
+                                <div class="group-config">
+                                    <div class="config-row">
+                                        <label>Number of Groups</label>
+                                        <select id="num-groups">
+                                            <option value="2">2 Groups</option>
+                                            <option value="3">3 Groups</option>
+                                            <option value="4">4 Groups</option>
+                                            <option value="5">5 Groups</option>
+                                            <option value="6">6 Groups</option>
+                                            <option value="8">8 Groups</option>
+                                        </select>
+                                    </div>
+                                    <div id="group-breakdown" class="group-breakdown">
+                                        <!-- Group sizes will be calculated and shown here -->
+                                    </div>
+                                    <div class="config-row">
+                                        <label>Players Advancing Per Group</label>
+                                        <input type="number" id="players-advancing" value="2" min="1" max="8">
+                                    </div>
                                 </div>
                             </div>
                             
@@ -146,8 +173,33 @@
                     <!-- Standings Section -->
                     <div id="section-standings" class="director-section">
                         <h2>Tournament Standings</h2>
+                        <div class="standings-controls">
+                            <button class="action-btn" id="refresh-standings-btn">🔄 Refresh Standings</button>
+                            <button class="action-btn gold" id="manual-override-btn">✏️ Manual Override Rankings</button>
+                            <button class="action-btn green" id="finalize-groups-btn">✓ Finalize Groups & Generate Bracket</button>
+                        </div>
                         <div id="standings-display" class="standings-container">
                             <!-- Standings tables will be displayed here -->
+                        </div>
+                        
+                        <!-- Manual Override Modal -->
+                        <div id="manual-override-modal" class="modal" style="display: none;">
+                            <div class="modal-content large">
+                                <div class="modal-header">
+                                    <h2>Manual Override Rankings</h2>
+                                    <button class="close-modal" id="close-override-modal">×</button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="info-text">Drag and drop players to manually adjust rankings within each group</p>
+                                    <div id="manual-rankings-container" class="manual-rankings">
+                                        <!-- Draggable player lists by group will appear here -->
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="action-btn" id="cancel-override-btn">Cancel</button>
+                                    <button class="action-btn green" id="save-override-btn">Save Rankings</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     

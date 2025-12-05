@@ -51,6 +51,17 @@ function initializeEventListeners() {
     // Create tournament button
     document.getElementById('create-tournament-btn')?.addEventListener('click', createTournament);
     
+    // Group configuration listeners
+    document.getElementById('num-groups')?.addEventListener('change', calculateGroupBreakdown);
+    
+    // Standings controls
+    document.getElementById('refresh-standings-btn')?.addEventListener('click', loadStandings);
+    document.getElementById('manual-override-btn')?.addEventListener('click', showManualOverrideModal);
+    document.getElementById('finalize-groups-btn')?.addEventListener('click', finalizeGroupsAndGenerateBracket);
+    document.getElementById('close-override-modal')?.addEventListener('click', closeManualOverrideModal);
+    document.getElementById('cancel-override-btn')?.addEventListener('click', closeManualOverrideModal);
+    document.getElementById('save-override-btn')?.addEventListener('click', saveManualOverride);
+    
     // Tablet submit buttons
     document.getElementById('submit-leg-btn')?.addEventListener('click', submitLeg);
     document.getElementById('complete-match-btn')?.addEventListener('click', completeMatch);
@@ -223,13 +234,58 @@ function togglePlayerSelection(item) {
         tournamentState.selectedPlayers.splice(index, 1);
         item.classList.remove('selected');
     } else {
-        if (tournamentState.selectedPlayers.length >= 10) {
-            showError('Maximum 10 players can be selected');
+        if (tournamentState.selectedPlayers.length >= 64) {
+            showError('Maximum 64 players can be selected');
             return;
         }
         tournamentState.selectedPlayers.push(playerId);
         item.classList.add('selected');
     }
+    
+    // Update player count display
+    updatePlayerCountDisplay();
+    calculateGroupBreakdown();
+}
+
+function updatePlayerCountDisplay() {
+    const countEl = document.getElementById('selected-player-count');
+    if (countEl) {
+        countEl.textContent = tournamentState.selectedPlayers.length;
+    }
+}
+
+function calculateGroupBreakdown() {
+    const numPlayers = tournamentState.selectedPlayers.length;
+    const numGroups = parseInt(document.getElementById('num-groups')?.value) || 2;
+    const breakdownEl = document.getElementById('group-breakdown');
+    
+    if (!breakdownEl || numPlayers < 2) {
+        if (breakdownEl) breakdownEl.innerHTML = '<p style="color: #888;">Select at least 2 players to see group breakdown</p>';
+        return;
+    }
+    
+    const groupSizes = calculateOptimalGroupSizes(numPlayers, numGroups);
+    const groupLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    
+    let html = '';
+    groupSizes.forEach((size, index) => {
+        html += `<div class="group-info">Group ${groupLabels[index]}: ${size} players</div>`;
+    });
+    
+    breakdownEl.innerHTML = html;
+}
+
+function calculateOptimalGroupSizes(totalPlayers, numGroups) {
+    const baseSize = Math.floor(totalPlayers / numGroups);
+    const remainder = totalPlayers % numGroups;
+    
+    const sizes = [];
+    for (let i = 0; i < numGroups; i++) {
+        // Distribute the remainder across groups (each group can be at most +1 from base)
+        sizes.push(i < remainder ? baseSize + 1 : baseSize);
+    }
+    
+    return sizes;
 }
 
 async function createTournament() {
@@ -237,14 +293,21 @@ async function createTournament() {
     const scoringMethod = document.getElementById('scoring-method')?.value;
     const gameFormat = document.getElementById('game-format')?.value;
     const numBoards = parseInt(document.getElementById('num-boards')?.value) || 2;
+    const numGroups = parseInt(document.getElementById('num-groups')?.value) || 2;
+    const playersAdvancing = parseInt(document.getElementById('players-advancing')?.value) || 2;
     
     if (!name || !name.trim()) {
         showError('Please enter a tournament name');
         return;
     }
     
-    if (tournamentState.selectedPlayers.length !== 10) {
-        showError('Please select exactly 10 players');
+    if (tournamentState.selectedPlayers.length < 2) {
+        showError('Please select at least 2 players');
+        return;
+    }
+    
+    if (tournamentState.selectedPlayers.length > 64) {
+        showError('Maximum 64 players allowed');
         return;
     }
     
@@ -265,6 +328,8 @@ async function createTournament() {
                 scoring_method: scoringMethod,
                 game_format: gameFormat,
                 num_boards: numBoards,
+                num_groups: numGroups,
+                players_advancing: playersAdvancing,
                 tie_breaker_priority: tiebreakerPriority
             }])
             .select()
@@ -272,15 +337,25 @@ async function createTournament() {
         
         if (tournamentError) throw tournamentError;
         
-        // Assign players to groups
+        // Calculate group sizes and assign players
+        const groupSizes = calculateOptimalGroupSizes(tournamentState.selectedPlayers.length, numGroups);
         const shuffled = [...tournamentState.selectedPlayers].sort(() => Math.random() - 0.5);
-        const groupA = shuffled.slice(0, 5);
-        const groupB = shuffled.slice(5, 10);
+        const groupLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         
-        const tournamentPlayers = [
-            ...groupA.map((id, index) => ({ tournament_id: tournament.id, player_id: id, group_name: 'A', seed: index + 1 })),
-            ...groupB.map((id, index) => ({ tournament_id: tournament.id, player_id: id, group_name: 'B', seed: index + 1 }))
-        ];
+        const tournamentPlayers = [];
+        let playerIndex = 0;
+        
+        groupSizes.forEach((size, groupIndex) => {
+            for (let i = 0; i < size; i++) {
+                tournamentPlayers.push({
+                    tournament_id: tournament.id,
+                    player_id: shuffled[playerIndex],
+                    group_name: groupLabels[groupIndex],
+                    seed: i + 1
+                });
+                playerIndex++;
+            }
+        });
         
         const { error: playersError } = await client
             .from(TABLES.TOURNAMENT_PLAYERS)
@@ -288,11 +363,12 @@ async function createTournament() {
         
         if (playersError) throw playersError;
         
-        // Generate round robin matches
-        await generateRoundRobinMatches(tournament.id, groupA, groupB, numBoards);
+        // Generate round robin matches for all groups
+        await generateRoundRobinMatchesAllGroups(tournament.id, groupSizes, groupLabels, shuffled, numBoards);
         
         showSuccess('Tournament created successfully!');
         tournamentState.selectedPlayers = [];
+        updatePlayerCountDisplay();
         switchDirectorSection('overview');
         loadTournaments();
         
@@ -302,44 +378,36 @@ async function createTournament() {
     }
 }
 
-async function generateRoundRobinMatches(tournamentId, groupA, groupB, numBoards) {
+async function generateRoundRobinMatchesAllGroups(tournamentId, groupSizes, groupLabels, allPlayers, numBoards) {
     const client = getTournamentSupabaseClient();
     if (!client) return;
     
     const matches = [];
     let boardIndex = 0;
+    let playerIndex = 0;
     
-    // Generate matches for Group A
-    for (let i = 0; i < groupA.length; i++) {
-        for (let j = i + 1; j < groupA.length; j++) {
-            matches.push({
-                tournament_id: tournamentId,
-                player1_id: groupA[i],
-                player2_id: groupA[j],
-                stage: MATCH_STAGE.ROUND_ROBIN,
-                group_name: 'A',
-                board_id: `Board ${(boardIndex % numBoards) + 1}`,
-                status: MATCH_STATUS.PENDING
-            });
-            boardIndex++;
+    // Generate matches for each group
+    groupSizes.forEach((groupSize, groupIndex) => {
+        const groupPlayers = allPlayers.slice(playerIndex, playerIndex + groupSize);
+        
+        // Round robin within this group
+        for (let i = 0; i < groupPlayers.length; i++) {
+            for (let j = i + 1; j < groupPlayers.length; j++) {
+                matches.push({
+                    tournament_id: tournamentId,
+                    player1_id: groupPlayers[i],
+                    player2_id: groupPlayers[j],
+                    stage: MATCH_STAGE.ROUND_ROBIN,
+                    group_name: groupLabels[groupIndex],
+                    board_id: `Board ${(boardIndex % numBoards) + 1}`,
+                    status: MATCH_STATUS.PENDING
+                });
+                boardIndex++;
+            }
         }
-    }
-    
-    // Generate matches for Group B
-    for (let i = 0; i < groupB.length; i++) {
-        for (let j = i + 1; j < groupB.length; j++) {
-            matches.push({
-                tournament_id: tournamentId,
-                player1_id: groupB[i],
-                player2_id: groupB[j],
-                stage: MATCH_STAGE.ROUND_ROBIN,
-                group_name: 'B',
-                board_id: `Board ${(boardIndex % numBoards) + 1}`,
-                status: MATCH_STATUS.PENDING
-            });
-            boardIndex++;
-        }
-    }
+        
+        playerIndex += groupSize;
+    });
     
     const { error } = await client
         .from(TABLES.MATCHES)
@@ -512,4 +580,181 @@ function showError(message) {
 function showSuccess(message) {
     alert(message);
     console.log(message);
+}
+
+// Manual Override Functions
+function showManualOverrideModal() {
+    if (!tournamentState.currentTournament) {
+        showError('Please select a tournament first');
+        return;
+    }
+    
+    loadManualRankings();
+    document.getElementById('manual-override-modal').style.display = 'flex';
+}
+
+function closeManualOverrideModal() {
+    document.getElementById('manual-override-modal').style.display = 'none';
+}
+
+async function loadManualRankings() {
+    const client = getTournamentSupabaseClient();
+    if (!client) return;
+    
+    try {
+        // Get standings for current tournament
+        const { data, error } = await client
+            .from('tournament_leaderboard')
+            .select('*')
+            .eq('tournament_id', tournamentState.currentTournament)
+            .order('group_name')
+            .order('points', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Group by group_name
+        const groupedData = {};
+        data.forEach(player => {
+            if (!groupedData[player.group_name]) {
+                groupedData[player.group_name] = [];
+            }
+            groupedData[player.group_name].push(player);
+        });
+        
+        renderManualRankings(groupedData);
+    } catch (error) {
+        console.error('Error loading rankings:', error);
+        showError('Failed to load rankings');
+    }
+}
+
+function renderManualRankings(groupedData) {
+    const container = document.getElementById('manual-rankings-container');
+    if (!container) return;
+    
+    let html = '';
+    Object.keys(groupedData).sort().forEach(groupName => {
+        html += `
+            <div class="ranking-group" data-group="${groupName}">
+                <h3>Group ${groupName}</h3>
+                <div class="ranking-list" id="ranking-list-${groupName}">
+                    ${groupedData[groupName].map((player, index) => `
+                        <div class="ranking-item" draggable="true" data-player-id="${player.player_id}">
+                            <div class="ranking-number">${index + 1}</div>
+                            <div class="ranking-player">${player.username}</div>
+                            <div class="ranking-stats">${player.points}pts | ${player.legs_won}-${player.legs_lost}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    initializeRankingDragDrop();
+}
+
+function initializeRankingDragDrop() {
+    const items = document.querySelectorAll('.ranking-item');
+    let draggedItem = null;
+    
+    items.forEach(item => {
+        item.addEventListener('dragstart', function() {
+            draggedItem = this;
+            setTimeout(() => this.classList.add('dragging'), 0);
+        });
+        
+        item.addEventListener('dragend', function() {
+            setTimeout(() => this.classList.remove('dragging'), 0);
+            updateRankingNumbers(this.closest('.ranking-list'));
+        });
+        
+        item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const list = this.closest('.ranking-list');
+            const afterElement = getDragAfterElement(list, e.clientY);
+            if (afterElement == null) {
+                list.appendChild(draggedItem);
+            } else {
+                list.insertBefore(draggedItem, afterElement);
+            }
+        });
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.ranking-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updateRankingNumbers(list) {
+    const items = list.querySelectorAll('.ranking-item');
+    items.forEach((item, index) => {
+        const numberEl = item.querySelector('.ranking-number');
+        if (numberEl) {
+            numberEl.textContent = index + 1;
+        }
+    });
+}
+
+async function saveManualOverride() {
+    const client = getTournamentSupabaseClient();
+    if (!client) return;
+    
+    try {
+        // Get all ranking lists
+        const groups = document.querySelectorAll('.ranking-group');
+        const updates = [];
+        
+        groups.forEach(group => {
+            const groupName = group.dataset.group;
+            const items = group.querySelectorAll('.ranking-item');
+            
+            items.forEach((item, index) => {
+                updates.push({
+                    tournament_id: tournamentState.currentTournament,
+                    player_id: item.dataset.playerId,
+                    manual_ranking: index + 1,
+                    group_name: groupName
+                });
+            });
+        });
+        
+        // Save manual rankings (you'll need to add a manual_ranking column to tournament_stats)
+        for (const update of updates) {
+            const { error } = await client
+                .from(TABLES.TOURNAMENT_STATS)
+                .update({ manual_ranking: update.manual_ranking })
+                .eq('tournament_id', update.tournament_id)
+                .eq('player_id', update.player_id);
+            
+            if (error) throw error;
+        }
+        
+        showSuccess('Rankings updated successfully');
+        closeManualOverrideModal();
+        loadStandings();
+    } catch (error) {
+        console.error('Error saving rankings:', error);
+        showError('Failed to save rankings');
+    }
+}
+
+async function finalizeGroupsAndGenerateBracket() {
+    if (!confirm('Are you sure you want to finalize group stage and generate the knockout bracket? This cannot be undone.')) {
+        return;
+    }
+    
+    // TODO: Implement bracket generation based on group standings and players_advancing setting
+    showSuccess('Bracket generation will be implemented next');
 }
