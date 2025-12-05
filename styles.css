@@ -883,8 +883,8 @@ body {
     display: flex;
     align-items: stretch;
     border-bottom: 3px solid #fff;
-    height: 50vh;
-    max-height: 500px;
+    height: 35vh;
+    max-height: 350px;
 }
 
 .player-header {
@@ -1475,8 +1475,8 @@ body {
 
 /* Game Screen */
 .scoring-area {
-    height: clamp(120px, 18vh, 200px);
-    max-height: 200px;
+    height: clamp(150px, 30vh, 350px);
+    max-height: 350px;
     background: #000;
     display: flex;
     align-items: flex-start;
