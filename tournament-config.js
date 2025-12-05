@@ -27,7 +27,7 @@ function getTournamentSupabaseClient() {
 
 // Database table names
 const TABLES = {
-    PLAYERS: 'tournament_players_global',
+    PLAYERS: 'players',
     TOURNAMENTS: 'tournaments',
     TOURNAMENT_PLAYERS: 'tournament_players',
     MATCHES: 'tournament_matches',

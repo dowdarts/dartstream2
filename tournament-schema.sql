@@ -1,20 +1,11 @@
 -- Tournament Portal Database Schema
 -- This migration creates all necessary tables for the tournament system
+-- NOTE: This schema assumes the 'players' table already exists from the main app (setup-database.sql)
 
--- Global Players Table
-CREATE TABLE IF NOT EXISTS tournament_players_global (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT NOT NULL UNIQUE,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_by_user_id UUID,
-    CONSTRAINT username_min_length CHECK (char_length(username) >= 2)
-);
-
--- Global Player Statistics
+-- Global Player Statistics (references shared players table)
 CREATE TABLE IF NOT EXISTS stats_global (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    player_id UUID NOT NULL REFERENCES tournament_players_global(id) ON DELETE CASCADE,
+    player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     total_darts INTEGER DEFAULT 0,
     total_score INTEGER DEFAULT 0,
     total_180s INTEGER DEFAULT 0,
@@ -65,7 +56,7 @@ CREATE TABLE IF NOT EXISTS tournament_boards (
 CREATE TABLE IF NOT EXISTS tournament_players (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-    player_id UUID NOT NULL REFERENCES tournament_players_global(id) ON DELETE CASCADE,
+    player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     group_name TEXT NOT NULL,
     seed INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -78,12 +69,12 @@ CREATE TABLE IF NOT EXISTS tournament_matches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
     board_id TEXT NOT NULL,
-    player1_id UUID NOT NULL REFERENCES tournament_players_global(id),
-    player2_id UUID NOT NULL REFERENCES tournament_players_global(id),
+    player1_id BIGINT NOT NULL REFERENCES players(id),
+    player2_id BIGINT NOT NULL REFERENCES players(id),
     stage TEXT NOT NULL,
     group_name TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
-    winner_id UUID REFERENCES tournament_players_global(id),
+    winner_id BIGINT REFERENCES players(id),
     player1_legs INTEGER DEFAULT 0,
     player2_legs INTEGER DEFAULT 0,
     leg_data JSONB DEFAULT '[]'::jsonb,
@@ -98,7 +89,7 @@ CREATE TABLE IF NOT EXISTS tournament_matches (
 CREATE TABLE IF NOT EXISTS tournament_stats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-    player_id UUID NOT NULL REFERENCES tournament_players_global(id) ON DELETE CASCADE,
+    player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     points INTEGER DEFAULT 0,
     matches_won INTEGER DEFAULT 0,
     matches_lost INTEGER DEFAULT 0,
@@ -129,7 +120,7 @@ CREATE OR REPLACE VIEW tournament_leaderboard AS
 SELECT 
     ts.tournament_id,
     ts.player_id,
-    p.username,
+    p.first_name || ' ' || p.last_name as player_name,
     tp.group_name,
     ts.points,
     ts.matches_won,
@@ -145,14 +136,14 @@ SELECT
     ts.total_140s,
     ts.total_100s
 FROM tournament_stats ts
-JOIN tournament_players_global p ON ts.player_id = p.id
+JOIN players p ON ts.player_id = p.id
 JOIN tournament_players tp ON ts.tournament_id = tp.tournament_id AND ts.player_id = tp.player_id;
 
 -- Global Leaderboard View
 CREATE OR REPLACE VIEW global_leaderboard AS
 SELECT 
     sg.player_id,
-    p.username,
+    p.first_name || ' ' || p.last_name as player_name,
     CASE 
         WHEN sg.total_darts > 0 THEN ROUND((sg.total_score::decimal / (sg.total_darts::decimal / 3)), 2)
         ELSE 0
@@ -163,13 +154,12 @@ SELECT
     sg.total_140s,
     sg.total_100s
 FROM stats_global sg
-JOIN tournament_players_global p ON sg.player_id = p.id
-WHERE p.is_active = true
+JOIN players p ON sg.player_id = p.id
 ORDER BY global_average DESC;
 
 -- Row Level Security (RLS) Policies
 -- Enable RLS on all tables
-ALTER TABLE tournament_players_global ENABLE ROW LEVEL SECURITY;
+-- Note: The 'players' table RLS is already managed by setup-database.sql
 ALTER TABLE stats_global ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_players ENABLE ROW LEVEL SECURITY;
@@ -178,7 +168,6 @@ ALTER TABLE tournament_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_boards ENABLE ROW LEVEL SECURITY;
 
 -- Allow anonymous read access to all tables (adjust based on your security requirements)
-CREATE POLICY "Allow anonymous read access" ON tournament_players_global FOR SELECT USING (true);
 CREATE POLICY "Allow anonymous read access" ON stats_global FOR SELECT USING (true);
 CREATE POLICY "Allow anonymous read access" ON tournaments FOR SELECT USING (true);
 CREATE POLICY "Allow anonymous read access" ON tournament_players FOR SELECT USING (true);
@@ -187,8 +176,6 @@ CREATE POLICY "Allow anonymous read access" ON tournament_stats FOR SELECT USING
 CREATE POLICY "Allow anonymous read access" ON tournament_boards FOR SELECT USING (true);
 
 -- Allow anonymous insert/update for tournament operations
-CREATE POLICY "Allow anonymous insert" ON tournament_players_global FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow anonymous update" ON tournament_players_global FOR UPDATE USING (true);
 CREATE POLICY "Allow anonymous insert" ON stats_global FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow anonymous update" ON stats_global FOR UPDATE USING (true);
 CREATE POLICY "Allow anonymous insert" ON tournaments FOR INSERT WITH CHECK (true);
@@ -216,7 +203,7 @@ CREATE TRIGGER update_tournament_stats_updated_at BEFORE UPDATE ON tournament_st
 CREATE TRIGGER update_stats_global_updated_at BEFORE UPDATE ON stats_global FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to initialize tournament stats for a player
-CREATE OR REPLACE FUNCTION initialize_tournament_stats(p_tournament_id UUID, p_player_id UUID)
+CREATE OR REPLACE FUNCTION initialize_tournament_stats(p_tournament_id UUID, p_player_id BIGINT)
 RETURNS void AS $$
 BEGIN
     INSERT INTO tournament_stats (tournament_id, player_id)

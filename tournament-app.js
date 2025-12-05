@@ -125,13 +125,18 @@ async function loadPlayers() {
         const { data, error } = await client
             .from(TABLES.PLAYERS)
             .select('*')
-            .eq('is_active', true)
-            .order('username');
+            .order('first_name');
         
         if (error) throw error;
         
-        tournamentState.activePlayers = data || [];
-        renderPlayersList(data || []);
+        // Transform to include full name
+        const players = (data || []).map(p => ({
+            ...p,
+            fullName: `${p.first_name} ${p.last_name}`
+        }));
+        
+        tournamentState.activePlayers = players;
+        renderPlayersList(players);
     } catch (error) {
         console.error('Error loading players:', error);
         showError('Failed to load players');
@@ -149,7 +154,7 @@ function renderPlayersList(players) {
     
     container.innerHTML = players.map(player => `
         <div class="player-card" data-player-id="${player.id}">
-            <h3>${player.username}</h3>
+            <h3>${player.first_name} ${player.last_name}</h3>
             <div class="player-stats">
                 <div class="stat">
                     <div class="stat-value">0.00</div>
@@ -169,25 +174,28 @@ function renderPlayersList(players) {
 }
 
 function showAddPlayerModal() {
-    const playerName = prompt('Enter player name:');
-    if (playerName && playerName.trim()) {
-        addPlayer(playerName.trim());
-    }
+    const firstName = prompt('Enter player first name:');
+    if (!firstName || !firstName.trim()) return;
+    
+    const lastName = prompt('Enter player last name:');
+    if (!lastName || !lastName.trim()) return;
+    
+    addPlayer(firstName.trim(), lastName.trim());
 }
 
-async function addPlayer(playerName) {
+async function addPlayer(firstName, lastName) {
     const client = getTournamentSupabaseClient();
     if (!client) return;
     
     try {
         const { data, error } = await client
             .from(TABLES.PLAYERS)
-            .insert([{ username: playerName, is_active: true }])
+            .insert([{ first_name: firstName, last_name: lastName }])
             .select();
         
         if (error) throw error;
         
-        showSuccess(`Player "${playerName}" added successfully`);
+        showSuccess(`Player "${firstName} ${lastName}" added successfully`);
         loadPlayers();
     } catch (error) {
         console.error('Error adding player:', error);
@@ -204,8 +212,7 @@ async function loadPlayersForSelection() {
         const { data, error } = await client
             .from(TABLES.PLAYERS)
             .select('*')
-            .eq('is_active', true)
-            .order('username');
+            .order('first_name');
         
         if (error) throw error;
         
@@ -221,7 +228,7 @@ function renderPlayerSelection(players) {
     
     container.innerHTML = players.map(player => `
         <div class="player-select-item" data-player-id="${player.id}">
-            ${player.username}
+            ${player.first_name} ${player.last_name}
         </div>
     `).join('');
     
