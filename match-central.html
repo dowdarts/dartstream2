@@ -254,7 +254,7 @@
                 <div class="status-dot"></div>
                 <span>Listening for active matches...</span>
             </div>
-            <button class="refresh-btn" onclick="refreshMatches()">Refresh</button>
+            <button class="refresh-btn" id="refreshBtn">Refresh</button>
         </div>
 
         <div id="matchesGrid" class="matches-grid">
@@ -270,13 +270,13 @@
         <div class="manual-connect">
             <h3>Manual Connection</h3>
             <p class="manual-text">Enter a 4-digit code to connect directly</p>
-            <input type="text" id="manualCode" class="code-input" placeholder="0000" maxlength="4" onkeypress="if(event.key === 'Enter') connectManually()">
-            <button class="connect-btn" onclick="connectManually()">Connect</button>
+            <input type="text" id="manualCode" class="code-input" placeholder="0000" maxlength="4">
+            <button class="connect-btn" id="manualConnectBtn">Connect</button>
         </div>
     </div>
 
     <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
         const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
@@ -460,7 +460,7 @@
                         <span class="legs-score">LEGS: ${homeLegs} - ${awayLegs}</span>
                         <span>${new Date(match.updatedAt).toLocaleTimeString()}</span>
                     </div>
-                    <button class="select-btn" onclick="event.stopPropagation(); selectMatch('${code}')">
+                    <button class="select-btn" data-code="${code}">
                         Display on Scoreboard
                     </button>
                 `;
@@ -512,10 +512,21 @@
         // Run cleanup every 30 seconds
         setInterval(cleanupOldGames, 30 * 1000);
 
-        window.refreshMatches = refreshMatches;
-        window.connectManually = connectManually;
-        window.selectMatch = selectMatch;
-        window.forceCleanupAll = forceCleanupAll;
+        // Add event listeners
+        document.getElementById('refreshBtn').addEventListener('click', refreshMatches);
+        document.getElementById('manualConnectBtn').addEventListener('click', connectManually);
+        document.getElementById('manualCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') connectManually();
+        });
+        
+        // Event delegation for dynamically created select buttons
+        document.getElementById('matchesGrid').addEventListener('click', (e) => {
+            if (e.target.classList.contains('select-btn')) {
+                e.stopPropagation();
+                const code = e.target.getAttribute('data-code');
+                if (code) selectMatch(code);
+            }
+        });
     </script>
 </body>
 </html>
