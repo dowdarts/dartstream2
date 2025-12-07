@@ -360,13 +360,14 @@
 
         // Initialize BroadcastChannel for cross-tab communication
         function initializeController() {
-            // Load saved score bug code if any
-            connectionCode = localStorage.getItem('score bug-connection-code');
+            // Load saved score bug code from sessionStorage (session-specific)
+            connectionCode = sessionStorage.getItem('controller-scoreboard-code');
             if (connectionCode) {
                 const codeInput = document.getElementById('scoreBugCode');
                 if (codeInput) {
                     codeInput.value = connectionCode;
                 }
+                console.log('🔄 Restored controller connection code:', connectionCode);
             }
             
             // Set up BroadcastChannel
@@ -410,6 +411,7 @@
             const scoreBugCodeInput = document.getElementById('scoreBugCode');
             if (scoreBugCodeInput && scoreBugCodeInput.value) {
                 connectionCode = scoreBugCodeInput.value;
+                sessionStorage.setItem('controller-scoreboard-code', connectionCode);
                 setTimeout(() => pingScoreBug(), 500);
             }
         }
@@ -466,7 +468,7 @@
             }
             
             connectionCode = codeInput.value;
-            localStorage.setItem('scoreboard-connection-code', connectionCode);
+            sessionStorage.setItem('controller-scoreboard-code', connectionCode);
             
             // Initialize Supabase for remote communication
             setupSupabaseConnection();
