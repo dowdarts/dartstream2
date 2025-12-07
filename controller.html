@@ -533,7 +533,7 @@
             }
             
             const settings = {
-                type: 'updatescore bug',
+                type: 'updateScoreboard',
                 controllerId: controllerId,
                 header: document.getElementById('headerText').value,
                 group: document.getElementById('footerGroup').value,
@@ -548,6 +548,7 @@
                 showScore: document.getElementById('showScore').checked
             };
 
+            console.log('📤 Sending scoreboard settings:', settings);
             sendToScoreBug(settings);
             
             // Save to localStorage
