@@ -360,6 +360,13 @@
 
         // Initialize BroadcastChannel for cross-tab communication
         function initializeController() {
+            // Restore controller ID from sessionStorage
+            const savedControllerId = sessionStorage.getItem('controller-id');
+            if (savedControllerId) {
+                controllerId = savedControllerId;
+                console.log('🔄 Restored controller ID:', controllerId);
+            }
+            
             // Load saved score bug code from sessionStorage (session-specific)
             connectionCode = sessionStorage.getItem('controller-scoreboard-code');
             if (connectionCode) {
@@ -437,12 +444,15 @@
 
         // Handle responses from score bug
         function handleScoreBugResponse(data) {
+            console.log('📨 Controller received response:', data);
             if (data.type === 'pong' && data.controllerId) {
                 controllerId = data.controllerId;
+                sessionStorage.setItem('controller-id', controllerId);
+                console.log('✅ Controller ID received and saved:', controllerId);
                 updateConnectionStatus(true);
             } else if (data.type === 'ack' && data.controllerId === controllerId) {
                 // Acknowledged command
-                console.log('Command acknowledged:', data.commandType);
+                console.log('✅ Command acknowledged:', data.commandType);
             }
         }
 
