@@ -581,18 +581,7 @@
                 alert('Not connected to score bug. Please connect first.');
                 return;
             }
-            sendToScoreBug({ 
-                type: 'toggleAd',
-                controllerId: controllerId
-            });
-        }
-        
-        // Toggle ad
-        function toggleAd() {
-            if (!isConnected) {
-                alert('Not connected to score bug. Please connect first.');
-                return;
-            }
+            console.log('🔄 Sending toggle ad command');
             sendToScoreBug({ 
                 type: 'toggleAd',
                 controllerId: controllerId
