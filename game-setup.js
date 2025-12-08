@@ -9,6 +9,7 @@ export const GameSetupModule = {
     selectedPlayersForDelete: [],
     libraryMode: 'select', // 'select', 'edit', 'delete'
     filteringActive: false,
+    currentEditingPlayer: null, // Track player being edited
     
     gameConfig: {
         gameType: '501',
@@ -178,13 +179,12 @@ export const GameSetupModule = {
                 cardElement.classList.add('selected-for-game');
             }
         } else if (this.libraryMode === 'edit') {
-            const firstName = prompt('Edit first name:', player.firstName);
-            if (firstName === null || firstName.trim() === '') return;
-            
-            const lastName = prompt('Edit last name:', player.lastName);
-            if (lastName === null || lastName.trim() === '') return;
-            
-            this.updatePlayer(player.id, firstName.trim(), lastName.trim());
+            // Open edit modal with player data
+            this.currentEditingPlayer = player;
+            document.getElementById('edit-player-firstname').value = player.firstName || '';
+            document.getElementById('edit-player-lastname').value = player.lastName || '';
+            document.getElementById('edit-player-nationality').value = player.nationality || '';
+            this.showModal('edit-player-modal');
         } else if (this.libraryMode === 'delete') {
             const indexInDelete = this.selectedPlayersForDelete.indexOf(playerName);
             
@@ -276,6 +276,11 @@ export const GameSetupModule = {
         document.getElementById('add-player-cancel')?.addEventListener('click', () => this.hideModal('add-player-modal'));
         document.getElementById('close-add-player')?.addEventListener('click', () => this.hideModal('add-player-modal'));
         
+        // Edit player modal handlers
+        document.getElementById('edit-player-submit')?.addEventListener('click', () => this.handleEditPlayer());
+        document.getElementById('edit-player-cancel')?.addEventListener('click', () => this.hideModal('edit-player-modal'));
+        document.getElementById('close-edit-player')?.addEventListener('click', () => this.hideModal('edit-player-modal'));
+        
         // Close modal buttons
         document.querySelectorAll('.close-modal').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -356,9 +361,40 @@ export const GameSetupModule = {
         }
     },
     
-    // Update player
-    async updatePlayer(playerId, firstName, lastName) {
-        const result = await PlayerLibraryModule.updatePlayer(playerId, firstName, lastName);
+    // Handle edit player
+    async handleEditPlayer() {
+        if (!this.currentEditingPlayer) return;
+        
+        const firstName = document.getElementById('edit-player-firstname').value.trim();
+        const lastName = document.getElementById('edit-player-lastname').value.trim();
+        const nationality = document.getElementById('edit-player-nationality').value;
+        
+        if (firstName === '' || lastName === '') {
+            alert('Please enter both first and last name');
+            return;
+        }
+        
+        const result = await PlayerLibraryModule.updatePlayer(
+            this.currentEditingPlayer.id, 
+            firstName, 
+            lastName, 
+            nationality || null
+        );
+        
+        if (result.success) {
+            this.renderPlayerLibrary();
+            this.renderPlayerSelectionLists();
+            this.hideModal('edit-player-modal');
+            this.currentEditingPlayer = null;
+            alert('Player updated successfully!');
+        } else {
+            alert('Failed to update player. Please try again.');
+        }
+    },
+    
+    // Update player (legacy - kept for compatibility)
+    async updatePlayer(playerId, firstName, lastName, nationality = null) {
+        const result = await PlayerLibraryModule.updatePlayer(playerId, firstName, lastName, nationality);
         
         if (result.success) {
             this.renderPlayerLibrary();
