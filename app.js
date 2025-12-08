@@ -803,7 +803,9 @@ document.getElementById('select-players-btn')?.addEventListener('click', functio
 
 // Select Players button from starting player screen
 document.getElementById('select-players-starting-screen-btn')?.addEventListener('click', function() {
+    gameState.isChangingPlayers = true;
     showScreen('player-selection-screen');
+    renderPlayerSelectionLists();
 });
 
 // Select Players button from game type screen
