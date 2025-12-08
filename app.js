@@ -763,12 +763,12 @@ function selectPlayer(player, side) {
 
 // Select Players button
 document.getElementById('select-players-btn')?.addEventListener('click', function() {
-    showScreen('game-selection-screen');
+    showScreen('player-selection-screen');
 });
 
 // Select Players button from starting player screen
 document.getElementById('select-players-starting-screen-btn')?.addEventListener('click', function() {
-    showScreen('game-selection-screen');
+    showScreen('player-selection-screen');
 });
 
 // Start Game button (same function as Select Players)
