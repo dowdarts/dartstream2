@@ -225,6 +225,59 @@
         .hidden {
             display: none;
         }
+
+        .ad-gallery-controller {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .ad-gallery-item-controller {
+            position: relative;
+            border: 2px solid rgba(250, 204, 21, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ad-gallery-item-controller.active {
+            border-color: #facc15;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+        }
+
+        .ad-gallery-item-controller:hover {
+            border-color: #facc15;
+        }
+
+        .ad-gallery-item-controller img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ad-gallery-item-controller .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .ad-gallery-item-controller:hover .remove-btn {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -313,11 +366,14 @@
         <h2>📺 Advertisement Controls</h2>
         
         <div class="control-group">
-            <label class="control-label">Upload Ad Image</label>
+            <label class="control-label">Upload Ad Images (Multiple Selection)</label>
             <div class="file-upload-area" onclick="document.getElementById('adImageUpload').click()">
-                <p>📁 Click to upload image</p>
-                <input type="file" id="adImageUpload" accept="image/*" onchange="handleAdImageUpload(event)">
-                <img id="adPreview" class="preview-image hidden" alt="Ad Preview">
+                <p>📁 Click to upload images</p>
+                <input type="file" id="adImageUpload" accept="image/*" multiple onchange="handleAdImageUpload(event)">
+            </div>
+            <div id="adGalleryController" class="ad-gallery-controller"></div>
+            <div style="color: #facc15; font-size: 12px; margin-top: 10px; text-align: center;">
+                Use Shift + Left/Right Arrow on scoreboard to switch
             </div>
         </div>
 
@@ -564,26 +620,111 @@
                 return;
             }
             
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('adPreview');
-                    preview.src = e.target.result;
-                    preview.classList.remove('hidden');
-                    
-                    // Send to score bug
-                    sendToScoreBug({
-                        type: 'updateAdImage',
-                        controllerId: controllerId,
-                        image: e.target.result
-                    });
-                    
-                    // Save to localStorage
-                    localStorage.setItem('ad-image', e.target.result);
-                };
-                reader.readAsDataURL(file);
+            const files = event.target.files;
+            if (files.length > 0) {
+                // Load all selected images
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Add to ad images array
+                        if (!window.adImages) {
+                            window.adImages = [];
+                        }
+                        window.adImages.push(e.target.result);
+                        
+                        // Update gallery
+                        updateAdGallery();
+                        
+                        // Send all images to score bug
+                        sendToScoreBug({
+                            type: 'updateAdImages',
+                            controllerId: controllerId,
+                            images: window.adImages,
+                            currentIndex: window.currentAdIndex || 0
+                        });
+                        
+                        // Save to localStorage
+                        localStorage.setItem('ad-images', JSON.stringify(window.adImages));
+                    };
+                    reader.readAsDataURL(file);
+                });
             }
+        }
+
+        function updateAdGallery() {
+            const gallery = document.getElementById('adGalleryController');
+            gallery.innerHTML = '';
+            
+            if (!window.adImages || window.adImages.length === 0) return;
+            
+            window.adImages.forEach((imgSrc, index) => {
+                const item = document.createElement('div');
+                item.className = 'ad-gallery-item-controller';
+                if (index === (window.currentAdIndex || 0)) {
+                    item.classList.add('active');
+                }
+                
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeAdImage(index);
+                };
+                
+                item.appendChild(img);
+                item.appendChild(removeBtn);
+                item.onclick = () => selectAdImage(index);
+                
+                gallery.appendChild(item);
+            });
+        }
+
+        function selectAdImage(index) {
+            if (!window.adImages || index >= window.adImages.length) return;
+            
+            window.currentAdIndex = index;
+            updateAdGallery();
+            
+            // Send to score bug
+            sendToScoreBug({
+                type: 'selectAdImage',
+                controllerId: controllerId,
+                index: index
+            });
+            
+            localStorage.setItem('ad-current-index', index.toString());
+        }
+
+        function removeAdImage(index) {
+            if (!window.adImages) return;
+            
+            window.adImages.splice(index, 1);
+            
+            if (window.adImages.length === 0) {
+                window.currentAdIndex = 0;
+            } else if (index === window.currentAdIndex) {
+                const newIndex = Math.max(0, index - 1);
+                window.currentAdIndex = newIndex;
+            } else if (index < window.currentAdIndex) {
+                window.currentAdIndex--;
+            }
+            
+            updateAdGallery();
+            
+            // Send updated images to score bug
+            sendToScoreBug({
+                type: 'updateAdImages',
+                controllerId: controllerId,
+                images: window.adImages,
+                currentIndex: window.currentAdIndex || 0
+            });
+            
+            localStorage.setItem('ad-images', JSON.stringify(window.adImages));
+            localStorage.setItem('ad-current-index', (window.currentAdIndex || 0).toString());
         }
 
         // Toggle ad visibility
@@ -698,12 +839,17 @@
                 document.getElementById('adTransitionDuration').value = adSettings.transitionDuration || '1';
             }
 
-            // Load ad image
-            const savedAdImage = localStorage.getItem('ad-image');
-            if (savedAdImage) {
-                const preview = document.getElementById('adPreview');
-                preview.src = savedAdImage;
-                preview.classList.remove('hidden');
+            // Load ad images
+            const savedAdImages = localStorage.getItem('ad-images');
+            const savedAdIndex = localStorage.getItem('ad-current-index');
+            if (savedAdImages) {
+                try {
+                    window.adImages = JSON.parse(savedAdImages);
+                    window.currentAdIndex = parseInt(savedAdIndex) || 0;
+                    updateAdGallery();
+                } catch (e) {
+                    console.error('Error loading saved ad images:', e);
+                }
             }
 
             // Check for saved code
