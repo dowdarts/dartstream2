@@ -388,3 +388,6 @@ const GameStateSync = {
 
 // Make GameStateSync available globally
 window.GameStateSync = GameStateSync;
+
+// ES6 Module Exports
+export { getSupabaseClient as supabase, PlayerDB, GameStateSync };
