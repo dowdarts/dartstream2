@@ -83,6 +83,15 @@ body {
     flex-direction: column;
 }
 
+/* Game screen specific - fixed header/footer with flexible middle */
+#game-screen.active,
+#starting-player-screen.active {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
 /* Game Mode Selection Screen */
 .modal-header {
     background: linear-gradient(to bottom, #4a5f7a 0%, #2d3e50 100%);
@@ -908,8 +917,10 @@ body {
     display: flex;
     align-items: stretch;
     border-bottom: 3px solid #fff;
-    height: 50vh;
-    max-height: 500px;
+    flex-shrink: 0;
+    height: auto;
+    min-height: 200px;
+    max-height: 35vh;
 }
 
 .player-header {
@@ -1500,15 +1511,15 @@ body {
 
 /* Game Screen */
 .scoring-area {
-    height: clamp(120px, 18vh, 200px);
-    max-height: 200px;
+    flex: 1;
+    min-height: 0;
     background: #000;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding: 10px;
     overflow-y: auto;
-    flex-shrink: 0;
+    overflow-x: hidden;
 }
 
 .score-history {
@@ -1614,7 +1625,8 @@ body {
 
 .bottom-controls {
     background: #000;
-    padding-bottom: 20px;
+    flex-shrink: 0;
+    padding-bottom: 0;
 }
 
 .control-bar {
@@ -2079,8 +2091,8 @@ body {
     
     /* Game screen optimizations for mobile portrait */
     .scoreboard-header {
-        height: clamp(160px, 23vh, 200px);
-        max-height: 200px;
+        min-height: 160px;
+        max-height: 30vh;
     }
     
     .player-header {
@@ -2102,8 +2114,6 @@ body {
     }
     
     .scoring-area {
-        height: clamp(80px, 12vh, 120px);
-        max-height: 120px;
         padding: 6px;
     }
     
@@ -2138,7 +2148,7 @@ body {
     }
     
     .bottom-controls {
-        padding-bottom: 6px;
+        padding-bottom: 0;
     }
     
     .game-logo {
@@ -2177,8 +2187,8 @@ body {
     
     /* Game screen optimizations for landscape/small tablets */
     .scoreboard-header {
-        height: clamp(170px, 24vh, 220px);
-        max-height: 220px;
+        min-height: 170px;
+        max-height: 32vh;
     }
     
     .player-header {
@@ -2200,8 +2210,6 @@ body {
     }
     
     .scoring-area {
-        height: clamp(90px, 14vh, 140px);
-        max-height: 140px;
         padding: 7px;
     }
     
@@ -2236,7 +2244,7 @@ body {
     }
     
     .bottom-controls {
-        padding-bottom: 7px;
+        padding-bottom: 0;
     }
     
     .game-logo {
@@ -2325,8 +2333,8 @@ body {
     
     /* Game screen optimizations - reduce score display to fit everything */
     .scoreboard-header {
-        height: clamp(180px, 25vh, 240px);
-        max-height: 240px;
+        min-height: 180px;
+        max-height: 33vh;
     }
     
     .game-header {
@@ -2359,10 +2367,8 @@ body {
         max-height: 40px;
     }
     
-    /* More space for previous scores */
+    /* Flexible scrollable scoring area */
     .scoring-area {
-        height: clamp(100px, 15vh, 150px);
-        max-height: 150px;
         padding: 8px;
     }
     
@@ -2405,9 +2411,9 @@ body {
         font-size: clamp(22px, 3vw, 28px) !important;
     }
     
-    /* Reduce bottom padding - let content fill screen */
+    /* Bottom controls fixed at bottom */
     .bottom-controls {
-        padding-bottom: 8px;
+        padding-bottom: 0;
     }
 }
 
