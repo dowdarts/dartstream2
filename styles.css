@@ -2189,47 +2189,57 @@ body {
     
     /* Game screen optimizations - reduce score display to fit everything */
     .scoreboard-header {
-        height: clamp(220px, 30vh, 320px);
-        max-height: 320px;
+        height: clamp(200px, 28vh, 280px);
+        max-height: 280px;
     }
     
     .game-header {
-        padding: 12px;
+        padding: 10px;
     }
     
     .player-header {
-        padding: 12px 10px;
-        gap: 8px;
+        padding: 10px 8px;
+        gap: 6px;
     }
     
     .player-name-large {
-        font-size: clamp(20px, 3.5vw, 32px);
-        margin-bottom: 8px;
+        font-size: clamp(18px, 3vw, 28px);
+        margin-bottom: 6px;
     }
     
     .score-large {
-        font-size: clamp(56px, 9vw, 100px);
+        font-size: clamp(52px, 8vw, 90px);
     }
     
     .avg-label {
-        font-size: clamp(12px, 1.8vh, 16px);
+        font-size: clamp(11px, 1.6vh, 14px);
     }
     
     /* More space for previous scores */
     .scoring-area {
-        height: clamp(140px, 22vh, 240px);
-        max-height: 240px;
+        height: clamp(120px, 18vh, 180px);
+        max-height: 180px;
     }
     
     /* Better sized keypad buttons */
     .num-btn {
-        font-size: clamp(20px, 3vw, 28px);
-        padding: 14px;
+        font-size: clamp(18px, 2.8vw, 24px);
+        padding: 12px;
+        min-height: 44px;
     }
     
     .input-btn {
-        font-size: clamp(16px, 2.5vw, 20px);
-        padding: 14px 20px;
+        font-size: clamp(15px, 2.3vw, 18px);
+        padding: 12px 18px;
+    }
+    
+    .input-bar {
+        padding: 6px;
+    }
+    
+    .number-pad {
+        padding: clamp(3px, 0.8vh, 6px);
+        gap: clamp(2px, 0.4vh, 4px);
     }
     
     .player-score-display {
@@ -2242,11 +2252,7 @@ body {
     
     /* Add bottom padding to prevent button cutoff */
     .bottom-controls {
-        padding-bottom: clamp(30px, 5vh, 60px);
-    }
-    
-    .number-pad {
-        padding-bottom: clamp(20px, 3vh, 40px);
+        padding-bottom: 16px;
     }
 }
 
