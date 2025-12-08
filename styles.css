@@ -1614,6 +1614,7 @@ body {
 
 .bottom-controls {
     background: #000;
+    padding-bottom: 20px;
 }
 
 .control-bar {
@@ -2237,6 +2238,15 @@ body {
     
     .player-name-display {
         font-size: clamp(22px, 3vw, 28px) !important;
+    }
+    
+    /* Add bottom padding to prevent button cutoff */
+    .bottom-controls {
+        padding-bottom: clamp(30px, 5vh, 60px);
+    }
+    
+    .number-pad {
+        padding-bottom: clamp(20px, 3vh, 40px);
     }
 }
 
