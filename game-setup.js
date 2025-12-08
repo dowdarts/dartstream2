@@ -184,6 +184,7 @@ export const GameSetupModule = {
             document.getElementById('edit-player-firstname').value = player.firstName || '';
             document.getElementById('edit-player-lastname').value = player.lastName || '';
             document.getElementById('edit-player-nationality').value = player.nationality || '';
+            this.hideModal('player-library-modal');
             this.showModal('edit-player-modal');
         } else if (this.libraryMode === 'delete') {
             const indexInDelete = this.selectedPlayersForDelete.indexOf(playerName);
@@ -278,8 +279,14 @@ export const GameSetupModule = {
         
         // Edit player modal handlers
         document.getElementById('edit-player-submit')?.addEventListener('click', () => this.handleEditPlayer());
-        document.getElementById('edit-player-cancel')?.addEventListener('click', () => this.hideModal('edit-player-modal'));
-        document.getElementById('close-edit-player')?.addEventListener('click', () => this.hideModal('edit-player-modal'));
+        document.getElementById('edit-player-cancel')?.addEventListener('click', () => {
+            this.hideModal('edit-player-modal');
+            this.showModal('player-library-modal');
+        });
+        document.getElementById('close-edit-player')?.addEventListener('click', () => {
+            this.hideModal('edit-player-modal');
+            this.showModal('player-library-modal');
+        });
         
         // Close modal buttons
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -385,6 +392,7 @@ export const GameSetupModule = {
             this.renderPlayerLibrary();
             this.renderPlayerSelectionLists();
             this.hideModal('edit-player-modal');
+            this.showModal('player-library-modal');
             this.currentEditingPlayer = null;
             alert('Player updated successfully!');
         } else {
