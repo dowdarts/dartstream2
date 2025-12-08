@@ -2189,57 +2189,76 @@ body {
     
     /* Game screen optimizations - reduce score display to fit everything */
     .scoreboard-header {
-        height: clamp(200px, 28vh, 280px);
-        max-height: 280px;
+        height: clamp(180px, 25vh, 240px);
+        max-height: 240px;
     }
     
     .game-header {
-        padding: 10px;
+        padding: 8px;
     }
     
     .player-header {
-        padding: 10px 8px;
-        gap: 6px;
+        padding: 8px 6px;
+        gap: 4px;
     }
     
     .player-name-large {
-        font-size: clamp(18px, 3vw, 28px);
-        margin-bottom: 6px;
+        font-size: clamp(16px, 2.8vw, 24px);
+        margin-bottom: 4px;
     }
     
     .score-large {
-        font-size: clamp(52px, 8vw, 90px);
+        font-size: clamp(48px, 7.5vw, 80px);
     }
     
     .avg-label {
-        font-size: clamp(11px, 1.6vh, 14px);
+        font-size: clamp(10px, 1.4vh, 13px);
+    }
+    
+    .timer-display {
+        padding: 4px;
+    }
+    
+    .game-logo {
+        max-height: 40px;
     }
     
     /* More space for previous scores */
     .scoring-area {
-        height: clamp(120px, 18vh, 180px);
-        max-height: 180px;
+        height: clamp(100px, 15vh, 150px);
+        max-height: 150px;
+        padding: 8px;
+    }
+    
+    .control-bar {
+        padding: 3px 8px;
+        min-height: 36px;
     }
     
     /* Better sized keypad buttons */
     .num-btn {
-        font-size: clamp(18px, 2.8vw, 24px);
-        padding: 12px;
-        min-height: 44px;
+        font-size: clamp(16px, 2.5vw, 22px);
+        padding: 10px;
+        min-height: 42px;
     }
     
     .input-btn {
-        font-size: clamp(15px, 2.3vw, 18px);
-        padding: 12px 18px;
+        font-size: clamp(14px, 2.2vw, 17px);
+        padding: 10px 16px;
     }
     
     .input-bar {
-        padding: 6px;
+        padding: 5px;
     }
     
     .number-pad {
-        padding: clamp(3px, 0.8vh, 6px);
-        gap: clamp(2px, 0.4vh, 4px);
+        padding: 3px;
+        gap: 2px;
+    }
+    
+    .input-mode {
+        font-size: clamp(16px, 2.5vw, 18px);
+        padding: 6px;
     }
     
     .player-score-display {
@@ -2250,9 +2269,9 @@ body {
         font-size: clamp(22px, 3vw, 28px) !important;
     }
     
-    /* Add bottom padding to prevent button cutoff */
+    /* Reduce bottom padding - let content fill screen */
     .bottom-controls {
-        padding-bottom: 16px;
+        padding-bottom: 8px;
     }
 }
 
