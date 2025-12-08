@@ -761,6 +761,41 @@ function selectPlayer(player, side) {
     }
 }
 
+// Click to copy connection code functionality
+function setupConnectionCodeCopy() {
+    const codeElements = [
+        'connection-code-display',
+        'connection-code-display-2',
+        'connection-code-display-3',
+        'connection-code-display-game-type'
+    ];
+    
+    codeElements.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.style.cursor = 'pointer';
+            element.title = 'Click to copy';
+            element.addEventListener('click', function() {
+                const code = this.textContent.trim();
+                if (code && code !== '----') {
+                    navigator.clipboard.writeText(code).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 1000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Initialize click-to-copy on page load
+setupConnectionCodeCopy();
+
 // Select Players button
 document.getElementById('select-players-btn')?.addEventListener('click', function() {
     showScreen('player-selection-screen');
@@ -768,6 +803,11 @@ document.getElementById('select-players-btn')?.addEventListener('click', functio
 
 // Select Players button from starting player screen
 document.getElementById('select-players-starting-screen-btn')?.addEventListener('click', function() {
+    showScreen('player-selection-screen');
+});
+
+// Select Players button from game type screen
+document.getElementById('select-players-game-type-btn')?.addEventListener('click', function() {
     showScreen('player-selection-screen');
 });
 
@@ -829,10 +869,14 @@ function updateStartingPlayerScreen() {
     if (window.GameStateSync) {
         const connectionCode = window.GameStateSync.startNewMatch();
         
-        // Update connection code display on starting player screen
+        // Update all connection code displays
         const codeDisplay2 = document.getElementById('connection-code-display-2');
+        const codeDisplayGameType = document.getElementById('connection-code-display-game-type');
         if (codeDisplay2) {
             codeDisplay2.textContent = connectionCode;
+        }
+        if (codeDisplayGameType) {
+            codeDisplayGameType.textContent = connectionCode;
         }
         
         // Also prepare the game state data for scoreboard to connect early
@@ -1668,9 +1712,11 @@ function startGame() {
         // Update all connection code displays
         const codeDisplay1 = document.getElementById('connection-code-display');
         const codeDisplay3 = document.getElementById('connection-code-display-3');
+        const codeDisplayGameType = document.getElementById('connection-code-display-game-type');
         
         if (codeDisplay1) codeDisplay1.textContent = connectionCode;
         if (codeDisplay3) codeDisplay3.textContent = connectionCode;
+        if (codeDisplayGameType) codeDisplayGameType.textContent = connectionCode;
     }
     
     // Mark match as active and save state
@@ -3020,14 +3066,16 @@ window.addEventListener('DOMContentLoaded', async function() {
                 // This will reuse existing session code or create new one
                 const connectionCode = window.GameStateSync.startNewMatch();
                 
-                // Update connection code displays
+                // Update all connection code displays
                 const codeDisplay1 = document.getElementById('connection-code-display');
                 const codeDisplay2 = document.getElementById('connection-code-display-2');
                 const codeDisplay3 = document.getElementById('connection-code-display-3');
+                const codeDisplayGameType = document.getElementById('connection-code-display-game-type');
                 
                 if (codeDisplay1) codeDisplay1.textContent = connectionCode;
                 if (codeDisplay2) codeDisplay2.textContent = connectionCode;
                 if (codeDisplay3) codeDisplay3.textContent = connectionCode;
+                if (codeDisplayGameType) codeDisplayGameType.textContent = connectionCode;
                 
                 // Sync the restored state to Supabase
                 window.GameStateSync.syncGameState(gameState);
