@@ -2122,6 +2122,21 @@ body {
         min-height: 32px;
     }
     
+    .control-btn {
+        padding: 4px 6px;
+        font-size: clamp(10px, 2.5vw, 12px);
+        white-space: nowrap;
+    }
+    
+    .set-score-inline {
+        font-size: clamp(12px, 3vw, 14px);
+    }
+    
+    /* Hide throw indicators on mobile - no room */
+    .throw-indicator {
+        display: none;
+    }
+    
     .num-btn {
         font-size: clamp(14px, 3.5vw, 18px);
         padding: 8px;
@@ -2216,6 +2231,21 @@ body {
     .control-bar {
         padding: 3px 7px;
         min-height: 34px;
+    }
+    
+    .control-btn {
+        padding: 4px 8px;
+        font-size: clamp(11px, 2.5vw, 13px);
+        white-space: nowrap;
+    }
+    
+    .set-score-inline {
+        font-size: clamp(13px, 2.8vw, 15px);
+    }
+    
+    /* Hide throw indicators on mobile landscape */
+    .throw-indicator {
+        display: none;
     }
     
     .num-btn {
