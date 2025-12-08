@@ -2949,7 +2949,7 @@ function updateScoreHistory() {
         // Add starting player indicator dot on visit 1
         if (visit === 1) {
             const startDot = document.createElement('div');
-            startDot.className = gameState.startingPlayer === 1 ? 'start-indicator left' : 'start-indicator right';
+            startDot.className = gameState.legStarter === 1 ? 'start-indicator left' : 'start-indicator right';
             turnColumn.appendChild(startDot);
         }
         
