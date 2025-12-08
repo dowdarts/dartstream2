@@ -2946,23 +2946,30 @@ function updateScoreHistory() {
         const isEditingP1 = gameState.isEditMode && gameState.editModePlayer === 1 && gameState.editModeTurnIndex === (visit - 1);
         const isEditingP2 = gameState.isEditMode && gameState.editModePlayer === 2 && gameState.editModeTurnIndex === (visit - 1);
         
+        // Add starting player indicator dot on visit 1
+        if (visit === 1) {
+            const startDot = document.createElement('div');
+            startDot.className = gameState.startingPlayer === 1 ? 'start-indicator left' : 'start-indicator right';
+            turnColumn.appendChild(startDot);
+        }
+        
         if (isEditingP1 || isEditingP2) {
             // Show yellow arrow for the turn being edited
             if (isEditingP1) {
-                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffd700;">← ${visit}</span>`;
+                turnColumn.innerHTML += `<span class="turn-arrow" style="color: #ffd700;">← ${visit}</span>`;
             } else {
-                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffd700;">${visit} →</span>`;
+                turnColumn.innerHTML += `<span class="turn-arrow" style="color: #ffd700;">${visit} →</span>`;
             }
         } else if (isCurrentTurn) {
             // Show white arrow for current player (normal bright)
             if (gameState.currentPlayer === 1) {
-                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffffff;">← ${visit}</span>`;
+                turnColumn.innerHTML += `<span class="turn-arrow" style="color: #ffffff;">← ${visit}</span>`;
             } else {
-                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffffff;">${visit} →</span>`;
+                turnColumn.innerHTML += `<span class="turn-arrow" style="color: #ffffff;">${visit} →</span>`;
             }
         } else {
             // Show faded gray for completed turns
-            turnColumn.innerHTML = `<span class="turn-number" style="color: #666666;">${visit}</span>`;
+            turnColumn.innerHTML += `<span class="turn-number" style="color: #666666;">${visit}</span>`;
         }
         
         // Player 2 column
