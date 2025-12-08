@@ -1,10 +1,17 @@
 // ===== PLAYER LIBRARY MODULE =====
 // Handles all player database interactions and library management
 
-import { PlayerDB } from './supabase-config.js';
-
 export const PlayerLibraryModule = {
     playerLibrary: [],
+    
+    // Get PlayerDB from window (loaded by supabase-config.js)
+    getPlayerDB() {
+        if (!window.PlayerDB) {
+            console.error('PlayerDB not available on window');
+            throw new Error('PlayerDB not initialized');
+        }
+        return window.PlayerDB;
+    },
     
     // Initialize player library from Supabase
     async initialize() {
@@ -25,6 +32,7 @@ export const PlayerLibraryModule = {
         // Then sync with Supabase in the background
         try {
             console.log('Fetching players from Supabase...');
+            const PlayerDB = this.getPlayerDB();
             const players = await PlayerDB.getAllPlayers();
             console.log('Players fetched from Supabase:', players);
             
@@ -42,6 +50,7 @@ export const PlayerLibraryModule = {
                     { firstName: 'Matthew', lastName: 'Dow' }
                 ];
                 
+                const PlayerDB = this.getPlayerDB();
                 for (const player of defaultPlayers) {
                     await PlayerDB.addPlayer(player.firstName, player.lastName);
                 }
@@ -67,6 +76,7 @@ export const PlayerLibraryModule = {
     // Add a new player
     async addPlayer(firstName, lastName, nationality = null) {
         try {
+            const PlayerDB = this.getPlayerDB();
             await PlayerDB.addPlayer(firstName, lastName, nationality);
             await this.refreshFromDatabase();
             return { success: true };
@@ -79,6 +89,7 @@ export const PlayerLibraryModule = {
     // Update an existing player
     async updatePlayer(playerId, firstName, lastName, nationality = null) {
         try {
+            const PlayerDB = this.getPlayerDB();
             await PlayerDB.updatePlayer(playerId, firstName, lastName, nationality);
             await this.refreshFromDatabase();
             return { success: true };
@@ -91,6 +102,7 @@ export const PlayerLibraryModule = {
     // Delete players by IDs
     async deletePlayers(playerIds) {
         try {
+            const PlayerDB = this.getPlayerDB();
             await PlayerDB.deletePlayers(playerIds);
             await this.refreshFromDatabase();
             return { success: true };
@@ -103,6 +115,7 @@ export const PlayerLibraryModule = {
     // Refresh library from database
     async refreshFromDatabase() {
         try {
+            const PlayerDB = this.getPlayerDB();
             const players = await PlayerDB.getAllPlayers();
             this.playerLibrary = players;
             localStorage.setItem('playerLibrary', JSON.stringify(players));
