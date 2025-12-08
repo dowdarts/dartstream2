@@ -766,6 +766,11 @@ document.getElementById('select-players-btn')?.addEventListener('click', functio
     showScreen('game-selection-screen');
 });
 
+// Select Players button from starting player screen
+document.getElementById('select-players-starting-screen-btn')?.addEventListener('click', function() {
+    showScreen('game-selection-screen');
+});
+
 // Start Game button (same function as Select Players)
 document.getElementById('start-game-btn')?.addEventListener('click', function() {
     // If a quick mode was selected, skip game selection and go straight to starting player
