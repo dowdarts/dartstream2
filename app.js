@@ -1624,8 +1624,20 @@ function recalculateScoresFromTurn(player, fromTurnIndex) {
     for (let i = 0; i <= fromTurnIndex; i++) {
         const turn = playerData.turnHistory[i];
         if (turn) {
-            currentScore -= turn.total;
-            legScore += turn.total;
+            const newScore = currentScore - turn.total;
+            
+            // Check if this causes a bust
+            const isBust = newScore < 0 || newScore === 1 || 
+                          (newScore === 0 && gameState.matchSettings.outMode === 'double');
+            
+            // Update bust flag for this turn
+            turn.bust = isBust;
+            
+            if (!isBust) {
+                currentScore = newScore;
+                legScore += turn.total;
+            }
+            
             legDarts += (typeof turn.darts === 'number' ? turn.darts : 3);
         }
     }
