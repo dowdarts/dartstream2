@@ -2186,9 +2186,49 @@ body {
         font-size: clamp(20px, 3vw, 26px) !important;
     }
     
-    /* Game screen optimizations */
+    /* Game screen optimizations - reduce score display to fit everything */
+    .scoreboard-header {
+        height: clamp(220px, 30vh, 320px);
+        max-height: 320px;
+    }
+    
     .game-header {
-        padding: 20px;
+        padding: 12px;
+    }
+    
+    .player-header {
+        padding: 12px 10px;
+        gap: 8px;
+    }
+    
+    .player-name-large {
+        font-size: clamp(20px, 3.5vw, 32px);
+        margin-bottom: 8px;
+    }
+    
+    .score-large {
+        font-size: clamp(56px, 9vw, 100px);
+    }
+    
+    .avg-label {
+        font-size: clamp(12px, 1.8vh, 16px);
+    }
+    
+    /* More space for previous scores */
+    .scoring-area {
+        height: clamp(140px, 22vh, 240px);
+        max-height: 240px;
+    }
+    
+    /* Better sized keypad buttons */
+    .num-btn {
+        font-size: clamp(20px, 3vw, 28px);
+        padding: 14px;
+    }
+    
+    .input-btn {
+        font-size: clamp(16px, 2.5vw, 20px);
+        padding: 14px 20px;
     }
     
     .player-score-display {
