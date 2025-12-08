@@ -70,10 +70,10 @@ export const PlayerLibraryModule = {
     },
     
     // Add a new player
-    async addPlayer(firstName, lastName) {
+    async addPlayer(firstName, lastName, nationality = null) {
         try {
             const PlayerDB = this.getPlayerDB();
-            await PlayerDB.addPlayer(firstName, lastName);
+            await PlayerDB.addPlayer(firstName, lastName, nationality);
             await this.refreshFromDatabase();
             return { success: true };
         } catch (error) {
@@ -83,10 +83,10 @@ export const PlayerLibraryModule = {
     },
     
     // Update an existing player
-    async updatePlayer(playerId, firstName, lastName) {
+    async updatePlayer(playerId, firstName, lastName, nationality = null) {
         try {
             const PlayerDB = this.getPlayerDB();
-            await PlayerDB.updatePlayer(playerId, firstName, lastName);
+            await PlayerDB.updatePlayer(playerId, firstName, lastName, nationality);
             await this.refreshFromDatabase();
             return { success: true };
         } catch (error) {

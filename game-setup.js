@@ -334,13 +334,14 @@ export const GameSetupModule = {
     async handleAddPlayer() {
         const firstName = document.getElementById('new-player-firstname').value.trim();
         const lastName = document.getElementById('new-player-lastname').value.trim();
+        const nationality = document.getElementById('new-player-nationality').value;
         
         if (firstName === '' || lastName === '') {
             alert('Please enter both first and last name');
             return;
         }
         
-        const result = await PlayerLibraryModule.addPlayer(firstName, lastName);
+        const result = await PlayerLibraryModule.addPlayer(firstName, lastName, nationality || null);
         
         if (result.success) {
             this.renderPlayerLibrary();
@@ -348,6 +349,7 @@ export const GameSetupModule = {
             this.hideModal('add-player-modal');
             document.getElementById('new-player-firstname').value = '';
             document.getElementById('new-player-lastname').value = '';
+            document.getElementById('new-player-nationality').value = '';
             alert('Player added successfully!');
         } else {
             alert('Failed to add player. Please try again.');
@@ -481,10 +483,12 @@ export const GameSetupModule = {
         
         if (side === 'left') {
             this.gameConfig.player1Name = playerName;
+            this.gameConfig.player1Nationality = player.nationality || '';
             document.getElementById('left-selected-display').textContent = playerName;
             document.getElementById('player1-name-display').textContent = playerName;
         } else {
             this.gameConfig.player2Name = playerName;
+            this.gameConfig.player2Nationality = player.nationality || '';
             document.getElementById('right-selected-display').textContent = playerName;
             document.getElementById('player2-name-display').textContent = playerName;
         }

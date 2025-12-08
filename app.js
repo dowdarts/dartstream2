@@ -73,7 +73,9 @@ const gameState = {
         gameTypeChangeFrequency: 'per-match', // 'every-leg', 'per-set', 'per-match'
         legSelectionBeforeSet: false,
         firstLegStarter: null, // player 1 or 2
-        needsBullUp: false // track if we need bull up for next leg
+        needsBullUp: false, // track if we need bull up for next leg
+        player1Nationality: '', // player 1 flag/nationality
+        player2Nationality: '' // player 2 flag/nationality
     },
     playerLibrary: []
 };
@@ -736,6 +738,7 @@ function selectPlayer(player, side) {
         }
         
         gameState.players.player1.name = playerName;
+        gameState.matchSettings.player1Nationality = player.nationality || '';
         leftSelectedDisplay.textContent = playerName;
         document.getElementById('player1-name-display').textContent = playerName;
         
@@ -749,6 +752,7 @@ function selectPlayer(player, side) {
         }
         
         gameState.players.player2.name = playerName;
+        gameState.matchSettings.player2Nationality = player.nationality || '';
         rightSelectedDisplay.textContent = playerName;
         document.getElementById('player2-name-display').textContent = playerName;
         

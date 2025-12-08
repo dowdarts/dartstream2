@@ -42,10 +42,11 @@ const PlayerDB = {
             
             console.log('Fetched players from Supabase:', data);
             
-            return data.map(player => ({
+            return (data || []).map(player => ({
                 id: player.id,
                 firstName: player.first_name,
                 lastName: player.last_name,
+                nationality: player.nationality,
                 createdAt: player.created_at
             }));
         } catch (error) {
@@ -55,21 +56,22 @@ const PlayerDB = {
     },
 
     // Add a new player
-    async addPlayer(firstName, lastName) {
+    async addPlayer(firstName, lastName, nationality = null) {
         try {
             const supabase = getSupabaseClient();
             if (!supabase) {
                 throw new Error('Supabase client not available');
             }
             
-            console.log('Adding player:', firstName, lastName);
+            console.log('Adding player:', firstName, lastName, nationality);
             
             const { data, error } = await supabase
                 .from('players')
                 .insert([
                     { 
                         first_name: firstName,
-                        last_name: lastName
+                        last_name: lastName,
+                        nationality: nationality
                     }
                 ])
                 .select();
@@ -82,6 +84,7 @@ const PlayerDB = {
                 id: data[0].id,
                 firstName: data[0].first_name,
                 lastName: data[0].last_name,
+                nationality: data[0].nationality,
                 createdAt: data[0].created_at
             };
         } catch (error) {
@@ -92,19 +95,25 @@ const PlayerDB = {
     },
 
     // Update a player
-    async updatePlayer(id, firstName, lastName) {
+    async updatePlayer(id, firstName, lastName, nationality = null) {
         try {
             const supabase = getSupabaseClient();
             if (!supabase) {
                 throw new Error('Supabase client not available');
             }
             
+            const updateData = { 
+                first_name: firstName,
+                last_name: lastName
+            };
+            
+            if (nationality !== null) {
+                updateData.nationality = nationality;
+            }
+            
             const { data, error } = await supabase
                 .from('players')
-                .update({ 
-                    first_name: firstName,
-                    last_name: lastName
-                })
+                .update(updateData)
                 .eq('id', id)
                 .select();
             
@@ -114,6 +123,7 @@ const PlayerDB = {
                 id: data[0].id,
                 firstName: data[0].first_name,
                 lastName: data[0].last_name,
+                nationality: data[0].nationality,
                 createdAt: data[0].created_at
             };
         } catch (error) {
@@ -304,6 +314,7 @@ const GameStateSync = {
                 // Player 1 data
                 player1: {
                     name: state.players?.player1?.name || 'Player 1',
+                    nationality: state.players?.player1?.nationality || state.matchSettings?.player1Nationality || '',
                     score: state.players?.player1?.score || 501,
                     legAvg: Math.round((state.players?.player1?.legAvg || 0) * 100) / 100,
                     matchAvg: Math.round((state.players?.player1?.matchAvg || 0) * 100) / 100,
@@ -318,6 +329,7 @@ const GameStateSync = {
                 // Player 2 data
                 player2: {
                     name: state.players?.player2?.name || 'Player 2',
+                    nationality: state.players?.player2?.nationality || state.matchSettings?.player2Nationality || '',
                     score: state.players?.player2?.score || 501,
                     legAvg: Math.round((state.players?.player2?.legAvg || 0) * 100) / 100,
                     matchAvg: Math.round((state.players?.player2?.matchAvg || 0) * 100) / 100,
