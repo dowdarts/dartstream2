@@ -1,13 +1,26 @@
 {
   "html.validate.styles": false,
+  "html.validate.scripts": false,
+  "css.validate": false,
   "css.lint.vendorPrefix": "ignore",
   "css.lint.compatibleVendorPrefixes": "ignore",
+  "css.lint.unknownProperties": "ignore",
   "html-validate.enable": false,
+  "htmlhint.enable": false,
+  "webhint.enable": false,
   "files.associations": {
-    "*.sql": "postgres"
+    "*.sql": "plaintext"
   },
   "sqltools.useNodeRuntime": true,
   "[sql]": {
     "editor.defaultFormatter": "mtxr.sqltools"
-  }
+  },
+  "html.suggest.html5": true,
+  "css.lint.important": "ignore",
+  "stylelint.enable": false,
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "never"
+  },
+  "problems.decorations.enabled": false
 }
