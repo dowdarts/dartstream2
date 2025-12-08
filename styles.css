@@ -944,44 +944,46 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     width: 100%;
+    gap: 8px;
 }
 
-.score-row {
+.player-name-large {
+    font-size: clamp(24px, 5vw, 48px);
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+}
+
+.stats-small {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    justify-content: center;
+}
+
+.stat-label {
+    font-size: 16px;
+}
+
+.stat-label.red {
+    color: #ff0000;
+}
+
+.averages-display {
     display: flex;
     flex-direction: row;
+    gap: 12px;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    width: 100%;
 }
 
-.throw-indicator {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: transparent;
-    transition: background 0.3s ease;
-}
-
-.player-header.left .throw-indicator {
-    right: 10px;
-}
-
-.player-header.right .throw-indicator {
-    left: 10px;
-}
-
-.throw-indicator.active {
-    background: #ffffff;
-}
-
-/* When player is active (white background), show black indicator */
-.player-header.active .throw-indicator.active {
-    background: #000000;
+.avg-label {
+    font-size: clamp(16px, 2.5vh, 22px);
+    font-weight: bold;
+    color: #ff0000 !important;
+    line-height: 1;
 }
 
 .player-header.left {
@@ -1004,50 +1006,11 @@ body {
     color: #000;
 }
 
-.player-name-large {
-    font-size: clamp(24px, 5vw, 48px);
-    font-weight: bold;
-    margin-bottom: 10px;
-    text-align: center;
-    line-height: 1;
-}
-
-.stats-small {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    justify-content: center;
-}
-
-.stat-label {
-    font-size: 16px;
-}
-
-.stat-label.red {
-    color: #ff0000;
-}
-
-.averages-display {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-.avg-label {
-    font-size: clamp(14px, 2vh, 18px);
-    font-weight: bold;
-    color: #ff0000 !important;
-    line-height: 1.2;
-}
-
 .score-large {
-    font-size: clamp(60px, 12vw, 140px);
+    font-size: clamp(80px, 15vw, 180px);
     font-weight: bold;
-    margin-bottom: 0;
     transition: color 0.2s, text-shadow 0.2s;
-    line-height: 1;
+    line-height: 0.9;
 }
 
 .score-large.edit-mode {
@@ -1515,16 +1478,52 @@ body {
     min-height: 0;
     background: #000;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     padding: 10px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
+.throw-indicator-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #000;
+    padding: 8px 15px;
+    border: 2px solid #ffd700;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.throw-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid #666;
+    transition: all 0.3s ease;
+}
+
+.throw-dot.active {
+    background: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.turn-arrow {
+    flex: 1;
+    text-align: center;
+    font-size: clamp(16px, 3vw, 24px);
+    font-weight: bold;
+    color: #ffd700;
+}
+
 .score-history {
     width: 100%;
-    height: 100%;
+    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
