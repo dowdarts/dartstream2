@@ -1,0 +1,13 @@
+{
+  "html.validate.styles": false,
+  "css.lint.vendorPrefix": "ignore",
+  "css.lint.compatibleVendorPrefixes": "ignore",
+  "html-validate.enable": false,
+  "files.associations": {
+    "*.sql": "postgres"
+  },
+  "sqltools.useNodeRuntime": true,
+  "[sql]": {
+    "editor.defaultFormatter": "mtxr.sqltools"
+  }
+}
