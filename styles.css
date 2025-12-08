@@ -1045,8 +1045,8 @@ body {
 }
 
 .game-logo {
-    max-width: 100px;
-    max-height: 60px;
+    max-width: 140px;
+    max-height: 80px;
     object-fit: contain;
     margin-bottom: 5px;
 }
@@ -2152,7 +2152,7 @@ body {
     }
     
     .game-logo {
-        max-height: 30px;
+        max-height: 45px;
     }
 }
 
@@ -2263,7 +2263,7 @@ body {
     }
     
     .game-logo {
-        max-height: 35px;
+        max-height: 50px;
     }
 }
 
@@ -2379,7 +2379,7 @@ body {
     }
     
     .game-logo {
-        max-height: 40px;
+        max-height: 60px;
     }
     
     /* Flexible scrollable scoring area */
