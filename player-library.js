@@ -1,5 +1,6 @@
 // ===== PLAYER LIBRARY MODULE =====
 // Handles all player database interactions and library management
+// Updated: 2025-12-07 21:03 - Removed ES6 imports, using window.PlayerDB
 
 export const PlayerLibraryModule = {
     playerLibrary: [],
