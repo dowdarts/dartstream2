@@ -2933,7 +2933,14 @@ function updateScoreHistory() {
         const p1TurnIndex = visit - 1;
         if (p1TurnIndex < p1History.length) {
             const turnData = p1History[p1TurnIndex];
-            const displayText = turnData.bust ? 'X' : turnData.total;
+            let displayText;
+            if (turnData.bust) {
+                displayText = 'X';
+            } else if (turnData.total === 0) {
+                displayText = 'Ø';
+            } else {
+                displayText = turnData.total;
+            }
             const isEditingThisTurn = gameState.isEditMode && gameState.editModePlayer === 1 && gameState.editModeTurnIndex === p1TurnIndex;
             p1Column.innerHTML = `<div class="darts" style="color: ${isEditingThisTurn ? '#ffd700' : 'inherit'}">${displayText}</div>`;
             // Make clickable if it's a completed turn
@@ -2992,7 +2999,14 @@ function updateScoreHistory() {
         const p2TurnIndex = visit - 1;
         if (p2TurnIndex < p2History.length) {
             const turnData = p2History[p2TurnIndex];
-            const displayText = turnData.bust ? 'X' : turnData.total;
+            let displayText;
+            if (turnData.bust) {
+                displayText = 'X';
+            } else if (turnData.total === 0) {
+                displayText = 'Ø';
+            } else {
+                displayText = turnData.total;
+            }
             const isEditingThisTurn = gameState.isEditMode && gameState.editModePlayer === 2 && gameState.editModeTurnIndex === p2TurnIndex;
             p2Column.innerHTML = `<div class="darts" style="color: ${isEditingThisTurn ? '#ffd700' : 'inherit'}">${displayText}</div>`;
             // Make clickable if it's a completed turn
