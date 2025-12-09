@@ -1,0 +1,32 @@
+{
+  "name": "dartstream-webapp",
+  "version": "1.0.0",
+  "description": "DartStream Standard Web Application - Fire OS / Silk Browser Compatible",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 8080",
+    "build": "echo 'No build step required - standard web app'",
+    "deploy": "echo 'Upload dartstream-webapp folder to your web host'"
+  },
+  "keywords": [
+    "darts",
+    "fire-os",
+    "silk-browser",
+    "fire-tablet",
+    "fire-tv",
+    "scoreboard",
+    "live-streaming",
+    "sports"
+  ],
+  "author": "MDStudios",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dowdarts/dartstream2"
+  },
+  "compatibility": {
+    "fireos": "5.0+",
+    "silk": "All versions",
+    "browsers": "Modern browsers with ES6 support"
+  }
+}
