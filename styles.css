@@ -17,18 +17,36 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    padding: 0;
 }
 
 #app {
     width: 100%;
-    max-width: 100%;
-    height: 100%;
-    max-height: 100%;
+    max-width: 900px;
+    height: 100vh;
+    max-height: 100vh;
     position: relative;
     overflow: hidden;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* Responsive sizing for smaller devices */
+@media (max-width: 900px) {
+    #app {
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 901px) {
+    body {
+        padding: 20px;
+    }
+    
+    #app {
+        height: calc(100vh - 40px);
+        max-height: calc(100vh - 40px);
+        border-radius: 12px;
+    }
 }
 
 /* Screen Management */
@@ -51,8 +69,15 @@ body {
 #starting-player-screen.active {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
     overflow: hidden;
+}
+
+@media (min-width: 901px) {
+    #game-screen.active,
+    #starting-player-screen.active {
+        height: 100%;
+    }
 }
 
 /* Game Mode Selection Screen */
