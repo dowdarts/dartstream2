@@ -183,6 +183,93 @@ const PlayerDB = {
             console.error('Error deleting players:', error);
             throw error;
         }
+    },
+
+    // Link a player library entry to a player account
+    async linkPlayerToAccount(playerLibraryId, email) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            // First, get the player's details from the library
+            const { data: player, error: playerError } = await supabase
+                .from('players')
+                .select('*')
+                .eq('id', playerLibraryId)
+                .maybeSingle();
+
+            if (playerError) throw playerError;
+            if (!player) throw new Error('Player not found in library');
+
+            // Check if there's a matching player_account with this email
+            const { data: account, error: accountError } = await supabase
+                .from('player_accounts')
+                .select('*')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (accountError) throw accountError;
+            
+            if (!account) {
+                return { 
+                    success: false, 
+                    message: 'No account found with this email. Player must create an account first.' 
+                };
+            }
+
+            // Update the player_accounts table to link to this player library entry
+            const { error: linkError } = await supabase
+                .from('player_accounts')
+                .update({ account_linked_player_id: playerLibraryId })
+                .eq('id', account.id);
+
+            if (linkError) throw linkError;
+
+            return { 
+                success: true, 
+                message: `Successfully linked to account for ${account.first_name} ${account.last_name} (Player ID: ${account.player_id})`,
+                accountPlayerId: account.player_id
+            };
+
+        } catch (error) {
+            console.error('Error linking player to account:', error);
+            throw error;
+        }
+    },
+
+    // Check if a player library entry is linked to an account
+    async checkPlayerAccountLink(playerLibraryId) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            const { data, error } = await supabase
+                .from('player_accounts')
+                .select('player_id, first_name, last_name, email')
+                .eq('account_linked_player_id', playerLibraryId)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (data) {
+                return {
+                    isLinked: true,
+                    accountPlayerId: data.player_id,
+                    accountName: `${data.first_name} ${data.last_name}`,
+                    email: data.email
+                };
+            }
+
+            return { isLinked: false };
+
+        } catch (error) {
+            console.error('Error checking player account link:', error);
+            throw error;
+        }
     }
 };
 
