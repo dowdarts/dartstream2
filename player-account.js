@@ -210,25 +210,67 @@ async function loadAccountFromDatabase(userId) {
             .from('player_accounts')
             .select('*')
             .eq('user_id', userId)
-            .single();
+            .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows gracefully
 
         if (error) throw error;
 
-        currentAccount = {
-            id: data.player_id,
-            firstName: data.first_name,
-            lastName: data.last_name,
-            email: data.email,
-            userId: data.user_id,
-            stats: data.stats || {
-                gamesPlayed: 0,
-                gamesWon: 0,
-                totalDarts: 0,
-                totalScore: 0,
-                highestCheckout: 0,
-                averages: []
-            }
-        };
+        // If no account exists, create one manually (fallback if trigger didn't fire)
+        if (!data) {
+            console.log('No account found, creating manually...');
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            const playerId = await generatePlayerId();
+            const firstName = user.user_metadata?.first_name || '';
+            const lastName = user.user_metadata?.last_name || '';
+            const email = user.email;
+
+            const { data: newAccount, error: insertError } = await supabase
+                .from('player_accounts')
+                .insert({
+                    user_id: userId,
+                    player_id: playerId,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email,
+                    stats: {
+                        gamesPlayed: 0,
+                        gamesWon: 0,
+                        totalDarts: 0,
+                        totalScore: 0,
+                        highestCheckout: 0,
+                        averages: []
+                    }
+                })
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+
+            currentAccount = {
+                id: newAccount.player_id,
+                firstName: newAccount.first_name,
+                lastName: newAccount.last_name,
+                email: newAccount.email,
+                userId: newAccount.user_id,
+                stats: newAccount.stats
+            };
+        } else {
+            currentAccount = {
+                id: data.player_id,
+                firstName: data.first_name,
+                lastName: data.last_name,
+                email: data.email,
+                userId: data.user_id,
+                stats: data.stats || {
+                    gamesPlayed: 0,
+                    gamesWon: 0,
+                    totalDarts: 0,
+                    totalScore: 0,
+                    highestCheckout: 0,
+                    averages: []
+                }
+            };
+        }
     } catch (error) {
         console.error('Error loading account:', error);
         throw error;
