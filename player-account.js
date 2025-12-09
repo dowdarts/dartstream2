@@ -410,6 +410,15 @@ async function loadPlayerStats() {
             ? Math.round((legsWon / totalLegs) * 100) 
             : 0;
         document.getElementById('stat-leg-win-rate').textContent = legWinRate + '%';
+        
+        // Achievement Stats
+        document.getElementById('stat-180s').textContent = stats.total_180s || 0;
+        document.getElementById('stat-171s').textContent = stats.total_171s || 0;
+        document.getElementById('stat-95s').textContent = stats.total_95s || 0;
+        document.getElementById('stat-100-plus').textContent = stats.total_100_plus || 0;
+        document.getElementById('stat-120-plus').textContent = stats.total_120_plus || 0;
+        document.getElementById('stat-140-plus').textContent = stats.total_140_plus || 0;
+        document.getElementById('stat-160-plus').textContent = stats.total_160_plus || 0;
 
         // Display recent matches
         const recentMatches = stats.recent_matches || [];

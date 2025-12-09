@@ -25,6 +25,15 @@ CREATE TABLE IF NOT EXISTS match_stats (
     highest_checkout INTEGER DEFAULT 0,
     checkout_percentage DECIMAL(5,2),
     
+    -- Achievement tracking
+    count_180s INTEGER DEFAULT 0,
+    count_171s INTEGER DEFAULT 0,
+    count_95s INTEGER DEFAULT 0,
+    count_100_plus INTEGER DEFAULT 0,
+    count_120_plus INTEGER DEFAULT 0,
+    count_140_plus INTEGER DEFAULT 0,
+    count_160_plus INTEGER DEFAULT 0,
+    
     -- Score tracking (JSONB for flexibility)
     leg_scores JSONB DEFAULT '[]',
     checkout_history JSONB DEFAULT '[]',
@@ -93,6 +102,13 @@ BEGIN
         'total_score', SUM(total_score),
         'highest_checkout', MAX(highest_checkout),
         'average_3dart', ROUND(AVG(average_3dart), 2),
+        'total_180s', SUM(count_180s),
+        'total_171s', SUM(count_171s),
+        'total_95s', SUM(count_95s),
+        'total_100_plus', SUM(count_100_plus),
+        'total_120_plus', SUM(count_120_plus),
+        'total_140_plus', SUM(count_140_plus),
+        'total_160_plus', SUM(count_160_plus),
         'recent_matches', (
             SELECT jsonb_agg(
                 jsonb_build_object(

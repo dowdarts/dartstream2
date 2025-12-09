@@ -30,7 +30,16 @@ export const ScoringAppModule = {
                     setWins: 0,
                     matchAvg: 0,
                     legAvg: 0,
-                    turnHistory: []
+                    turnHistory: [],
+                    achievements: {
+                        count_180s: 0,
+                        count_171s: 0,
+                        count_95s: 0,
+                        count_100_plus: 0,
+                        count_120_plus: 0,
+                        count_140_plus: 0,
+                        count_160_plus: 0
+                    }
                 },
                 player2: {
                     name: config.player2Name || 'Away',
@@ -45,7 +54,16 @@ export const ScoringAppModule = {
                     setWins: 0,
                     matchAvg: 0,
                     legAvg: 0,
-                    turnHistory: []
+                    turnHistory: [],
+                    achievements: {
+                        count_180s: 0,
+                        count_171s: 0,
+                        count_95s: 0,
+                        count_100_plus: 0,
+                        count_120_plus: 0,
+                        count_140_plus: 0,
+                        count_160_plus: 0
+                    }
                 }
             },
             matchSettings: { ...config }
@@ -328,6 +346,16 @@ export const ScoringAppModule = {
             player.matchAvg = (player.matchScore / player.matchDarts) * 3;
         }
         
+        // Track achievements for this turn
+        const turnScore = this.gameState.turnTotal;
+        if (turnScore === 180) player.achievements.count_180s++;
+        if (turnScore === 171) player.achievements.count_171s++;
+        if (turnScore === 95) player.achievements.count_95s++;
+        if (turnScore >= 100) player.achievements.count_100_plus++;
+        if (turnScore >= 120) player.achievements.count_120_plus++;
+        if (turnScore >= 140) player.achievements.count_140_plus++;
+        if (turnScore >= 160) player.achievements.count_160_plus++;
+        
         player.turnHistory.push({
             darts: [...this.gameState.currentVisit],
             total: this.gameState.turnTotal,
@@ -474,6 +502,13 @@ export const ScoringAppModule = {
                     first_9_average: 0, // Can be calculated if needed
                     highest_checkout: 0, // Would need to track during game
                     checkout_percentage: 0, // Would need to track during game
+                    count_180s: p1.achievements.count_180s,
+                    count_171s: p1.achievements.count_171s,
+                    count_95s: p1.achievements.count_95s,
+                    count_100_plus: p1.achievements.count_100_plus,
+                    count_120_plus: p1.achievements.count_120_plus,
+                    count_140_plus: p1.achievements.count_140_plus,
+                    count_160_plus: p1.achievements.count_160_plus,
                     leg_scores: [], // Could store individual leg data
                     checkout_history: []
                 };
@@ -497,6 +532,13 @@ export const ScoringAppModule = {
                     first_9_average: 0,
                     highest_checkout: 0,
                     checkout_percentage: 0,
+                    count_180s: p2.achievements.count_180s,
+                    count_171s: p2.achievements.count_171s,
+                    count_95s: p2.achievements.count_95s,
+                    count_100_plus: p2.achievements.count_100_plus,
+                    count_120_plus: p2.achievements.count_120_plus,
+                    count_140_plus: p2.achievements.count_140_plus,
+                    count_160_plus: p2.achievements.count_160_plus,
                     leg_scores: [],
                     checkout_history: []
                 };
