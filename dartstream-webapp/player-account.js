@@ -366,12 +366,14 @@ async function loadPlayerStats() {
         if (accountError) throw accountError;
 
         if (!accountData || !accountData.account_linked_player_id) {
-            // No linked player, hide stats section
+            // No linked player, hide stats section and show account details
             document.getElementById('lifetime-stats-section').style.display = 'none';
+            document.getElementById('account-details').style.display = 'block';
             return;
         }
 
-        // Show stats section
+        // Account is linked - hide account details form and show only stats
+        document.getElementById('account-details').style.display = 'none';
         document.getElementById('lifetime-stats-section').style.display = 'block';
 
         // Display lifetime stats
