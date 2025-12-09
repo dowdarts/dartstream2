@@ -474,6 +474,80 @@ const GameStateSync = {
         } catch (error) {
             console.error('❌ Supabase sync error:', error);
         }
+    },
+
+    // Record match statistics for a player
+    async recordMatchStats(matchData) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            const { data, error } = await supabase
+                .from('match_stats')
+                .insert({
+                    match_id: matchData.match_id,
+                    player_library_id: matchData.player_library_id,
+                    opponent_name: matchData.opponent_name,
+                    match_date: matchData.match_date,
+                    won: matchData.won,
+                    legs_won: matchData.legs_won,
+                    legs_lost: matchData.legs_lost,
+                    sets_won: matchData.sets_won,
+                    sets_lost: matchData.sets_lost,
+                    total_darts_thrown: matchData.total_darts_thrown,
+                    total_score: matchData.total_score,
+                    average_3dart: matchData.average_3dart,
+                    first_9_average: matchData.first_9_average,
+                    highest_checkout: matchData.highest_checkout,
+                    checkout_percentage: matchData.checkout_percentage,
+                    count_180s: matchData.count_180s || 0,
+                    count_171s: matchData.count_171s || 0,
+                    count_95s: matchData.count_95s || 0,
+                    count_100_plus: matchData.count_100_plus || 0,
+                    count_120_plus: matchData.count_120_plus || 0,
+                    count_140_plus: matchData.count_140_plus || 0,
+                    count_160_plus: matchData.count_160_plus || 0,
+                    leg_scores: matchData.leg_scores || [],
+                    checkout_history: matchData.checkout_history || []
+                })
+                .select();
+
+            if (error) throw error;
+
+            // Update player account lifetime stats if linked
+            if (matchData.player_library_id) {
+                await this.updatePlayerLifetimeStats(matchData.player_library_id);
+            }
+
+            return { success: true, data };
+
+        } catch (error) {
+            console.error('Error recording match stats:', error);
+            throw error;
+        }
+    },
+
+    // Update player account lifetime stats
+    async updatePlayerLifetimeStats(playerLibraryId) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            const { data, error } = await supabase.rpc('update_player_lifetime_stats', {
+                p_player_library_id: playerLibraryId
+            });
+
+            if (error) throw error;
+            return { success: true };
+
+        } catch (error) {
+            console.error('Error updating player lifetime stats:', error);
+            throw error;
+        }
     }
 };
 

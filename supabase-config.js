@@ -283,33 +283,38 @@ const PlayerDB = {
             const { data, error } = await supabase
                 .from('match_stats')
                 .insert({
-                    match_id: matchData.matchId,
-                    player_library_id: matchData.playerLibraryId,
-                    player_name: matchData.playerName,
-                    opponent_name: matchData.opponentName,
-                    game_type: matchData.gameType,
-                    starting_score: matchData.startingScore,
-                    match_format: matchData.matchFormat,
+                    match_id: matchData.match_id,
+                    player_library_id: matchData.player_library_id,
+                    opponent_name: matchData.opponent_name,
+                    match_date: matchData.match_date,
                     won: matchData.won,
-                    legs_won: matchData.legsWon,
-                    legs_lost: matchData.legsLost,
-                    total_darts_thrown: matchData.totalDartsThrown,
-                    total_score: matchData.totalScore,
-                    checkout_attempts: matchData.checkoutAttempts,
-                    successful_checkouts: matchData.successfulCheckouts,
-                    highest_checkout: matchData.highestCheckout,
-                    three_dart_average: matchData.threeDartAverage,
-                    first_nine_average: matchData.firstNineAverage,
-                    leg_scores: matchData.legScores || [],
-                    checkout_history: matchData.checkoutHistory || []
+                    legs_won: matchData.legs_won,
+                    legs_lost: matchData.legs_lost,
+                    sets_won: matchData.sets_won,
+                    sets_lost: matchData.sets_lost,
+                    total_darts_thrown: matchData.total_darts_thrown,
+                    total_score: matchData.total_score,
+                    average_3dart: matchData.average_3dart,
+                    first_9_average: matchData.first_9_average,
+                    highest_checkout: matchData.highest_checkout,
+                    checkout_percentage: matchData.checkout_percentage,
+                    count_180s: matchData.count_180s || 0,
+                    count_171s: matchData.count_171s || 0,
+                    count_95s: matchData.count_95s || 0,
+                    count_100_plus: matchData.count_100_plus || 0,
+                    count_120_plus: matchData.count_120_plus || 0,
+                    count_140_plus: matchData.count_140_plus || 0,
+                    count_160_plus: matchData.count_160_plus || 0,
+                    leg_scores: matchData.leg_scores || [],
+                    checkout_history: matchData.checkout_history || []
                 })
                 .select();
 
             if (error) throw error;
 
             // Update player account lifetime stats if linked
-            if (matchData.playerLibraryId) {
-                await this.updatePlayerLifetimeStats(matchData.playerLibraryId);
+            if (matchData.player_library_id) {
+                await this.updatePlayerLifetimeStats(matchData.player_library_id);
             }
 
             return { success: true, data };
