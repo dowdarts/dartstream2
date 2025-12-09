@@ -85,48 +85,39 @@ async function handleRegister() {
     try {
         const supabase = getSupabaseClient();
         
-        // Sign up with Supabase Auth
+        // Sign up with Supabase Auth (trigger will auto-create player_accounts record)
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: email,
-            password: password
+            password: password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName
+                }
+            }
         });
 
         if (authError) throw authError;
 
-        // Generate unique player ID (4-digit number)
-        const playerId = await generatePlayerId();
+        if (!authData.user) {
+            throw new Error('User creation failed');
+        }
 
-        // Create account record in player_accounts table
-        const { data: accountData, error: dbError } = await supabase
-            .from('player_accounts')
-            .insert([{
-                user_id: authData.user.id,
-                player_id: playerId,
-                first_name: firstName,
-                last_name: lastName,
-                email: email,
-                stats: {
-                    gamesPlayed: 0,
-                    gamesWon: 0,
-                    totalDarts: 0,
-                    totalScore: 0,
-                    highestCheckout: 0,
-                    averages: []
-                }
-            }])
-            .select()
-            .single();
+        // Check if email confirmation is required
+        if (authData.session === null) {
+            showMessage('message-container', 'Please check your email to confirm your account before logging in.', 'success');
+            setTimeout(() => {
+                document.getElementById('register-form').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
+            }, 3000);
+            return;
+        }
 
-        if (dbError) throw dbError;
+        // Wait a moment for the trigger to create the player_accounts record
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        currentAccount = {
-            id: playerId,
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            userId: authData.user.id,
-            stats: accountData.stats
-        };
+        // Load the account data that was created by the trigger
+        await loadAccountFromDatabase(authData.user.id);
 
         showMessage('message-container', 'Account created successfully!', 'success');
         
