@@ -299,6 +299,9 @@ const PlayerDB = {
                 throw new Error('Supabase client not available');
             }
 
+            console.log('Recording match stats for player:', matchData.player_library_id);
+            console.log('Match data:', matchData);
+
             const { data, error } = await supabase
                 .from('match_stats')
                 .insert({
@@ -329,7 +332,13 @@ const PlayerDB = {
                 })
                 .select();
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ ERROR saving match stats:', error);
+                console.error('Error details:', error.message, error.code, error.details);
+                throw error;
+            }
+
+            console.log('✅ Match stats saved successfully:', data);
 
             // Update player account lifetime stats if linked
             if (matchData.player_library_id) {
