@@ -1,7 +1,24 @@
 // Player Account Management
 // Handles account creation, login, and linking with player library
+// Uses Supabase Auth for authentication and database for storage
 
 console.log('Player Account system loaded');
+
+// Import Supabase client
+const { createClient } = supabase;
+
+// Initialize Supabase client
+let supabaseClient = null;
+
+function getSupabaseClient() {
+    if (supabaseClient) return supabaseClient;
+    
+    const supabaseUrl = 'https://kswwbqumgsdissnwuiab.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnB1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM3NjYwOTMsImV4cCI6MjA0OTM0MjA5M30.VJ64q5Qw8TEBxYRnc4hP25w_KWdEu_TKa7iHNK5s8Uw';
+    
+    supabaseClient = createClient(supabaseUrl, supabaseKey);
+    return supabaseClient;
+}
 
 // Account state
 let currentAccount = null;
@@ -11,11 +28,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAccountSystem();
 });
 
-function initializeAccountSystem() {
-    // Check if user is already logged in
-    const savedAccount = localStorage.getItem('dartstream-account');
-    if (savedAccount) {
-        currentAccount = JSON.parse(savedAccount);
+async function initializeAccountSystem() {
+    const supabase = getSupabaseClient();
+    
+    // Check if user is already logged in via Supabase session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+        await loadAccountFromDatabase(session.user.id);
         showAccountDetails();
     }
 
@@ -44,9 +64,10 @@ async function handleRegister() {
     const firstName = document.getElementById('register-firstname').value.trim();
     const lastName = document.getElementById('register-lastname').value.trim();
     const email = document.getElementById('register-email').value.trim().toLowerCase();
+    const password = document.getElementById('register-password').value;
 
     // Validate inputs
-    if (!firstName || !lastName || !email) {
+    if (!firstName || !lastName || !email || !password) {
         showMessage('message-container', 'Please fill in all fields', 'error');
         return;
     }
@@ -56,48 +77,75 @@ async function handleRegister() {
         return;
     }
 
-    // Generate unique player ID (4-digit number)
-    const playerId = generatePlayerId();
+    if (password.length < 6) {
+        showMessage('message-container', 'Password must be at least 6 characters', 'error');
+        return;
+    }
 
-    // Create account object
-    const account = {
-        id: playerId,
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        createdAt: new Date().toISOString(),
-        stats: {
-            gamesPlayed: 0,
-            gamesWon: 0,
-            totalDarts: 0,
-            totalScore: 0,
-            highestCheckout: 0,
-            averages: []
-        }
-    };
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Sign up with Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: email,
+            password: password
+        });
 
-    // Save to database/localStorage
-    const result = await saveAccount(account);
+        if (authError) throw authError;
 
-    if (result.success) {
-        currentAccount = account;
-        localStorage.setItem('dartstream-account', JSON.stringify(account));
+        // Generate unique player ID (4-digit number)
+        const playerId = await generatePlayerId();
+
+        // Create account record in player_accounts table
+        const { data: accountData, error: dbError } = await supabase
+            .from('player_accounts')
+            .insert([{
+                user_id: authData.user.id,
+                player_id: playerId,
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                stats: {
+                    gamesPlayed: 0,
+                    gamesWon: 0,
+                    totalDarts: 0,
+                    totalScore: 0,
+                    highestCheckout: 0,
+                    averages: []
+                }
+            }])
+            .select()
+            .single();
+
+        if (dbError) throw dbError;
+
+        currentAccount = {
+            id: playerId,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            userId: authData.user.id,
+            stats: accountData.stats
+        };
+
         showMessage('message-container', 'Account created successfully!', 'success');
         
         // Show account details after 1 second
         setTimeout(() => {
             showAccountDetails();
         }, 1000);
-    } else {
-        showMessage('message-container', result.message || 'Failed to create account', 'error');
+    } catch (error) {
+        console.error('Registration error:', error);
+        showMessage('message-container', error.message || 'Failed to create account', 'error');
     }
 }
 
 async function handleLogin() {
     const email = document.getElementById('login-email').value.trim().toLowerCase();
+    const password = document.getElementById('login-password').value;
 
-    if (!email) {
-        showMessage('login-message-container', 'Please enter your email address', 'error');
+    if (!email || !password) {
+        showMessage('login-message-container', 'Please enter email and password', 'error');
         return;
     }
 
@@ -106,29 +154,77 @@ async function handleLogin() {
         return;
     }
 
-    // Find account by email
-    const account = await findAccountByEmail(email);
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Sign in with Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
 
-    if (account) {
-        currentAccount = account;
-        localStorage.setItem('dartstream-account', JSON.stringify(account));
+        if (authError) throw authError;
+
+        // Load account from database
+        await loadAccountFromDatabase(authData.user.id);
+
         showMessage('login-message-container', 'Login successful!', 'success');
         
         setTimeout(() => {
             showAccountDetails();
         }, 1000);
-    } else {
-        showMessage('login-message-container', 'No account found with this email address', 'error');
+    } catch (error) {
+        console.error('Login error:', error);
+        showMessage('login-message-container', error.message || 'Login failed', 'error');
     }
 }
 
-function handleLogout() {
-    currentAccount = null;
-    localStorage.removeItem('dartstream-account');
-    document.getElementById('account-details').style.display = 'none';
-    document.getElementById('register-form').style.display = 'block';
-    clearForm('register-form');
-    clearForm('login-form');
+async function handleLogout() {
+    try {
+        const supabase = getSupabaseClient();
+        await supabase.auth.signOut();
+        
+        currentAccount = null;
+        document.getElementById('account-details').style.display = 'none';
+        document.getElementById('register-form').style.display = 'block';
+        clearForm('register-form');
+        clearForm('login-form');
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+async function loadAccountFromDatabase(userId) {
+    try {
+        const supabase = getSupabaseClient();
+        
+        const { data, error } = await supabase
+            .from('player_accounts')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error) throw error;
+
+        currentAccount = {
+            id: data.player_id,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            email: data.email,
+            userId: data.user_id,
+            stats: data.stats || {
+                gamesPlayed: 0,
+                gamesWon: 0,
+                totalDarts: 0,
+                totalScore: 0,
+                highestCheckout: 0,
+                averages: []
+            }
+        };
+    } catch (error) {
+        console.error('Error loading account:', error);
+        throw error;
+    }
 }
 
 function showAccountDetails() {
@@ -145,20 +241,32 @@ function showAccountDetails() {
 }
 
 // Helper: Generate unique 4-digit player ID
-function generatePlayerId() {
-    // Generate random 4-digit number
-    const id = Math.floor(1000 + Math.random() * 9000).toString();
+async function generatePlayerId() {
+    const supabase = getSupabaseClient();
+    let attempts = 0;
+    const maxAttempts = 100;
     
-    // Check if ID already exists
-    const existingAccounts = getAllAccounts();
-    const exists = existingAccounts.some(account => account.id === id);
-    
-    if (exists) {
-        // Recursively generate new ID if duplicate
-        return generatePlayerId();
+    while (attempts < maxAttempts) {
+        // Generate random 4-digit number
+        const id = Math.floor(1000 + Math.random() * 9000).toString();
+        
+        // Check if ID already exists in database
+        const { data, error } = await supabase
+            .from('player_accounts')
+            .select('player_id')
+            .eq('player_id', id)
+            .single();
+        
+        // If no data found (error.code === 'PGRST116'), ID is unique
+        if (error && error.code === 'PGRST116') {
+            return id;
+        }
+        
+        attempts++;
     }
     
-    return id;
+    // Fallback to timestamp-based ID if random generation fails
+    return Date.now().toString().slice(-4);
 }
 
 // Helper: Validate email format
@@ -193,52 +301,48 @@ function clearForm(formId) {
     });
 }
 
-// Database functions (using localStorage for now, can be migrated to Supabase)
-async function saveAccount(account) {
-    try {
-        // Get existing accounts
-        const accounts = getAllAccounts();
-        
-        // Check if email already exists
-        const existingAccount = accounts.find(a => a.email === account.email);
-        if (existingAccount) {
-            return { success: false, message: 'An account with this email already exists' };
-        }
-        
-        // Add new account
-        accounts.push(account);
-        
-        // Save to localStorage
-        localStorage.setItem('dartstream-accounts', JSON.stringify(accounts));
-        
-        return { success: true };
-    } catch (error) {
-        console.error('Error saving account:', error);
-        return { success: false, message: 'Failed to save account' };
-    }
-}
-
-async function findAccountByEmail(email) {
-    const accounts = getAllAccounts();
-    return accounts.find(account => account.email === email);
-}
-
-function getAllAccounts() {
-    const accountsJson = localStorage.getItem('dartstream-accounts');
-    return accountsJson ? JSON.parse(accountsJson) : [];
-}
-
 // Export function for linking player library
 window.PlayerAccountSystem = {
-    findAccountByEmail,
+    getSupabaseClient,
     getCurrentAccount: () => currentAccount,
     linkPlayerToAccount: async function(email, playerId) {
-        const account = await findAccountByEmail(email);
-        if (account && account.id === playerId) {
-            return { success: true, account };
+        try {
+            const supabase = getSupabaseClient();
+            
+            // Find account by email and player_id in database
+            const { data, error } = await supabase
+                .from('player_accounts')
+                .select('*')
+                .eq('email', email.toLowerCase())
+                .eq('player_id', playerId)
+                .single();
+            
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    return { success: false, message: 'Email and Player ID do not match any account' };
+                }
+                throw error;
+            }
+            
+            if (data) {
+                return { 
+                    success: true, 
+                    account: {
+                        id: data.player_id,
+                        firstName: data.first_name,
+                        lastName: data.last_name,
+                        email: data.email
+                    }
+                };
+            }
+            
+            return { success: false, message: 'Email and Player ID do not match' };
+        } catch (error) {
+            console.error('Error linking account:', error);
+            return { success: false, message: 'Failed to verify account' };
         }
-        return { success: false, message: 'Email and Player ID do not match' };
     }
 };
 
 console.log('Player Account system initialized');
+
