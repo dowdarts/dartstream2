@@ -134,6 +134,28 @@
             text-decoration: underline;
         }
 
+        .partner-logos {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(1rem, 2vw, 2rem);
+            margin-top: clamp(1rem, 2vh, 1.5rem);
+            padding: clamp(1rem, 2vh, 1.5rem) 0;
+        }
+
+        .partner-logos img {
+            height: clamp(40px, 8vw, 60px);
+            width: auto;
+            object-fit: contain;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .partner-logos img:hover {
+            opacity: 1;
+        }
+
         /* Tablet optimizations */
         @media (max-width: 1024px) {
             .apps-grid {
@@ -202,6 +224,14 @@
         <div class="footer">
             <p>Created By MDStudios For CGCDarts & Atlantic Amateur Darts Series.</p>
             <p>© 2025 DartStream. All rights reserved.</p>
+            
+            <div class="partner-logos">
+                <img src="logos/MDSTUDIOS - Copy.png" alt="MDStudios">
+                <img src="logos/cgcdarts.com logo - Copy.png" alt="CGCDarts.com">
+                <img src="logos/CGC-TV Logo - Copy.png" alt="CGC-TV">
+                <img src="logos/LIVE STREAM CGC LOGO - Copy.png" alt="CGC Live Stream">
+                <img src="logos/AADS OFFIAL LOGO - Copy.png" alt="Atlantic Amateur Darts Series">
+            </div>
         </div>
     </div>
 </body>
