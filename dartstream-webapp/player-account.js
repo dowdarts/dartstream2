@@ -31,12 +31,24 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeAccountSystem() {
     const supabase = getSupabaseClient();
     
+    // Check URL parameters for action
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    
     // Check if user is already logged in via Supabase session
     const { data: { session } } = await supabase.auth.getSession();
     
     if (session) {
         await loadAccountFromDatabase(session.user.id);
         showAccountDetails();
+    } else {
+        // User is not logged in - show form based on URL parameter
+        if (action === 'register') {
+            showRegisterForm();
+        } else {
+            // Default to login form (including when action=login)
+            showLoginForm();
+        }
     }
 
     // Register form submit
