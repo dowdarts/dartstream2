@@ -150,6 +150,24 @@ async function handleRegister() {
 
         // Load the account data that was created by the trigger
         await loadAccountFromDatabase(authData.user.id);
+        
+        // Check if account is already linked (in case they complete setup immediately)
+        const { data: accountData } = await supabase
+            .from('player_accounts')
+            .select('account_linked_player_id, first_name, last_name')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+        
+        if (accountData && accountData.account_linked_player_id) {
+            // Account is set up and linked - redirect to index
+            const userName = `${accountData.first_name} ${accountData.last_name}`;
+            showMessage('message-container', 'Account created successfully!', 'success');
+            setTimeout(() => {
+                alert(`Welcome, ${userName}!`);
+                window.location.href = 'index.html';
+            }, 1000);
+            return;
+        }
 
         showMessage('message-container', 'Account created successfully!', 'success');
         
@@ -190,6 +208,21 @@ async function handleLogin() {
 
         // Load account from database
         await loadAccountFromDatabase(authData.user.id);
+        
+        // Check if account is already linked to player library
+        const { data: accountData } = await supabase
+            .from('player_accounts')
+            .select('account_linked_player_id, first_name, last_name')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+        
+        if (accountData && accountData.account_linked_player_id) {
+            // Account is already set up and linked - redirect to index
+            const userName = `${accountData.first_name} ${accountData.last_name}`;
+            alert(`Welcome back, ${userName}!`);
+            window.location.href = 'index.html';
+            return;
+        }
 
         showMessage('login-message-container', 'Login successful!', 'success');
         
@@ -514,6 +547,14 @@ async function handleLinkToLibrary() {
             if (updateAccountError) throw updateAccountError;
 
             showLinkingMessage('✅ Your player card has been created and linked to your account!', 'success');
+            
+            // Redirect to index after successful linking
+            setTimeout(() => {
+                const userName = `${firstName} ${lastName}`;
+                alert(`Welcome, ${userName}! Your account is now set up.`);
+                window.location.href = 'index.html';
+            }, 2000);
+            return;
         }
 
         // Refresh the linking status
