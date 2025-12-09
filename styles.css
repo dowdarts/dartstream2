@@ -28,6 +28,7 @@ body {
     position: relative;
     overflow: hidden;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
 /* Responsive sizing for smaller devices */
@@ -71,6 +72,7 @@ body {
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 60px);
 }
 
 @media (min-width: 901px) {
@@ -1599,7 +1601,7 @@ body {
 .bottom-controls {
     background: #000;
     flex-shrink: 0;
-    padding-bottom: 0;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
 }
 
 .control-bar {
