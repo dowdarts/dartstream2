@@ -458,11 +458,17 @@ export const ScoringAppModule = {
             const p2 = this.gameState.players.player2;
             
             // Get player library IDs from PlayerDB
-            const players = await window.PlayerDB.getPlayers();
+            const players = await window.PlayerDB.getAllPlayers();
             
-            // Find players by name match
-            const player1Data = players.find(p => p.name === p1.name);
-            const player2Data = players.find(p => p.name === p2.name);
+            console.log('All players from library:', players);
+            console.log('Looking for:', p1.name, 'and', p2.name);
+            
+            // Find players by name match (firstName + lastName)
+            const player1Data = players.find(p => `${p.firstName} ${p.lastName}` === p1.name);
+            const player2Data = players.find(p => `${p.firstName} ${p.lastName}` === p2.name);
+            
+            console.log('Found player1Data:', player1Data);
+            console.log('Found player2Data:', player2Data);
             
             if (!player1Data || !player2Data) {
                 console.log('Players not found in library, stats not saved');
