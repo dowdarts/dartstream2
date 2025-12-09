@@ -111,10 +111,9 @@ const PlayerDB = {
                 updateData.nationality = nationality;
             }
             
-            // Update the id field if customId is provided
-            if (customId !== null && customId !== '') {
-                updateData.id = customId;
-            }
+            // Note: customId parameter is accepted but not used
+            // The id field is a UUID primary key and cannot be updated
+            // If you need a custom player ID, add a separate 'player_number' or 'custom_id' column
             
             const { data, error } = await supabase
                 .from('players')
