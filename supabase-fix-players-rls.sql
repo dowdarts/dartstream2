@@ -40,6 +40,44 @@ TO public
 USING (true);
 
 -- ===========================================
+-- GAME_STATES TABLE - PUBLIC ACCESS
+-- ===========================================
+-- The game_states table stores live match data for the scoring app
+-- Anyone can create/read/update game states for live scoring
+
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Allow public read access" ON game_states;
+DROP POLICY IF EXISTS "Allow public insert access" ON game_states;
+DROP POLICY IF EXISTS "Allow public update access" ON game_states;
+DROP POLICY IF EXISTS "Allow public delete access" ON game_states;
+
+-- Create policies for public access
+CREATE POLICY "Allow public read access"
+ON game_states
+FOR SELECT
+TO public
+USING (true);
+
+CREATE POLICY "Allow public insert access"
+ON game_states
+FOR INSERT
+TO public
+WITH CHECK (true);
+
+CREATE POLICY "Allow public update access"
+ON game_states
+FOR UPDATE
+TO public
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Allow public delete access"
+ON game_states
+FOR DELETE
+TO public
+USING (true);
+
+-- ===========================================
 -- PLAYER_ACCOUNTS TABLE - AUTHENTICATED ACCESS
 -- ===========================================
 -- The player_accounts table stores user authentication and personal stats
