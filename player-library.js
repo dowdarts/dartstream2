@@ -88,10 +88,10 @@ export const PlayerLibraryModule = {
     },
     
     // Update an existing player
-    async updatePlayer(playerId, firstName, lastName, nationality = null) {
+    async updatePlayer(playerId, firstName, lastName, nationality = null, customId = null) {
         try {
             const PlayerDB = this.getPlayerDB();
-            await PlayerDB.updatePlayer(playerId, firstName, lastName, nationality);
+            await PlayerDB.updatePlayer(playerId, firstName, lastName, nationality, customId);
             await this.refreshFromDatabase();
             return { success: true };
         } catch (error) {

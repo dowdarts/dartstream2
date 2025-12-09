@@ -95,7 +95,7 @@ const PlayerDB = {
     },
 
     // Update a player
-    async updatePlayer(id, firstName, lastName, nationality = null) {
+    async updatePlayer(id, firstName, lastName, nationality = null, customId = null) {
         try {
             const supabase = getSupabaseClient();
             if (!supabase) {
@@ -109,6 +109,11 @@ const PlayerDB = {
             
             if (nationality !== null) {
                 updateData.nationality = nationality;
+            }
+            
+            // Update the id field if customId is provided
+            if (customId !== null && customId !== '') {
+                updateData.id = customId;
             }
             
             const { data, error } = await supabase

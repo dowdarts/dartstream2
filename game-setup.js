@@ -182,6 +182,7 @@ export const GameSetupModule = {
             this.currentEditingPlayer = player;
             document.getElementById('edit-player-firstname').value = player.firstName || '';
             document.getElementById('edit-player-lastname').value = player.lastName || '';
+            document.getElementById('edit-player-id').value = player.id || '';
             document.getElementById('edit-player-nationality').value = player.nationality || '';
             this.hideModal('player-library-modal');
             this.showModal('edit-player-modal');
@@ -373,6 +374,7 @@ export const GameSetupModule = {
         
         const firstName = document.getElementById('edit-player-firstname').value.trim();
         const lastName = document.getElementById('edit-player-lastname').value.trim();
+        const playerId = document.getElementById('edit-player-id').value.trim();
         const nationality = document.getElementById('edit-player-nationality').value;
         
         if (firstName === '' || lastName === '') {
@@ -384,7 +386,8 @@ export const GameSetupModule = {
             this.currentEditingPlayer.id, 
             firstName, 
             lastName, 
-            nationality || null
+            nationality || null,
+            playerId
         );
         
         if (result.success) {
