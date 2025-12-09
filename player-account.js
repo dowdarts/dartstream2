@@ -58,12 +58,16 @@ async function initializeAccountSystem() {
         document.getElementById('register-form').style.display = 'none';
         document.getElementById('forgot-password-form').style.display = 'none';
         document.getElementById('login-form').style.display = 'block';
+        document.getElementById('message-container').innerHTML = '';
+        document.getElementById('login-message-container').innerHTML = '';
     });
 
     document.getElementById('show-register').addEventListener('click', () => {
         document.getElementById('login-form').style.display = 'none';
         document.getElementById('forgot-password-form').style.display = 'none';
         document.getElementById('register-form').style.display = 'block';
+        document.getElementById('message-container').innerHTML = '';
+        document.getElementById('login-message-container').innerHTML = '';
     });
 }
 
