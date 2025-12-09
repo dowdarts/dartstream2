@@ -741,3 +741,6 @@ export const ScoringAppModule = {
         document.getElementById(screenId)?.classList.add('active');
     }
 };
+
+// Make ScoringApp globally available
+window.ScoringApp = ScoringApp;

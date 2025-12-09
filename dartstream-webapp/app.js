@@ -2614,12 +2614,24 @@ function showSetCompleteModal() {
         showScreen('format-select-screen');
     });
     
-    // End Match button - End match and reset everything
-    document.getElementById('end-match-btn').addEventListener('click', function() {
-        const confirmed = confirm('Are you sure you want to end the match? All progress will be lost.');
-        if (confirmed) {
-            modal.classList.remove('show');
-            endMatch();
+    // End Match button - Save stats and end match
+    document.getElementById('end-match-btn').addEventListener('click', async function() {
+        modal.classList.remove('show');
+        
+        // Determine winner based on current set wins
+        const p1 = gameState.players.player1;
+        const p2 = gameState.players.player2;
+        const winnerNum = p1.setWins > p2.setWins ? 1 : 2;
+        
+        // If using new scoring app, call its saveMatchStats
+        if (window.ScoringApp && typeof window.ScoringApp.saveMatchStats === 'function') {
+            await window.ScoringApp.saveMatchStats(winnerNum);
+        } else {
+            // Fallback for legacy - just end match
+            const confirmed = confirm('Stats saving not available. End match anyway?');
+            if (confirmed) {
+                endMatch();
+            }
         }
     });
 }
