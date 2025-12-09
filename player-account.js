@@ -65,9 +65,10 @@ async function handleRegister() {
     const lastName = document.getElementById('register-lastname').value.trim();
     const email = document.getElementById('register-email').value.trim().toLowerCase();
     const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
 
     // Validate inputs
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
         showMessage('message-container', 'Please fill in all fields', 'error');
         return;
     }
@@ -79,6 +80,11 @@ async function handleRegister() {
 
     if (password.length < 6) {
         showMessage('message-container', 'Password must be at least 6 characters', 'error');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showMessage('message-container', 'Passwords do not match. Please try again.', 'error');
         return;
     }
 
