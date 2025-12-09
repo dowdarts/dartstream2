@@ -416,11 +416,16 @@ export const ScoringAppModule = {
             ? this.gameState.matchSettings.setsToWin
             : this.gameState.matchSettings.totalSets;
         
+        console.log(`Check Match Win: ${p1.name} has ${p1.setWins} sets, ${p2.name} has ${p2.setWins} sets. Need ${setsNeeded} to win.`);
+        
         if (p1.setWins >= setsNeeded) {
+            console.log('🏆 MATCH COMPLETE - Player 1 wins!');
             this.showMatchComplete(p1, p2, 1);
         } else if (p2.setWins >= setsNeeded) {
+            console.log('🏆 MATCH COMPLETE - Player 2 wins!');
             this.showMatchComplete(p2, p1, 2);
         } else {
+            console.log('📊 Starting new set...');
             this.startNewSet();
         }
     },
