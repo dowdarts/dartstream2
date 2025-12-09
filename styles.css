@@ -20,52 +20,12 @@ body {
 }
 
 #app {
-    width: 100%;
-    max-width: 900px;
+    width: 100vw;
+    max-width: 100vw;
     height: 100vh;
     max-height: 100vh;
     position: relative;
     overflow: hidden;
-}
-
-/* Mobile phones - portrait */
-@media (max-width: 480px) {
-    #app {
-        width: 100vw;
-        max-width: 100vw;
-    }
-}
-
-/* Mobile phones - landscape and small tablets */
-@media (min-width: 481px) and (max-width: 768px) {
-    #app {
-        width: 100vw;
-        max-width: 100vw;
-    }
-}
-
-/* Tablets - portrait and landscape (optimal for tablet use) */
-@media (min-width: 769px) and (max-width: 1024px) {
-    #app {
-        width: 100vw;
-        max-width: 100vw;
-    }
-}
-
-/* Desktop - small to medium screens */
-@media (min-width: 1025px) and (max-width: 1440px) {
-    #app {
-        width: 900px;
-        max-width: 900px;
-    }
-}
-
-/* Desktop - large screens */
-@media (min-width: 1441px) {
-    #app {
-        width: 900px;
-        max-width: 900px;
-    }
 }
 
 /* Screen Management */
