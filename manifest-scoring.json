@@ -1,0 +1,17 @@
+{
+  "name": "DartStream Scoring App",
+  "short_name": "DartStream",
+  "description": "Professional Darts Scoring & Live Streaming",
+  "start_url": "/scoring-app.html",
+  "display": "standalone",
+  "background_color": "#2d3e50",
+  "theme_color": "#facc15",
+  "icons": [
+    {
+      "src": "dartstream-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
