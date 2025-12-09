@@ -2,7 +2,7 @@
 // Pure scoring logic for X01 games
 // Handles number pad input, turn management, bust detection, win validation, averages
 
-export const ScoringAppModule = {
+const ScoringApp = {
     gameState: null,
     
     // Initialize scoring app with game configuration
