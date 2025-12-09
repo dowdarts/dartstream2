@@ -295,6 +295,7 @@ export const ScoringAppModule = {
         this.gameState.turnTotal = 0;
         this.gameState.currentInput = '';
         this.updateDualFunctionButtons();
+        this.updateGameScreen();
         
         this.switchPlayer();
     },
