@@ -2618,20 +2618,122 @@ function showSetCompleteModal() {
     document.getElementById('end-match-btn').addEventListener('click', async function() {
         modal.classList.remove('show');
         
-        // Determine winner based on current set wins
-        const p1 = gameState.players.player1;
-        const p2 = gameState.players.player2;
-        const winnerNum = p1.setWins > p2.setWins ? 1 : 2;
-        
-        // If using new scoring app, call its saveMatchStats
-        if (window.ScoringApp && typeof window.ScoringApp.saveMatchStats === 'function') {
-            await window.ScoringApp.saveMatchStats(winnerNum);
-        } else {
-            // Fallback for legacy - just end match
-            const confirmed = confirm('Stats saving not available. End match anyway?');
-            if (confirmed) {
+        try {
+            const p1 = gameState.players.player1;
+            const p2 = gameState.players.player2;
+            
+            // Determine winner based on current set wins
+            const winnerNum = p1.setWins > p2.setWins ? 1 : 2;
+            const winner = winnerNum === 1 ? p1 : p2;
+            const loser = winnerNum === 1 ? p2 : p1;
+            
+            console.log('Saving match stats from Set Complete modal...');
+            console.log('Winner:', winner.name, 'Sets:', winner.setWins);
+            console.log('Loser:', loser.name, 'Sets:', loser.setWins);
+            
+            // Get player library IDs from PlayerDB
+            const players = await window.PlayerDB.getAllPlayers();
+            
+            console.log('All players from library:', players);
+            console.log('Looking for:', p1.name, 'and', p2.name);
+            
+            // Find players by name match (firstName + lastName)
+            const player1Data = players.find(p => `${p.firstName} ${p.lastName}` === p1.name);
+            const player2Data = players.find(p => `${p.firstName} ${p.lastName}` === p2.name);
+            
+            console.log('Found player1Data:', player1Data);
+            console.log('Found player2Data:', player2Data);
+            
+            if (!player1Data || !player2Data) {
+                console.log('Players not found in library');
+                alert('Match ended! (Stats not saved - players not found in library)');
                 endMatch();
+                return;
             }
+            
+            // Check if players have linked accounts
+            if (!player1Data.account_linked_player_id && !player2Data.account_linked_player_id) {
+                console.log('No linked accounts found');
+                alert('Match ended! (No player accounts linked for stats tracking)');
+                endMatch();
+                return;
+            }
+            
+            const matchId = `match_${Date.now()}`;
+            const matchDate = new Date().toISOString();
+            
+            // Prepare match data for both players
+            const savePromises = [];
+            
+            if (player1Data.account_linked_player_id) {
+                const p1MatchData = {
+                    match_id: matchId,
+                    player_library_id: player1Data.id,
+                    opponent_name: p2.name,
+                    match_date: matchDate,
+                    won: winnerNum === 1,
+                    legs_won: p1.legWins,
+                    legs_lost: p2.legWins,
+                    sets_won: p1.setWins,
+                    sets_lost: p2.setWins,
+                    total_darts_thrown: p1.matchDarts,
+                    total_score: p1.matchScore,
+                    average_3dart: p1.matchAvg,
+                    first_9_average: 0,
+                    highest_checkout: 0,
+                    checkout_percentage: 0,
+                    count_180s: p1.achievements?.count_180s || 0,
+                    count_171s: p1.achievements?.count_171s || 0,
+                    count_95s: p1.achievements?.count_95s || 0,
+                    count_100_plus: p1.achievements?.count_100_plus || 0,
+                    count_120_plus: p1.achievements?.count_120_plus || 0,
+                    count_140_plus: p1.achievements?.count_140_plus || 0,
+                    count_160_plus: p1.achievements?.count_160_plus || 0,
+                    leg_scores: [],
+                    checkout_history: []
+                };
+                savePromises.push(window.PlayerDB.recordMatchStats(p1MatchData));
+            }
+            
+            if (player2Data.account_linked_player_id) {
+                const p2MatchData = {
+                    match_id: matchId,
+                    player_library_id: player2Data.id,
+                    opponent_name: p1.name,
+                    match_date: matchDate,
+                    won: winnerNum === 2,
+                    legs_won: p2.legWins,
+                    legs_lost: p1.legWins,
+                    sets_won: p2.setWins,
+                    sets_lost: p1.setWins,
+                    total_darts_thrown: p2.matchDarts,
+                    total_score: p2.matchScore,
+                    average_3dart: p2.matchAvg,
+                    first_9_average: 0,
+                    highest_checkout: 0,
+                    checkout_percentage: 0,
+                    count_180s: p2.achievements?.count_180s || 0,
+                    count_171s: p2.achievements?.count_171s || 0,
+                    count_95s: p2.achievements?.count_95s || 0,
+                    count_100_plus: p2.achievements?.count_100_plus || 0,
+                    count_120_plus: p2.achievements?.count_120_plus || 0,
+                    count_140_plus: p2.achievements?.count_140_plus || 0,
+                    count_160_plus: p2.achievements?.count_160_plus || 0,
+                    leg_scores: [],
+                    checkout_history: []
+                };
+                savePromises.push(window.PlayerDB.recordMatchStats(p2MatchData));
+            }
+            
+            await Promise.all(savePromises);
+            
+            alert('Match stats saved successfully!');
+            endMatch();
+            
+        } catch (error) {
+            console.error('Error saving match stats:', error);
+            alert('Error saving match stats. Match will end anyway.');
+            endMatch();
         }
     });
 }
