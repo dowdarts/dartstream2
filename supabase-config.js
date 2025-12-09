@@ -270,6 +270,126 @@ const PlayerDB = {
             console.error('Error checking player account link:', error);
             throw error;
         }
+    },
+
+    // Record match statistics for a player
+    async recordMatchStats(matchData) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            const { data, error } = await supabase
+                .from('match_stats')
+                .insert({
+                    match_id: matchData.matchId,
+                    player_library_id: matchData.playerLibraryId,
+                    player_name: matchData.playerName,
+                    opponent_name: matchData.opponentName,
+                    game_type: matchData.gameType,
+                    starting_score: matchData.startingScore,
+                    match_format: matchData.matchFormat,
+                    won: matchData.won,
+                    legs_won: matchData.legsWon,
+                    legs_lost: matchData.legsLost,
+                    total_darts_thrown: matchData.totalDartsThrown,
+                    total_score: matchData.totalScore,
+                    checkout_attempts: matchData.checkoutAttempts,
+                    successful_checkouts: matchData.successfulCheckouts,
+                    highest_checkout: matchData.highestCheckout,
+                    three_dart_average: matchData.threeDartAverage,
+                    first_nine_average: matchData.firstNineAverage,
+                    leg_scores: matchData.legScores || [],
+                    checkout_history: matchData.checkoutHistory || []
+                })
+                .select();
+
+            if (error) throw error;
+
+            // Update player account lifetime stats if linked
+            if (matchData.playerLibraryId) {
+                await this.updatePlayerLifetimeStats(matchData.playerLibraryId);
+            }
+
+            return { success: true, data };
+
+        } catch (error) {
+            console.error('Error recording match stats:', error);
+            throw error;
+        }
+    },
+
+    // Update player account lifetime stats
+    async updatePlayerLifetimeStats(playerLibraryId) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            // Call the database function to update lifetime stats
+            const { error } = await supabase.rpc('update_player_lifetime_stats', {
+                p_player_library_id: playerLibraryId
+            });
+
+            if (error) throw error;
+
+            return { success: true };
+
+        } catch (error) {
+            console.error('Error updating lifetime stats:', error);
+            throw error;
+        }
+    },
+
+    // Get match history for a player
+    async getPlayerMatchHistory(playerLibraryId, limit = 20) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            const { data, error } = await supabase
+                .from('match_stats')
+                .select('*')
+                .eq('player_library_id', playerLibraryId)
+                .order('match_date', { ascending: false })
+                .limit(limit);
+
+            if (error) throw error;
+
+            return data || [];
+
+        } catch (error) {
+            console.error('Error fetching match history:', error);
+            throw error;
+        }
+    },
+
+    // Get player lifetime stats from account
+    async getPlayerLifetimeStats(playerLibraryId) {
+        try {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                throw new Error('Supabase client not available');
+            }
+
+            const { data, error } = await supabase
+                .from('player_accounts')
+                .select('lifetime_stats')
+                .eq('account_linked_player_id', playerLibraryId)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            return data?.lifetime_stats || null;
+
+        } catch (error) {
+            console.error('Error fetching lifetime stats:', error);
+            throw error;
+        }
     }
 };
 

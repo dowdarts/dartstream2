@@ -204,6 +204,72 @@
         .back-link a:hover {
             text-decoration: underline;
         }
+
+        .stat-box {
+            background: rgba(0,0,0,0.4);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #facc15;
+        }
+
+        .match-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #facc15;
+        }
+
+        .match-item.win {
+            border-left-color: #10b981;
+        }
+
+        .match-item.loss {
+            border-left-color: #ef4444;
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .match-opponent {
+            font-weight: bold;
+            color: white;
+        }
+
+        .match-result {
+            font-size: 14px;
+        }
+
+        .match-result.win {
+            color: #10b981;
+        }
+
+        .match-result.loss {
+            color: #ef4444;
+        }
+
+        .match-details {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -353,6 +419,43 @@
                         Click the button above to create your player card in the library and link it to your account. 
                         This will allow you to track your personal stats across all matches.
                     </p>
+
+                    <!-- Lifetime Stats Section -->
+                    <div id="lifetime-stats-section" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;">
+                        <h3 style="color: #facc15; margin-bottom: 15px;">📊 Your Lifetime Stats</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                            <div class="stat-box">
+                                <div class="stat-label">Total Matches</div>
+                                <div class="stat-value" id="stat-total-matches">0</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Wins</div>
+                                <div class="stat-value" id="stat-wins">0</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Win Rate</div>
+                                <div class="stat-value" id="stat-win-rate">0%</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">3-Dart Avg</div>
+                                <div class="stat-value" id="stat-average">0.00</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Highest Checkout</div>
+                                <div class="stat-value" id="stat-highest-checkout">0</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Total Legs Won</div>
+                                <div class="stat-value" id="stat-legs-won">0</div>
+                            </div>
+                        </div>
+
+                        <h4 style="color: #facc15; margin: 15px 0 10px;">Recent Matches</h4>
+                        <div id="recent-matches-list" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Recent matches will be displayed here -->
+                        </div>
+                    </div>
 
                     <button class="submit-btn secondary" id="logout-btn">Logout</button>
 

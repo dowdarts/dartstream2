@@ -389,14 +389,136 @@ export const ScoringAppModule = {
             : this.gameState.matchSettings.totalSets;
         
         if (p1.setWins >= setsNeeded) {
-            alert(`${p1.name} WINS THE MATCH! Sets: ${p1.setWins}-${p2.setWins}, Match Average: ${p1.matchAvg.toFixed(2)}`);
-            this.showScreen('game-mode-screen');
+            this.showMatchComplete(p1, p2, 1);
         } else if (p2.setWins >= setsNeeded) {
-            alert(`${p2.name} WINS THE MATCH! Sets: ${p2.setWins}-${p2.setWins}, Match Average: ${p2.matchAvg.toFixed(2)}`);
-            this.showScreen('game-mode-screen');
+            this.showMatchComplete(p2, p1, 2);
         } else {
             this.startNewSet();
         }
+    },
+    
+    // Show match complete modal
+    showMatchComplete(winner, loser, winnerNum) {
+        const modal = document.getElementById('match-complete-modal');
+        document.getElementById('match-winner-name').textContent = winner.name;
+        document.getElementById('match-complete-text').textContent = 
+            `${winner.name} wins ${winner.setWins}-${loser.setWins}!`;
+        
+        // Display final stats
+        document.getElementById('player1-final-stats').innerHTML = `
+            <strong>${this.gameState.players.player1.name}</strong><br>
+            Sets: ${this.gameState.players.player1.setWins}<br>
+            Match Avg: ${this.gameState.players.player1.matchAvg.toFixed(2)}
+        `;
+        document.getElementById('player2-final-stats').innerHTML = `
+            <strong>${this.gameState.players.player2.name}</strong><br>
+            Sets: ${this.gameState.players.player2.setWins}<br>
+            Match Avg: ${this.gameState.players.player2.matchAvg.toFixed(2)}
+        `;
+        
+        modal.style.display = 'flex';
+        
+        // Attach save/discard handlers
+        document.getElementById('save-match-btn').onclick = () => this.saveMatchStats(winnerNum);
+        document.getElementById('discard-match-btn').onclick = () => this.discardMatch();
+    },
+    
+    // Save match stats to database
+    async saveMatchStats(winnerNum) {
+        try {
+            const p1 = this.gameState.players.player1;
+            const p2 = this.gameState.players.player2;
+            
+            // Get player library IDs from PlayerDB
+            const players = await window.PlayerDB.getPlayers();
+            
+            // Find players by name match
+            const player1Data = players.find(p => p.name === p1.name);
+            const player2Data = players.find(p => p.name === p2.name);
+            
+            if (!player1Data || !player2Data) {
+                console.log('Players not found in library, stats not saved');
+                alert('Match completed! (Stats not saved - players not found in library)');
+                this.discardMatch();
+                return;
+            }
+            
+            // Check if players have linked accounts
+            if (!player1Data.account_linked_player_id && !player2Data.account_linked_player_id) {
+                console.log('No linked accounts found');
+                alert('Match completed! (No player accounts linked for stats tracking)');
+                this.discardMatch();
+                return;
+            }
+            
+            const matchId = `match_${Date.now()}`;
+            const matchDate = new Date().toISOString();
+            
+            // Prepare match data for both players
+            const savePromises = [];
+            
+            if (player1Data.account_linked_player_id) {
+                const p1MatchData = {
+                    match_id: matchId,
+                    player_library_id: player1Data.id,
+                    opponent_name: p2.name,
+                    match_date: matchDate,
+                    won: winnerNum === 1,
+                    legs_won: p1.legWins,
+                    legs_lost: p2.legWins,
+                    sets_won: p1.setWins,
+                    sets_lost: p2.setWins,
+                    total_darts_thrown: p1.matchDarts,
+                    total_score: p1.matchScore,
+                    average_3dart: p1.matchAvg,
+                    first_9_average: 0, // Can be calculated if needed
+                    highest_checkout: 0, // Would need to track during game
+                    checkout_percentage: 0, // Would need to track during game
+                    leg_scores: [], // Could store individual leg data
+                    checkout_history: []
+                };
+                savePromises.push(window.PlayerDB.recordMatchStats(p1MatchData));
+            }
+            
+            if (player2Data.account_linked_player_id) {
+                const p2MatchData = {
+                    match_id: matchId,
+                    player_library_id: player2Data.id,
+                    opponent_name: p1.name,
+                    match_date: matchDate,
+                    won: winnerNum === 2,
+                    legs_won: p2.legWins,
+                    legs_lost: p1.legWins,
+                    sets_won: p2.setWins,
+                    sets_lost: p1.setWins,
+                    total_darts_thrown: p2.matchDarts,
+                    total_score: p2.matchScore,
+                    average_3dart: p2.matchAvg,
+                    first_9_average: 0,
+                    highest_checkout: 0,
+                    checkout_percentage: 0,
+                    leg_scores: [],
+                    checkout_history: []
+                };
+                savePromises.push(window.PlayerDB.recordMatchStats(p2MatchData));
+            }
+            
+            await Promise.all(savePromises);
+            
+            alert('Match stats saved successfully!');
+            this.discardMatch();
+            
+        } catch (error) {
+            console.error('Error saving match stats:', error);
+            alert('Error saving match stats. Returning to menu.');
+            this.discardMatch();
+        }
+    },
+    
+    // Discard match and return to menu
+    discardMatch() {
+        document.getElementById('match-complete-modal').style.display = 'none';
+        this.showScreen('game-mode-screen');
     },
     
     // Start new leg

@@ -295,6 +295,78 @@ function showAccountDetails() {
 
     // Check if account is already linked to a player in the library
     checkLinkingStatus();
+    
+    // Load and display stats
+    loadPlayerStats();
+}
+
+async function loadPlayerStats() {
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Get the linked player ID
+        const { data: accountData, error: accountError } = await supabase
+            .from('player_accounts')
+            .select('account_linked_player_id, lifetime_stats')
+            .eq('user_id', currentAccount.userId)
+            .maybeSingle();
+
+        if (accountError) throw accountError;
+
+        if (!accountData || !accountData.account_linked_player_id) {
+            // No linked player, hide stats section
+            document.getElementById('lifetime-stats-section').style.display = 'none';
+            return;
+        }
+
+        // Show stats section
+        document.getElementById('lifetime-stats-section').style.display = 'block';
+
+        // Display lifetime stats
+        const stats = accountData.lifetime_stats || {};
+        document.getElementById('stat-total-matches').textContent = stats.total_matches || 0;
+        document.getElementById('stat-wins').textContent = stats.total_wins || 0;
+        
+        const winRate = stats.total_matches > 0 
+            ? Math.round((stats.total_wins / stats.total_matches) * 100) 
+            : 0;
+        document.getElementById('stat-win-rate').textContent = winRate + '%';
+        
+        document.getElementById('stat-average').textContent = (stats.average_3dart || 0).toFixed(2);
+        document.getElementById('stat-highest-checkout').textContent = stats.highest_checkout || 0;
+        document.getElementById('stat-legs-won').textContent = stats.total_legs_won || 0;
+
+        // Display recent matches
+        const recentMatches = stats.recent_matches || [];
+        const matchesList = document.getElementById('recent-matches-list');
+        
+        if (recentMatches.length === 0) {
+            matchesList.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 20px;">No matches recorded yet. Start playing to see your stats!</p>';
+        } else {
+            matchesList.innerHTML = recentMatches.map(match => {
+                const matchDate = new Date(match.date).toLocaleDateString();
+                const resultClass = match.won ? 'win' : 'loss';
+                const resultText = match.won ? 'WIN' : 'LOSS';
+                
+                return `
+                    <div class="match-item ${resultClass}">
+                        <div class="match-header">
+                            <span class="match-opponent">vs ${match.opponent || 'Unknown'}</span>
+                            <span class="match-result ${resultClass}">${resultText}</span>
+                        </div>
+                        <div class="match-details">
+                            <span>${matchDate}</span>
+                            <span>Score: ${match.score || 'N/A'}</span>
+                            <span>Avg: ${(match.average || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+    } catch (error) {
+        console.error('Error loading player stats:', error);
+    }
 }
 
 async function checkLinkingStatus() {

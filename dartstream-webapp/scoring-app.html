@@ -670,6 +670,31 @@
         </div>
     </div>
 
+    <!-- Match Complete Modal -->
+    <div id="match-complete-modal" class="modal-overlay">
+        <div class="modal-content set-complete-modal">
+            <div class="set-complete-header">
+                <div class="player-score-display" id="match-winner-display">
+                    <div class="player-label" id="match-winner-name">Winner</div>
+                    <div class="score-value" style="font-size: 72px;">🏆</div>
+                </div>
+            </div>
+            <h3 class="next-set-text" id="match-complete-text">Match Complete!</h3>
+            <div class="match-stats-summary" id="match-stats-summary" style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 16px;">
+                    <div id="player1-final-stats"></div>
+                    <div id="player2-final-stats"></div>
+                </div>
+            </div>
+            <div class="set-complete-buttons">
+                <button class="set-btn green" id="save-match-btn" style="font-size: 18px; padding: 15px 30px;">Save Match & Return to Menu</button>
+            </div>
+            <div class="set-complete-buttons">
+                <button class="set-btn yellow" id="discard-match-btn">Discard & Return to Menu</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Set Complete Modal -->
     <div id="set-complete-modal" class="modal-overlay">
         <div class="modal-content set-complete-modal">
