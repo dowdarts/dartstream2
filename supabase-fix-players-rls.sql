@@ -47,9 +47,9 @@ USING (true);
 -- Linking happens via matching player_id + email between tables
 
 -- Add account_linked_player_id column to track which player library entry is linked
--- This column will store the player_id from the players table once linked
+-- This column will store the UUID id from the players table once linked
 ALTER TABLE player_accounts 
-ADD COLUMN IF NOT EXISTS account_linked_player_id VARCHAR(4) REFERENCES players(id);
+ADD COLUMN IF NOT EXISTS account_linked_player_id UUID REFERENCES players(id);
 
 -- Add index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_player_accounts_linked_player 
