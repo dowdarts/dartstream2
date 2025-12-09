@@ -422,38 +422,83 @@
 
                     <!-- Lifetime Stats Section -->
                     <div id="lifetime-stats-section" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;">
-                        <h3 style="color: #facc15; margin-bottom: 15px;">📊 Your Lifetime Stats</h3>
+                        <h3 style="color: #facc15; margin-bottom: 15px; text-align: center;">📊 My Stats</h3>
                         
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px;">
-                            <div class="stat-box">
-                                <div class="stat-label">Total Matches</div>
-                                <div class="stat-value" id="stat-total-matches">0</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">Wins</div>
-                                <div class="stat-value" id="stat-wins">0</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">Win Rate</div>
-                                <div class="stat-value" id="stat-win-rate">0%</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">3-Dart Avg</div>
-                                <div class="stat-value" id="stat-average">0.00</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">Highest Checkout</div>
-                                <div class="stat-value" id="stat-highest-checkout">0</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">Total Legs Won</div>
-                                <div class="stat-value" id="stat-legs-won">0</div>
+                        <!-- Match Summary Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Match Summary</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">Matches</div>
+                                    <div class="stat-value" id="stat-total-matches">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Wins</div>
+                                    <div class="stat-value" id="stat-wins" style="color: #10b981;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Losses</div>
+                                    <div class="stat-value" id="stat-losses" style="color: #ef4444;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Win %</div>
+                                    <div class="stat-value" id="stat-win-rate">0%</div>
+                                </div>
                             </div>
                         </div>
 
-                        <h4 style="color: #facc15; margin: 15px 0 10px;">Recent Matches</h4>
-                        <div id="recent-matches-list" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Recent matches will be displayed here -->
+                        <!-- Performance Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Performance Stats</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">3-Dart Average</div>
+                                    <div class="stat-value" id="stat-average">0.00</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Highest Checkout</div>
+                                    <div class="stat-value" id="stat-highest-checkout">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Darts</div>
+                                    <div class="stat-value" id="stat-total-darts">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Score</div>
+                                    <div class="stat-value" id="stat-total-score">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legs Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Legs Performance</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">Legs Won</div>
+                                    <div class="stat-value" id="stat-legs-won" style="color: #10b981;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Legs Lost</div>
+                                    <div class="stat-value" id="stat-legs-lost" style="color: #ef4444;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Legs</div>
+                                    <div class="stat-value" id="stat-total-legs">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Leg Win %</div>
+                                    <div class="stat-value" id="stat-leg-win-rate">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Match History -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">📅 Recent Match History</h4>
+                            <div id="recent-matches-list" style="max-height: 400px; overflow-y: auto;">
+                                <p style="color: #94a3b8; text-align: center; padding: 20px;">No matches recorded yet</p>
+                            </div>
                         </div>
                     </div>
 

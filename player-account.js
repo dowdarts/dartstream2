@@ -376,17 +376,40 @@ async function loadPlayerStats() {
 
         // Display lifetime stats
         const stats = accountData.lifetime_stats || {};
-        document.getElementById('stat-total-matches').textContent = stats.total_matches || 0;
-        document.getElementById('stat-wins').textContent = stats.total_wins || 0;
         
-        const winRate = stats.total_matches > 0 
-            ? Math.round((stats.total_wins / stats.total_matches) * 100) 
+        // Match Summary
+        const totalMatches = stats.total_matches || 0;
+        const totalWins = stats.total_wins || 0;
+        const totalLosses = totalMatches - totalWins;
+        
+        document.getElementById('stat-total-matches').textContent = totalMatches;
+        document.getElementById('stat-wins').textContent = totalWins;
+        document.getElementById('stat-losses').textContent = totalLosses;
+        
+        const winRate = totalMatches > 0 
+            ? Math.round((totalWins / totalMatches) * 100) 
             : 0;
         document.getElementById('stat-win-rate').textContent = winRate + '%';
         
+        // Performance Stats
         document.getElementById('stat-average').textContent = (stats.average_3dart || 0).toFixed(2);
         document.getElementById('stat-highest-checkout').textContent = stats.highest_checkout || 0;
-        document.getElementById('stat-legs-won').textContent = stats.total_legs_won || 0;
+        document.getElementById('stat-total-darts').textContent = stats.total_darts_thrown || 0;
+        document.getElementById('stat-total-score').textContent = stats.total_score || 0;
+        
+        // Legs Performance
+        const legsWon = stats.total_legs_won || 0;
+        const legsLost = stats.total_legs_lost || 0;
+        const totalLegs = legsWon + legsLost;
+        
+        document.getElementById('stat-legs-won').textContent = legsWon;
+        document.getElementById('stat-legs-lost').textContent = legsLost;
+        document.getElementById('stat-total-legs').textContent = totalLegs;
+        
+        const legWinRate = totalLegs > 0 
+            ? Math.round((legsWon / totalLegs) * 100) 
+            : 0;
+        document.getElementById('stat-leg-win-rate').textContent = legWinRate + '%';
 
         // Display recent matches
         const recentMatches = stats.recent_matches || [];
