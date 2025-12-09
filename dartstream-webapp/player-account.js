@@ -340,6 +340,110 @@ function showAccountDetails() {
 
     // Check if account is already linked to a player in the library
     checkLinkingStatus();
+    
+    // Load and display stats
+    loadPlayerStats();
+}
+
+async function loadPlayerStats() {
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Get current session to ensure we have the user ID
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            document.getElementById('lifetime-stats-section').style.display = 'none';
+            return;
+        }
+        
+        // Get the linked player ID
+        const { data: accountData, error: accountError } = await supabase
+            .from('player_accounts')
+            .select('account_linked_player_id, lifetime_stats')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+        if (accountError) throw accountError;
+
+        if (!accountData || !accountData.account_linked_player_id) {
+            // No linked player, hide stats section
+            document.getElementById('lifetime-stats-section').style.display = 'none';
+            return;
+        }
+
+        // Show stats section
+        document.getElementById('lifetime-stats-section').style.display = 'block';
+
+        // Display lifetime stats
+        const stats = accountData.lifetime_stats || {};
+        
+        // Match Summary
+        const totalMatches = stats.total_matches || 0;
+        const totalWins = stats.total_wins || 0;
+        const totalLosses = totalMatches - totalWins;
+        
+        document.getElementById('stat-total-matches').textContent = totalMatches;
+        document.getElementById('stat-wins').textContent = totalWins;
+        document.getElementById('stat-losses').textContent = totalLosses;
+        
+        const winRate = totalMatches > 0 
+            ? Math.round((totalWins / totalMatches) * 100) 
+            : 0;
+        document.getElementById('stat-win-rate').textContent = winRate + '%';
+        
+        // Performance Stats
+        document.getElementById('stat-average').textContent = (stats.average_3dart || 0).toFixed(2);
+        document.getElementById('stat-highest-checkout').textContent = stats.highest_checkout || 0;
+        document.getElementById('stat-total-darts').textContent = stats.total_darts_thrown || 0;
+        document.getElementById('stat-total-score').textContent = stats.total_score || 0;
+        
+        // Legs Performance
+        const legsWon = stats.total_legs_won || 0;
+        const legsLost = stats.total_legs_lost || 0;
+        const totalLegs = legsWon + legsLost;
+        
+        document.getElementById('stat-legs-won').textContent = legsWon;
+        document.getElementById('stat-legs-lost').textContent = legsLost;
+        document.getElementById('stat-total-legs').textContent = totalLegs;
+        
+        const legWinRate = totalLegs > 0 
+            ? Math.round((legsWon / totalLegs) * 100) 
+            : 0;
+        document.getElementById('stat-leg-win-rate').textContent = legWinRate + '%';
+
+        // Display recent matches
+        const recentMatches = stats.recent_matches || [];
+        const matchesList = document.getElementById('recent-matches-list');
+        
+        if (recentMatches.length === 0) {
+            matchesList.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 20px;">No matches recorded yet. Start playing to see your stats!</p>';
+        } else {
+            matchesList.innerHTML = recentMatches.map(match => {
+                const matchDate = new Date(match.date).toLocaleDateString();
+                const resultClass = match.won ? 'win' : 'loss';
+                const resultColor = match.won ? '#22c55e' : '#ef4444';
+                const resultText = match.won ? 'WIN' : 'LOSS';
+                
+                return `
+                    <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid ${resultColor};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="color: #fff; font-weight: bold;">${match.opponent || 'Unknown Opponent'}</span>
+                            <span style="color: ${resultColor}; font-weight: bold; font-size: 12px;">${resultText}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; color: #94a3b8; font-size: 12px;">
+                            <span>${matchDate}</span>
+                            <span>Score: ${match.score}</span>
+                            <span>Avg: ${match.average}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+    } catch (error) {
+        console.error('Error loading player stats:', error);
+        document.getElementById('lifetime-stats-section').style.display = 'none';
+    }
 }
 
 async function checkLinkingStatus() {

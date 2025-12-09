@@ -43,9 +43,29 @@ CREATE INDEX IF NOT EXISTS idx_match_stats_date ON match_stats(match_date DESC);
 ALTER TABLE match_stats ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies - allow public access for scoring app
-CREATE POLICY "Allow public insert" ON match_stats FOR INSERT TO public WITH CHECK (true);
-CREATE POLICY "Allow public read" ON match_stats FOR SELECT TO public USING (true);
-CREATE POLICY "Allow public update" ON match_stats FOR UPDATE TO public USING (true) WITH CHECK (true);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'match_stats' AND policyname = 'Allow public insert'
+    ) THEN
+        CREATE POLICY "Allow public insert" ON match_stats FOR INSERT TO public WITH CHECK (true);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'match_stats' AND policyname = 'Allow public read'
+    ) THEN
+        CREATE POLICY "Allow public read" ON match_stats FOR SELECT TO public USING (true);
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'match_stats' AND policyname = 'Allow public update'
+    ) THEN
+        CREATE POLICY "Allow public update" ON match_stats FOR UPDATE TO public USING (true) WITH CHECK (true);
+    END IF;
+END $$;
 
 -- Function to update player_accounts lifetime stats from match_stats
 CREATE OR REPLACE FUNCTION update_player_lifetime_stats(p_player_library_id UUID)
