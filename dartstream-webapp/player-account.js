@@ -366,14 +366,16 @@ async function loadPlayerStats() {
         if (accountError) throw accountError;
 
         if (!accountData || !accountData.account_linked_player_id) {
-            // No linked player, hide stats section and show account details
+            // No linked player, hide stats section and show account form
             document.getElementById('lifetime-stats-section').style.display = 'none';
+            document.getElementById('account-form-section').style.display = 'block';
             document.getElementById('account-details').style.display = 'block';
             return;
         }
 
-        // Account is linked - hide account details form and show only stats
-        document.getElementById('account-details').style.display = 'none';
+        // Account is linked - hide form fields/buttons but show stats
+        document.getElementById('account-form-section').style.display = 'none';
+        document.getElementById('account-details').style.display = 'block';
         document.getElementById('lifetime-stats-section').style.display = 'block';
 
         // Display lifetime stats

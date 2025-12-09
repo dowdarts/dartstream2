@@ -320,40 +320,42 @@
                 <div id="account-details" class="account-form" style="display: none;">
                     <h2 class="form-title">Your Account</h2>
                     
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input type="text" id="account-firstname" class="form-input">
+                    <div id="account-form-section">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" id="account-firstname" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" id="account-lastname" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="account-email" class="form-input">
+                        </div>
+
+                        <div class="player-id-display">
+                            <div class="label">Your Player ID</div>
+                            <div class="id" id="account-player-id">XXXX</div>
+                        </div>
+
+                        <div id="linking-status" class="info-text" style="margin: 15px 0; padding: 10px; border-radius: 5px;">
+                            <!-- Status will be displayed here -->
+                        </div>
+
+                        <button class="submit-btn" id="link-to-library-btn" style="margin-bottom: 10px;">
+                            Add Your Account to Scoring App
+                        </button>
+
+                        <p class="info-text">
+                            Click the button above to create your player card in the library and link it to your account. 
+                            This will allow you to track your personal stats across all matches.
+                        </p>
+
+                        <button class="submit-btn secondary" id="logout-btn">Logout</button>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" id="account-lastname" class="form-input">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" id="account-email" class="form-input">
-                    </div>
-
-                    <div class="player-id-display">
-                        <div class="label">Your Player ID</div>
-                        <div class="id" id="account-player-id">XXXX</div>
-                    </div>
-
-                    <div id="linking-status" class="info-text" style="margin: 15px 0; padding: 10px; border-radius: 5px;">
-                        <!-- Status will be displayed here -->
-                    </div>
-
-                    <button class="submit-btn" id="link-to-library-btn" style="margin-bottom: 10px;">
-                        Add Your Account to Scoring App
-                    </button>
-
-                    <p class="info-text">
-                        Click the button above to create your player card in the library and link it to your account. 
-                        This will allow you to track your personal stats across all matches.
-                    </p>
-
-                    <button class="submit-btn secondary" id="logout-btn">Logout</button>
 
                     <!-- Lifetime Stats Section -->
                     <div id="lifetime-stats-section" style="display: none; margin-top: 30px; width: 100%; max-width: 500px;">
