@@ -354,10 +354,10 @@ async function generatePlayerId() {
             .from('player_accounts')
             .select('player_id')
             .eq('player_id', id)
-            .single();
+            .maybeSingle(); // Use maybeSingle() to handle 0 rows gracefully
         
-        // If no data found (error.code === 'PGRST116'), ID is unique
-        if (error && error.code === 'PGRST116') {
+        // If no data found, ID is unique
+        if (!data && !error) {
             return id;
         }
         
