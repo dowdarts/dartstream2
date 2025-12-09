@@ -2619,6 +2619,10 @@ function showSetCompleteModal() {
         modal.classList.remove('show');
         
         try {
+            console.log('End Match button clicked');
+            console.log('PlayerDB available?', !!window.PlayerDB);
+            console.log('getAllPlayers available?', !!(window.PlayerDB && window.PlayerDB.getAllPlayers));
+            
             const p1 = gameState.players.player1;
             const p2 = gameState.players.player2;
             
