@@ -316,11 +316,18 @@ async function loadPlayerStats() {
     try {
         const supabase = getSupabaseClient();
         
+        // Get current session to ensure we have the user ID
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            document.getElementById('lifetime-stats-section').style.display = 'none';
+            return;
+        }
+        
         // Get the linked player ID
         const { data: accountData, error: accountError } = await supabase
             .from('player_accounts')
             .select('account_linked_player_id, lifetime_stats')
-            .eq('user_id', currentAccount.userId)
+            .eq('user_id', session.user.id)
             .maybeSingle();
 
         if (accountError) throw accountError;
@@ -385,11 +392,15 @@ async function checkLinkingStatus() {
     try {
         const supabase = getSupabaseClient();
         
+        // Get current session to ensure we have the user ID
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
         // Check if this account has a linked player
         const { data, error } = await supabase
             .from('player_accounts')
             .select('account_linked_player_id')
-            .eq('user_id', currentAccount.userId)
+            .eq('user_id', session.user.id)
             .maybeSingle();
 
         if (error) throw error;
@@ -423,6 +434,13 @@ async function handleLinkToLibrary() {
     try {
         const supabase = getSupabaseClient();
         
+        // Get current session to ensure we have the user ID
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            showLinkingMessage('No active session. Please log in again.', 'error');
+            return;
+        }
+        
         // Get updated values from the form
         const firstName = document.getElementById('account-firstname').value.trim();
         const lastName = document.getElementById('account-lastname').value.trim();
@@ -439,7 +457,7 @@ async function handleLinkToLibrary() {
         const { data: accountData, error: accountError } = await supabase
             .from('player_accounts')
             .select('account_linked_player_id')
-            .eq('user_id', currentAccount.userId)
+            .eq('user_id', session.user.id)
             .maybeSingle();
 
         if (accountError) throw accountError;
@@ -481,7 +499,7 @@ async function handleLinkToLibrary() {
             const { error: linkError } = await supabase
                 .from('player_accounts')
                 .update({ account_linked_player_id: playerLibraryId })
-                .eq('user_id', currentAccount.userId);
+                .eq('user_id', session.user.id);
 
             if (linkError) throw linkError;
 
@@ -493,7 +511,7 @@ async function handleLinkToLibrary() {
                     last_name: lastName,
                     email: email
                 })
-                .eq('user_id', currentAccount.userId);
+                .eq('user_id', session.user.id);
 
             if (updateAccountError) throw updateAccountError;
 
