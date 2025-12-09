@@ -391,8 +391,7 @@ async function handleLinkToLibrary() {
                 .from('players')
                 .update({
                     first_name: firstName,
-                    last_name: lastName,
-                    email: email
+                    last_name: lastName
                 })
                 .eq('id', playerLibraryId);
 
@@ -406,8 +405,7 @@ async function handleLinkToLibrary() {
                 .from('players')
                 .insert({
                     first_name: firstName,
-                    last_name: lastName,
-                    email: email
+                    last_name: lastName
                 })
                 .select()
                 .single();
