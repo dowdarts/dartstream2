@@ -53,6 +53,9 @@ async function initializeAccountSystem() {
     // Logout
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
+    // Link to library
+    document.getElementById('link-to-library-btn').addEventListener('click', handleLinkToLibrary);
+
     // Toggle between forms
     document.getElementById('show-login').addEventListener('click', () => {
         document.getElementById('register-form').style.display = 'none';
@@ -289,6 +292,155 @@ function showAccountDetails() {
     document.getElementById('account-lastname').value = currentAccount.lastName;
     document.getElementById('account-email').value = currentAccount.email;
     document.getElementById('account-player-id').textContent = currentAccount.id;
+
+    // Check if account is already linked to a player in the library
+    checkLinkingStatus();
+}
+
+async function checkLinkingStatus() {
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Check if this account has a linked player
+        const { data, error } = await supabase
+            .from('player_accounts')
+            .select('account_linked_player_id')
+            .eq('user_id', currentAccount.userId)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        const statusDiv = document.getElementById('linking-status');
+        const linkButton = document.getElementById('link-to-library-btn');
+
+        if (data && data.account_linked_player_id) {
+            // Account is linked
+            statusDiv.innerHTML = '✅ Your account is linked to the scoring app player library!';
+            statusDiv.style.backgroundColor = '#d4edda';
+            statusDiv.style.color = '#155724';
+            linkButton.textContent = 'Update Player Card';
+            linkButton.classList.remove('submit-btn');
+            linkButton.classList.add('submit-btn', 'secondary');
+        } else {
+            // Not linked yet
+            statusDiv.innerHTML = 'ℹ️ Add your account to the scoring app to track your stats across all matches.';
+            statusDiv.style.backgroundColor = '#d1ecf1';
+            statusDiv.style.color = '#0c5460';
+            linkButton.textContent = 'Add Your Account to Scoring App';
+            linkButton.classList.remove('secondary');
+        }
+
+    } catch (error) {
+        console.error('Error checking linking status:', error);
+    }
+}
+
+async function handleLinkToLibrary() {
+    try {
+        const supabase = getSupabaseClient();
+        
+        // Get updated values from the form
+        const firstName = document.getElementById('account-firstname').value.trim();
+        const lastName = document.getElementById('account-lastname').value.trim();
+        const email = document.getElementById('account-email').value.trim().toLowerCase();
+
+        if (!firstName || !lastName || !email) {
+            showLinkingMessage('Please fill in all fields', 'error');
+            return;
+        }
+
+        showLinkingMessage('Creating/updating your player card...', 'info');
+
+        // Check if account already has a linked player
+        const { data: accountData, error: accountError } = await supabase
+            .from('player_accounts')
+            .select('account_linked_player_id')
+            .eq('user_id', currentAccount.userId)
+            .maybeSingle();
+
+        if (accountError) throw accountError;
+
+        let playerLibraryId = accountData?.account_linked_player_id;
+
+        if (playerLibraryId) {
+            // Update existing player in library
+            const { error: updateError } = await supabase
+                .from('players')
+                .update({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email
+                })
+                .eq('id', playerLibraryId);
+
+            if (updateError) throw updateError;
+
+            showLinkingMessage('✅ Your player card has been updated!', 'success');
+
+        } else {
+            // Create new player in library
+            const { data: newPlayer, error: insertError } = await supabase
+                .from('players')
+                .insert({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email
+                })
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+
+            playerLibraryId = newPlayer.id;
+
+            // Link the player to this account
+            const { error: linkError } = await supabase
+                .from('player_accounts')
+                .update({ account_linked_player_id: playerLibraryId })
+                .eq('user_id', currentAccount.userId);
+
+            if (linkError) throw linkError;
+
+            // Update the account info in player_accounts
+            const { error: updateAccountError } = await supabase
+                .from('player_accounts')
+                .update({
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email
+                })
+                .eq('user_id', currentAccount.userId);
+
+            if (updateAccountError) throw updateAccountError;
+
+            showLinkingMessage('✅ Your player card has been created and linked to your account!', 'success');
+        }
+
+        // Refresh the linking status
+        setTimeout(() => {
+            checkLinkingStatus();
+        }, 2000);
+
+    } catch (error) {
+        console.error('Error linking to library:', error);
+        showLinkingMessage('❌ Error: ' + error.message, 'error');
+    }
+}
+
+function showLinkingMessage(message, type) {
+    const statusDiv = document.getElementById('linking-status');
+    statusDiv.innerHTML = message;
+    
+    if (type === 'success') {
+        statusDiv.style.backgroundColor = '#d4edda';
+        statusDiv.style.color = '#155724';
+    } else if (type === 'error') {
+        statusDiv.style.backgroundColor = '#f8d7da';
+        statusDiv.style.color = '#721c24';
+    } else {
+        statusDiv.style.backgroundColor = '#d1ecf1';
+        statusDiv.style.color = '#0c5460';
+    }
 }
 
 function showForgotPasswordForm() {

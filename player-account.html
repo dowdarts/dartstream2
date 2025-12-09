@@ -322,17 +322,17 @@
                     
                     <div class="form-group">
                         <label class="form-label">First Name</label>
-                        <input type="text" id="account-firstname" class="form-input readonly" readonly>
+                        <input type="text" id="account-firstname" class="form-input">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Last Name</label>
-                        <input type="text" id="account-lastname" class="form-input readonly" readonly>
+                        <input type="text" id="account-lastname" class="form-input">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email Address</label>
-                        <input type="email" id="account-email" class="form-input readonly" readonly>
+                        <input type="email" id="account-email" class="form-input">
                     </div>
 
                     <div class="player-id-display">
@@ -340,9 +340,17 @@
                         <div class="id" id="account-player-id">XXXX</div>
                     </div>
 
+                    <div id="linking-status" class="info-text" style="margin: 15px 0; padding: 10px; border-radius: 5px;">
+                        <!-- Status will be displayed here -->
+                    </div>
+
+                    <button class="submit-btn" id="link-to-library-btn" style="margin-bottom: 10px;">
+                        Add Your Account to Scoring App
+                    </button>
+
                     <p class="info-text">
-                        Use this Player ID when adding yourself to the Player Library in the scoring app. 
-                        Enter your email address in the library to link your account and view your personal stats.
+                        Click the button above to create your player card in the library and link it to your account. 
+                        This will allow you to track your personal stats across all matches.
                     </p>
 
                     <button class="submit-btn secondary" id="logout-btn">Logout</button>
