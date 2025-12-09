@@ -14,7 +14,7 @@ function getSupabaseClient() {
     if (supabaseClient) return supabaseClient;
     
     const supabaseUrl = 'https://kswwbqumgsdissnwuiab.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnB1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM3NjYwOTMsImV4cCI6MjA0OTM0MjA5M30.VJ64q5Qw8TEBxYRnc4hP25w_KWdEu_TKa7iHNK5s8Uw';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
     
     supabaseClient = createClient(supabaseUrl, supabaseKey);
     return supabaseClient;
