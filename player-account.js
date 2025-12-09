@@ -45,17 +45,24 @@ async function initializeAccountSystem() {
     // Login form submit
     document.getElementById('login-btn').addEventListener('click', handleLogin);
 
+    // Forgot password
+    document.getElementById('forgot-password-link').addEventListener('click', showForgotPasswordForm);
+    document.getElementById('forgot-password-btn').addEventListener('click', handleForgotPassword);
+    document.getElementById('back-to-login').addEventListener('click', showLoginForm);
+
     // Logout
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
     // Toggle between forms
     document.getElementById('show-login').addEventListener('click', () => {
         document.getElementById('register-form').style.display = 'none';
+        document.getElementById('forgot-password-form').style.display = 'none';
         document.getElementById('login-form').style.display = 'block';
     });
 
     document.getElementById('show-register').addEventListener('click', () => {
         document.getElementById('login-form').style.display = 'none';
+        document.getElementById('forgot-password-form').style.display = 'none';
         document.getElementById('register-form').style.display = 'block';
     });
 }
@@ -229,12 +236,61 @@ function showAccountDetails() {
 
     document.getElementById('register-form').style.display = 'none';
     document.getElementById('login-form').style.display = 'none';
+    document.getElementById('forgot-password-form').style.display = 'none';
     document.getElementById('account-details').style.display = 'block';
 
     document.getElementById('account-firstname').value = currentAccount.firstName;
     document.getElementById('account-lastname').value = currentAccount.lastName;
     document.getElementById('account-email').value = currentAccount.email;
     document.getElementById('account-player-id').textContent = currentAccount.id;
+}
+
+function showForgotPasswordForm() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('account-details').style.display = 'none';
+    document.getElementById('forgot-password-form').style.display = 'block';
+    clearForm('forgot-password-account-form');
+}
+
+function showLoginForm() {
+    document.getElementById('forgot-password-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('account-details').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('forgot-password-email').value.trim().toLowerCase();
+
+    if (!email) {
+        showMessage('forgot-password-message-container', 'Please enter your email address', 'error');
+        return;
+    }
+
+    if (!isValidEmail(email)) {
+        showMessage('forgot-password-message-container', 'Please enter a valid email address', 'error');
+        return;
+    }
+
+    try {
+        const supabase = getSupabaseClient();
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/player-account.html'
+        });
+
+        if (error) throw error;
+
+        showMessage('forgot-password-message-container', 'Password reset link sent! Check your email.', 'success');
+        
+        setTimeout(() => {
+            showLoginForm();
+        }, 3000);
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        showMessage('forgot-password-message-container', error.message || 'Failed to send reset link', 'error');
+    }
 }
 
 // Helper: Generate unique 4-digit player ID
