@@ -387,7 +387,6 @@ function renderPlayerLibrary() {
         card.innerHTML = `
             <div class="name">${player.firstName}</div>
             <div class="surname">${player.lastName}</div>
-            <div class="player-id">ID: ${player.id}</div>
         `;
         
         card.addEventListener('click', function() {

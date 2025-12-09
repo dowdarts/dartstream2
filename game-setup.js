@@ -158,7 +158,6 @@ export const GameSetupModule = {
             card.innerHTML = `
                 <div class="name">${player.firstName}</div>
                 <div class="surname">${player.lastName}</div>
-                <div class="player-id">ID: ${player.id}</div>
             `;
             
             card.addEventListener('click', () => this.handlePlayerCardClick(player, playerName, card));
