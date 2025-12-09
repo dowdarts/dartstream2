@@ -384,7 +384,11 @@ function renderPlayerLibrary() {
             card.classList.add('selected-for-delete');
         }
         
+        // Check if player has linked account with email
+        const hasLinkedAccount = player.account_linked_player_id && player.email;
+        
         card.innerHTML = `
+            ${hasLinkedAccount ? '<div class="account-linked-badge"></div>' : ''}
             <div class="name">${player.firstName}</div>
             <div class="surname">${player.lastName}</div>
         `;
