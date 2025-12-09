@@ -35,9 +35,101 @@
             margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
         }
 
+        .header .logo-container {
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .header .logo-container img {
+            max-width: clamp(180px, 30vw, 300px);
+            height: auto;
+        }
+
         .header h1 {
-            font-size: clamp(2rem, 6vw, 3rem);
+            font-size: clamp(2.5rem, 7vw, 4rem);
             margin-bottom: clamp(0.5rem, 1vh, 1rem);
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .header .slogan {
+            font-size: clamp(1.1rem, 3vw, 1.8rem);
+            color: #facc15;
+            font-style: italic;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #94a3b8;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto clamp(1.5rem, 3vh, 2rem);
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #1a1a2e;
+            padding: clamp(0.8rem, 2vh, 1.2rem) clamp(2rem, 4vw, 3rem);
+            border-radius: 8px;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(250, 204, 21, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(250, 204, 21, 0.5);
+        }
+
+        .features-section {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: clamp(1.5rem, 3vh, 2.5rem);
+            margin-bottom: clamp(2rem, 4vh, 3rem);
+        }
+
+        .features-section h2 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            color: #facc15;
+            text-align: center;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1.5rem, 3vh, 2rem);
+            margin-top: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .feature-item {
+            background: rgba(0,0,0,0.3);
+            padding: clamp(1rem, 2vh, 1.5rem);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .feature-item h3 {
+            color: #facc15;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
+        }
+
+        .feature-item p {
+            color: #94a3b8;
+            line-height: 1.5;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+
+        .section-divider {
+            text-align: center;
+            margin: clamp(2rem, 4vh, 3rem) 0;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #facc15;
         }
 
         .header .emoji {
@@ -177,12 +269,43 @@
 </head>
 <body>
     <div class="container">
+        <!-- Hero Section -->
         <div class="header">
-            <div class="emoji">🎯</div>
-            <h1>DartStream</h1>
-            <p>Professional Darts Scoring & Broadcasting System</p>
+            <div class="logo-container">
+                <img src="dartstream-logo.png" alt="DartStream Logo">
+            </div>
+            <h1>The Complete Production System for Live Darts</h1>
+            <p class="slogan">Every Stat, Every Score, Every Stream. From Oche to Screen.</p>
+            <p>DartStream is the all-in-one software solution that brings professional-grade broadcast quality to any darts event. Go beyond simple scoring with integrated event management, real-time player statistics, and customizable TV graphics—all controlled from one central hub.</p>
+            <a href="scoring-app.html" class="cta-button">GET STARTED</a>
         </div>
 
+        <!-- Key Features Section -->
+        <div class="features-section">
+            <h2>🌟 Unify Your Darts Event Production</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>📊 Total Score Control</h3>
+                    <p>Live scoreboard integration and in-app scoring, including automatic calculation for all popular formats.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📺 Broadcast Ready Graphics</h3>
+                    <p>Generate professional TV Score Bugs, Player Standing displays, and overlays instantly, designed to look great on any stream.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📈 Data & Stats Engine</h3>
+                    <p>Real-time player stats tracking and event tracking to feed your graphics and enrich the viewing experience.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🎮 Event Management Central</h3>
+                    <p>Use the integrated Live Match Central and Tournament Director tools to manage your entire event schedule, players, and match flow seamlessly.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider">💻 Choose Your DartStream App</div>
+
+        <!-- Apps Grid -->
         <div class="apps-grid">
             <a href="scoring-app.html" class="app-card">
                 <div class="app-icon">📱</div>
