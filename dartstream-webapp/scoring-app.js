@@ -282,6 +282,14 @@ export const ScoringAppModule = {
         player.matchDarts += this.gameState.currentVisit.length;
         player.score = player.preTurnScore;
         
+        // Recalculate averages after bust (darts added but no score)
+        if (player.legDarts > 0) {
+            player.legAvg = (player.legScore / player.legDarts) * 3;
+        }
+        if (player.matchDarts > 0) {
+            player.matchAvg = (player.matchScore / player.matchDarts) * 3;
+        }
+        
         this.gameState.currentVisit = [];
         this.gameState.dartsThrown = 0;
         this.gameState.turnTotal = 0;
