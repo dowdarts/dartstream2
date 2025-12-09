@@ -33,21 +33,40 @@ const PlayerDB = {
                 return [];
             }
             
-            const { data, error } = await supabase
+            // Get all players
+            const { data: players, error: playersError } = await supabase
                 .from('players')
                 .select('*')
                 .order('first_name', { ascending: true });
             
-            if (error) throw error;
+            if (playersError) throw playersError;
             
-            console.log('Fetched players from Supabase:', data);
+            // Get all player accounts to check for linked accounts
+            const { data: accounts, error: accountsError } = await supabase
+                .from('player_accounts')
+                .select('account_linked_player_id, email');
             
-            return (data || []).map(player => ({
+            if (accountsError) throw accountsError;
+            
+            // Create a map of player_id to account info
+            const accountMap = new Map();
+            (accounts || []).forEach(account => {
+                if (account.account_linked_player_id) {
+                    accountMap.set(account.account_linked_player_id, account.email);
+                }
+            });
+            
+            console.log('Fetched players from Supabase:', players);
+            console.log('Account linkages:', accountMap);
+            
+            return (players || []).map(player => ({
                 id: player.id,
                 firstName: player.first_name,
                 lastName: player.last_name,
                 nationality: player.nationality,
-                createdAt: player.created_at
+                createdAt: player.created_at,
+                email: accountMap.get(player.id) || null,
+                account_linked_player_id: accountMap.has(player.id) ? player.id : null
             }));
         } catch (error) {
             console.error('Error fetching players:', error);
