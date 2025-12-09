@@ -183,6 +183,7 @@ export const GameSetupModule = {
             document.getElementById('edit-player-firstname').value = player.firstName || '';
             document.getElementById('edit-player-lastname').value = player.lastName || '';
             document.getElementById('edit-player-id').value = player.id || '';
+            document.getElementById('edit-player-email').value = player.email || '';
             document.getElementById('edit-player-nationality').value = player.nationality || '';
             this.hideModal('player-library-modal');
             this.showModal('edit-player-modal');
@@ -375,11 +376,23 @@ export const GameSetupModule = {
         const firstName = document.getElementById('edit-player-firstname').value.trim();
         const lastName = document.getElementById('edit-player-lastname').value.trim();
         const playerId = document.getElementById('edit-player-id').value.trim();
+        const email = document.getElementById('edit-player-email').value.trim().toLowerCase();
         const nationality = document.getElementById('edit-player-nationality').value;
         
         if (firstName === '' || lastName === '') {
             alert('Please enter both first and last name');
             return;
+        }
+        
+        // Verify account link if email is provided
+        if (email && window.PlayerAccountSystem) {
+            const linkResult = await window.PlayerAccountSystem.linkPlayerToAccount(email, playerId);
+            if (!linkResult.success && playerId) {
+                const confirmLink = confirm('Email and Player ID do not match any account. Do you want to continue without linking?');
+                if (!confirmLink) return;
+            } else if (linkResult.success) {
+                alert('Player successfully linked to DartStream Stats account!');
+            }
         }
         
         const result = await PlayerLibraryModule.updatePlayer(
