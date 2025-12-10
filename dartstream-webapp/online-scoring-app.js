@@ -436,7 +436,9 @@ const OnlineScoringApp = {
         const currentPlayerKey = `player${this.gameState.currentPlayer}`;
         const player = this.gameState.players[currentPlayerKey];
         
-        const finishingDart = this.gameState.currentVisit.length;
+        // Ask which dart finished the game
+        const dartFinished = prompt('Which dart finished the game? (1, 2, or 3)', this.gameState.currentVisit.length);
+        const finishingDart = parseInt(dartFinished) || this.gameState.currentVisit.length;
         
         player.legDarts += finishingDart;
         player.matchDarts += finishingDart;
@@ -463,9 +465,83 @@ const OnlineScoringApp = {
         this.updateDualFunctionButtons();
         this.updateDisplay();
         
-        // TODO: Check for match win and save stats
-        // For now, just continue
-        setTimeout(() => this.startNewLeg(), 2000);
+        // Check for set/match win
+        setTimeout(() => this.checkSetWin(), 1000);
+    },
+    
+    // Check set win
+    checkSetWin() {
+        const p1 = this.gameState.players.player1;
+        const p2 = this.gameState.players.player2;
+        
+        const legsNeeded = this.gameState.matchSettings.legsFormat === 'best-of'
+            ? this.gameState.matchSettings.legsToWin
+            : this.gameState.matchSettings.totalLegs;
+        
+        if (p1.legWins >= legsNeeded) {
+            p1.setWins++;
+            alert(`${p1.name} wins the set ${p1.legWins}-${p2.legWins}!`);
+            this.checkMatchWin();
+        } else if (p2.legWins >= legsNeeded) {
+            p2.setWins++;
+            alert(`${p2.name} wins the set ${p2.legWins}-${p1.legWins}!`);
+            this.checkMatchWin();
+        } else {
+            this.startNewLeg();
+        }
+    },
+    
+    // Check match win
+    checkMatchWin() {
+        const p1 = this.gameState.players.player1;
+        const p2 = this.gameState.players.player2;
+        
+        const setsNeeded = this.gameState.matchSettings.setsFormat === 'best-of'
+            ? this.gameState.matchSettings.setsToWin
+            : this.gameState.matchSettings.totalSets;
+        
+        console.log(`Check Match Win: ${p1.name} has ${p1.setWins} sets, ${p2.name} has ${p2.setWins} sets. Need ${setsNeeded} to win.`);
+        
+        if (p1.setWins >= setsNeeded) {
+            console.log('🏆 MATCH COMPLETE - Player 1 wins!');
+            this.showMatchComplete(p1, p2, 1);
+        } else if (p2.setWins >= setsNeeded) {
+            console.log('🏆 MATCH COMPLETE - Player 2 wins!');
+            this.showMatchComplete(p2, p1, 2);
+        } else {
+            console.log('📊 Starting new set...');
+            this.startNewSet();
+        }
+    },
+    
+    // Show match complete
+    showMatchComplete(winner, loser, winnerNum) {
+        const message = `
+🏆 MATCH COMPLETE! 🏆
+
+${winner.name} wins ${winner.setWins}-${loser.setWins}!
+
+Final Stats:
+${this.gameState.players.player1.name}: ${this.gameState.players.player1.setWins} sets, ${this.gameState.players.player1.matchAvg} avg
+${this.gameState.players.player2.name}: ${this.gameState.players.player2.setWins} sets, ${this.gameState.players.player2.matchAvg} avg
+
+Thanks for playing!
+        `;
+        
+        alert(message);
+        
+        // TODO: Save match stats to Supabase and return to main menu
+        // For now, just show alert
+    },
+    
+    // Start new set
+    startNewSet() {
+        this.gameState.currentSet++;
+        
+        this.gameState.players.player1.legWins = 0;
+        this.gameState.players.player2.legWins = 0;
+        
+        this.startNewLeg();
     },
     
     // Start new leg
@@ -712,6 +788,17 @@ const OnlineScoringApp = {
                 p1Display.classList.remove('active');
                 p2Display.classList.add('active');
             }
+        }
+        
+        // Update set/leg scores
+        const setScoreDisplay = document.getElementById('set-score-display');
+        const legScoreDisplay = document.getElementById('leg-score-display');
+        
+        if (setScoreDisplay) {
+            setScoreDisplay.textContent = `${this.gameState.players.player1.setWins} - ${this.gameState.players.player2.setWins}`;
+        }
+        if (legScoreDisplay) {
+            legScoreDisplay.textContent = `${this.gameState.players.player1.legWins} - ${this.gameState.players.player2.legWins}`;
         }
     },
     
