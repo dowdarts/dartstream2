@@ -2,6 +2,22 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent double-tap zoom on all interactive elements */
+button,
+.num-btn,
+.score-btn,
+.input-btn,
+.control-btn,
+.game-option-btn,
+.player-header,
+.bottom-btn,
+.bottom-btn-dark {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 body {
