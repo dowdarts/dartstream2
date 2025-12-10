@@ -2717,8 +2717,16 @@ function showSetCompleteModal() {
             console.log('PlayerDB available?', !!window.PlayerDB);
             console.log('getAllPlayers available?', !!(window.PlayerDB && window.PlayerDB.getAllPlayers));
             
+            // Get match stats from global gameState
             const p1 = gameState.players.player1;
             const p2 = gameState.players.player2;
+            
+            // Get achievements from ScoringApp's gameState (where they are tracked)
+            const p1Achievements = window.ScoringApp?.gameState?.players?.player1?.achievements || {};
+            const p2Achievements = window.ScoringApp?.gameState?.players?.player2?.achievements || {};
+            
+            console.log('Player 1 achievements:', p1Achievements);
+            console.log('Player 2 achievements:', p2Achievements);
             
             // Determine winner based on current set wins
             const winnerNum = p1.setWins > p2.setWins ? 1 : 2;
@@ -2780,13 +2788,13 @@ function showSetCompleteModal() {
                     first_9_average: 0,
                     highest_checkout: 0,
                     checkout_percentage: 0,
-                    count_180s: p1.achievements?.count_180s || 0,
-                    count_171s: p1.achievements?.count_171s || 0,
-                    count_95s: p1.achievements?.count_95s || 0,
-                    count_100_plus: p1.achievements?.count_100_plus || 0,
-                    count_120_plus: p1.achievements?.count_120_plus || 0,
-                    count_140_plus: p1.achievements?.count_140_plus || 0,
-                    count_160_plus: p1.achievements?.count_160_plus || 0,
+                    count_180s: p1Achievements.count_180s || 0,
+                    count_171s: p1Achievements.count_171s || 0,
+                    count_95s: p1Achievements.count_95s || 0,
+                    count_100_plus: p1Achievements.count_100_plus || 0,
+                    count_120_plus: p1Achievements.count_120_plus || 0,
+                    count_140_plus: p1Achievements.count_140_plus || 0,
+                    count_160_plus: p1Achievements.count_160_plus || 0,
                     leg_scores: [],
                     checkout_history: []
                 };
@@ -2810,13 +2818,13 @@ function showSetCompleteModal() {
                     first_9_average: 0,
                     highest_checkout: 0,
                     checkout_percentage: 0,
-                    count_180s: p2.achievements?.count_180s || 0,
-                    count_171s: p2.achievements?.count_171s || 0,
-                    count_95s: p2.achievements?.count_95s || 0,
-                    count_100_plus: p2.achievements?.count_100_plus || 0,
-                    count_120_plus: p2.achievements?.count_120_plus || 0,
-                    count_140_plus: p2.achievements?.count_140_plus || 0,
-                    count_160_plus: p2.achievements?.count_160_plus || 0,
+                    count_180s: p2Achievements.count_180s || 0,
+                    count_171s: p2Achievements.count_171s || 0,
+                    count_95s: p2Achievements.count_95s || 0,
+                    count_100_plus: p2Achievements.count_100_plus || 0,
+                    count_120_plus: p2Achievements.count_120_plus || 0,
+                    count_140_plus: p2Achievements.count_140_plus || 0,
+                    count_160_plus: p2Achievements.count_160_plus || 0,
                     leg_scores: [],
                     checkout_history: []
                 };
