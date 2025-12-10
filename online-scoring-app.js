@@ -1085,7 +1085,7 @@ window.addEventListener('load', () => {
             console.log('✅ Received initialization config:', event.data.config);
             if (debugStatus) debugStatus.textContent = 'Config received - initializing...';
             
-            // Hide loading screen, show app
+            // Hide loading screen, show app FIRST
             const loadingScreen = document.getElementById('loading-screen');
             const app = document.getElementById('app');
             if (loadingScreen) loadingScreen.style.display = 'none';
@@ -1099,7 +1099,10 @@ window.addEventListener('load', () => {
             const roomBanner = document.getElementById('room-code-banner');
             if (roomBanner) roomBanner.style.display = 'block';
             
-            OnlineScoringApp.initialize(event.data.config);
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                OnlineScoringApp.initialize(event.data.config);
+            }, 100);
         }
     });
     
