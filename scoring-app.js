@@ -829,6 +829,18 @@ window.addEventListener('message', (event) => {
     
     if (!isInIframe) return; // Only process messages when in iframe
     
+    if (event.data.type === 'initialize-game') {
+        // Initialize the game with config from Play Online
+        const config = event.data.config;
+        console.log('Initializing game from Play Online:', config);
+        
+        // Hide setup screen, show game screen
+        ScoringApp.showScreen('game-screen');
+        
+        // Initialize the game
+        ScoringApp.initialize(config);
+    }
+    
     if (event.data.type === 'set-turn') {
         const enabled = event.data.enabled;
         console.log('Turn control:', enabled ? 'ENABLED' : 'DISABLED');

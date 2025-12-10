@@ -191,7 +191,8 @@ const PlayOnline = {
                 console.log('Room updated:', payload);
                 if (payload.new.guest_id && payload.new.status === 'active') {
                     this.opponentId = payload.new.guest_id;
-                    this.startMatch();
+                    // Host shows game config screen when guest joins
+                    this.showGameConfig();
                 }
             })
             .subscribe();
@@ -261,22 +262,165 @@ const PlayOnline = {
         }
     },
 
-    // Start the match
-    startMatch() {
-        console.log('Starting match...');
+    // Show game configuration screen (Host only after both players connect)
+    async showGameConfig() {
+        console.log('Showing game configuration...');
         
-        // Hide setup, show main interface
+        // Hide setup, show config screen
         document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('game-config-screen').classList.remove('hidden');
+
+        // Fetch and display player names from their accounts
+        await this.loadPlayerNames();
+    },
+
+    // Load player names from player_accounts table
+    async loadPlayerNames() {
+        try {
+            if (!window.supabaseClient) {
+                await this.waitForSupabase();
+            }
+
+            // Get host's account
+            const { data: hostAccount } = await window.supabaseClient
+                .from('player_accounts')
+                .select('first_name, last_name, account_linked_player_id')
+                .eq('user_id', this.isHost ? this.localPlayerId : this.opponentId)
+                .maybeSingle();
+
+            // Get guest's account
+            const { data: guestAccount } = await window.supabaseClient
+                .from('player_accounts')
+                .select('first_name, last_name, account_linked_player_id')
+                .eq('user_id', this.isHost ? this.opponentId : this.localPlayerId)
+                .maybeSingle();
+
+            // Display names
+            const hostName = hostAccount ? `${hostAccount.first_name} ${hostAccount.last_name}` : 'Host Player';
+            const guestName = guestAccount ? `${guestAccount.first_name} ${guestAccount.last_name}` : 'Guest Player';
+
+            document.getElementById('host-player-name').textContent = hostName;
+            document.getElementById('guest-player-name').textContent = guestName;
+
+            // Store for game initialization
+            this.hostPlayerName = hostName;
+            this.guestPlayerName = guestName;
+            this.hostPlayerId = hostAccount?.account_linked_player_id;
+            this.guestPlayerId = guestAccount?.account_linked_player_id;
+
+        } catch (error) {
+            console.error('Error loading player names:', error);
+            document.getElementById('host-player-name').textContent = 'Host Player';
+            document.getElementById('guest-player-name').textContent = 'Guest Player';
+        }
+    },
+
+    // Cancel game config and disconnect
+    cancelGameConfig() {
+        if (confirm('Cancel match? This will disconnect both players.')) {
+            this.disconnect();
+            window.location.reload();
+        }
+    },
+
+    // Confirm game configuration and start match (Host only)
+    async confirmGameConfig() {
+        // Get configuration values
+        const gameType = document.getElementById('online-game-type').value;
+        const matchFormat = document.getElementById('online-match-format').value;
+        const startingPlayer = document.getElementById('online-starting-player').value;
+
+        // Parse game type (e.g., "501-sido" -> startScore: 501, doubleOut: false)
+        const [score, inOut] = gameType.split('-');
+        const startScore = parseInt(score);
+        const doubleOut = inOut === 'dido';
+
+        // Parse match format
+        let totalLegs = 1;
+        let legsFormat = 'first-to';
+        
+        if (matchFormat === 'best-of-3') totalLegs = 3;
+        else if (matchFormat === 'best-of-5') totalLegs = 5;
+        else if (matchFormat === 'best-of-7') totalLegs = 7;
+        else if (matchFormat === 'best-of-3-sets') totalLegs = 3; // Sets mode
+        else if (matchFormat === 'best-of-5-sets') totalLegs = 5; // Sets mode
+
+        if (matchFormat.includes('best-of')) {
+            legsFormat = 'best-of';
+        }
+
+        // Set initial turn based on starting player
+        this.currentTurn = startingPlayer; // 'host' or 'guest'
+
+        // Create game config
+        const gameConfig = {
+            gameType: gameType,
+            startScore: startScore,
+            doubleOut: doubleOut,
+            player1Name: this.hostPlayerName,
+            player2Name: this.guestPlayerName,
+            player1Id: this.hostPlayerId,
+            player2Id: this.guestPlayerId,
+            totalLegs: totalLegs,
+            legsFormat: legsFormat,
+            startingPlayer: startingPlayer
+        };
+
+        console.log('Game config:', gameConfig);
+
+        // Broadcast config to guest
+        await this.supabaseChannel.send({
+            type: 'broadcast',
+            event: 'game-config',
+            payload: { from: this.localPlayerId, config: gameConfig }
+        });
+
+        // Start the match
+        this.initializeMatch(gameConfig);
+    },
+
+    // Initialize match with config
+    initializeMatch(config) {
+        console.log('Initializing match with config:', config);
+        
+        // Hide config, show main interface
+        document.getElementById('game-config-screen').classList.add('hidden');
         document.getElementById('videostream-container').classList.remove('hidden');
 
         // Update connection status
-        this.updateConnectionStatus('Connected to room', true);
+        this.updateConnectionStatus('Match in progress', true);
 
         // Initialize turn indicator
         this.updateTurnIndicator();
 
         // Listen for game state changes
         this.listenForGameUpdates();
+
+        // Initialize the scoring app iframe with config
+        const iframe = document.getElementById('scoring-iframe');
+        iframe.contentWindow.postMessage({
+            type: 'initialize-game',
+            config: config
+        }, '*');
+
+        // Set initial turn control
+        const isMyTurn = (this.isHost && this.currentTurn === 'host') || 
+                         (!this.isHost && this.currentTurn === 'guest');
+        
+        iframe.contentWindow.postMessage({
+            type: 'set-turn',
+            enabled: isMyTurn
+        }, '*');
+    },
+
+    // Original startMatch renamed and simplified for guest
+    startMatch() {
+        console.log('Starting match (guest waiting for config)...');
+        
+        // Hide setup, show waiting message
+        document.getElementById('setup-screen').classList.add('hidden');
+        // Guest waits for host to configure
+        this.updateConnectionStatus('Waiting for host to configure match...', true);
     },
 
     // Enumerate available media devices
@@ -566,6 +710,18 @@ const PlayOnline = {
             } else if (event.data.type === 'match-complete') {
                 console.log('Match completed:', event.data);
                 this.handleMatchComplete(event.data);
+            }
+        });
+
+        // Listen for game config from host (Guest only)
+        this.supabaseChannel.on('broadcast', { event: 'game-config' }, (payload) => {
+            const { from, config } = payload.payload;
+            if (from !== this.localPlayerId && !this.isHost) {
+                console.log('Received game config from host:', config);
+                this.currentTurn = config.startingPlayer;
+                this.hostPlayerName = config.player1Name;
+                this.guestPlayerName = config.player2Name;
+                this.initializeMatch(config);
             }
         });
 
