@@ -8,6 +8,11 @@
   "html-validate.enable": false,
   "htmlhint.enable": false,
   "webhint.enable": false,
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "html.customData": [],
+  "css.lint.compatibilityIssues": "ignore",
   "files.associations": {
     "*.sql": "plaintext"
   },

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="dartstream-logo.png">
     <title>DartStream - Professional Dart Live Streaming Tools</title>
     <link rel="stylesheet" href="styles.css">
@@ -295,7 +295,6 @@
                         class="player-input" 
                         placeholder="First Name"
                         autocomplete="off"
-                        autocapitalize="words"
                         inputmode="text">
                     <input 
                         type="text" 
@@ -303,11 +302,10 @@
                         class="player-input" 
                         placeholder="Last Name"
                         autocomplete="off"
-                        autocapitalize="words"
                         inputmode="text">
                     
                     <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Nationality</label>
-                    <select id="new-player-nationality" class="player-input" style="margin-bottom: 15px;">
+                    <select id="new-player-nationality" class="player-input" style="margin-bottom: 15px;" aria-label="Select player nationality">
                         <option value="">Select Nationality</option>
                         <option value="flags/Flag_of_Canada-512x256.png">Canada</option>
                         <option value="flags/Flag_of_United_States-512x269.png">United States</option>
@@ -344,7 +342,6 @@
                         class="player-input" 
                         placeholder="First Name"
                         autocomplete="off"
-                        autocapitalize="words"
                         inputmode="text">
                     <input 
                         type="text" 
@@ -352,7 +349,6 @@
                         class="player-input" 
                         placeholder="Last Name"
                         autocomplete="off"
-                        autocapitalize="words"
                         inputmode="text">
                     
                     <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Player ID</label>
@@ -376,7 +372,7 @@
                         style="margin-bottom: 15px;">
                     
                     <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Nationality</label>
-                    <select id="edit-player-nationality" class="player-input" style="margin-bottom: 15px;">
+                    <select id="edit-player-nationality" class="player-input" style="margin-bottom: 15px;" aria-label="Select player nationality">
                         <option value="">Select Nationality</option>
                         <option value="flags/Flag_of_Canada-512x256.png">Canada</option>
                         <option value="flags/Flag_of_United_States-512x269.png">United States</option>
