@@ -362,10 +362,15 @@ const PlayOnline = {
         document.getElementById('videostream-container').classList.remove('hidden');
         
         // Broadcast config to guest
+        console.log('📡 Broadcasting game-config to guest...');
         this.supabaseChannel.send({
             type: 'broadcast',
             event: 'game-config',
             payload: { from: this.localPlayerId, config: defaultConfig }
+        }).then(() => {
+            console.log('✅ Game config broadcast sent successfully');
+        }).catch(err => {
+            console.error('❌ Failed to broadcast game config:', err);
         });
         
         // Initialize match for host
