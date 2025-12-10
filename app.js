@@ -2131,6 +2131,16 @@ function updateInputDisplay() {
 
 // ===== SCORING FUNCTIONS =====
 
+// Helper function to check if a score is possible with 3 darts
+function isValidDartScore(score) {
+    if (score < 0 || score > 180) return false;
+    
+    // List of impossible scores in darts
+    const impossibleScores = [163, 166, 169, 172, 173, 175, 176, 178, 179];
+    
+    return !impossibleScores.includes(score);
+}
+
 function addDigit(digit) {
     // In edit mode, first digit overwrites the current value
     if (gameState.isEditMode && gameState.currentInput === gameState.editModeOriginalScore.toString()) {
@@ -2144,18 +2154,18 @@ function addDigit(digit) {
         const potentialInput = gameState.currentInput + digit;
         const potentialValue = parseInt(potentialInput);
         
-        // Only allow input if it results in a valid dart score (0-180)
-        if (potentialValue <= 180) {
+        // Only allow input if it results in a valid dart score (0-180 and not impossible)
+        if (isValidDartScore(potentialValue)) {
             gameState.currentInput = potentialInput;
             updateGameScreen();
         }
-        // If adding this digit would exceed 180, ignore it (don't add the digit)
+        // If adding this digit would create an invalid score, ignore it
     }
 }
 
 function addScore(score) {
-    // Validate score is within valid range (0-180)
-    if (score < 0 || score > 180) {
+    // Validate score is within valid range and is possible
+    if (!isValidDartScore(score)) {
         return; // Ignore invalid scores
     }
     
