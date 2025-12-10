@@ -2141,12 +2141,24 @@ function addDigit(digit) {
     
     // Build up the current input (max 3 digits for 0-180)
     if (gameState.currentInput.length < 3) {
-        gameState.currentInput += digit;
-        updateGameScreen();
+        const potentialInput = gameState.currentInput + digit;
+        const potentialValue = parseInt(potentialInput);
+        
+        // Only allow input if it results in a valid dart score (0-180)
+        if (potentialValue <= 180) {
+            gameState.currentInput = potentialInput;
+            updateGameScreen();
+        }
+        // If adding this digit would exceed 180, ignore it (don't add the digit)
     }
 }
 
 function addScore(score) {
+    // Validate score is within valid range (0-180)
+    if (score < 0 || score > 180) {
+        return; // Ignore invalid scores
+    }
+    
     // Store the score being entered
     gameState.currentInput = score.toString();
     
