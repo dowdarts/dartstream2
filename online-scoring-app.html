@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DartStream Online Scoring</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Online-specific styles */
+        .room-code-banner {
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #0f172a;
+            padding: 8px 16px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border-bottom: 3px solid #334155;
+        }
+        .turn-lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            pointer-events: all;
+        }
+        .turn-lock-message {
+            background: #1e293b;
+            border: 3px solid #ef4444;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+        .turn-lock-message h2 {
+            color: #facc15;
+            margin: 0 0 10px 0;
+        }
+        .opponent-indicator {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            color: #ef4444;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Room Code Banner -->
+        <div id="room-code-banner" class="room-code-banner" style="display: none;">
+            ONLINE MATCH • Room: <span id="room-code-display"></span>
+        </div>
+
+        <!-- Turn Lock Overlay (shown when it's opponent's turn) -->
+        <div id="turn-lock-overlay" class="turn-lock-overlay" style="display: none;">
+            <div class="turn-lock-message">
+                <h2>🎯 Opponent's Turn</h2>
+                <p style="font-size: 1.1rem; margin: 10px 0;">Waiting for opponent to throw...</p>
+                <div class="opponent-indicator" id="opponent-status">
+                    Watch the scores update live
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scoring Screen -->
+        <div id="scoring-screen" class="screen">
+            <!-- Include standard scoring app layout -->
+            <div id="game-screen-header">
+                <div id="scoreboard-display">
+                    <div id="score-area">
+                        <div id="player1-score-area" class="player-score-area">
+                            <div id="player1-name" class="player-name">Player 1</div>
+                            <div id="player1-score" class="player-score">501</div>
+                            <div id="player1-avg" class="player-avg">AVG: 0.00</div>
+                        </div>
+                        <div id="player2-score-area" class="player-score-area">
+                            <div id="player2-name" class="player-name">Player 2</div>
+                            <div id="player2-score" class="player-score">501</div>
+                            <div id="player2-avg" class="player-avg">AVG: 0.00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="match-info">
+                    <div id="set-leg-display">Set <span id="set-number">0</span> - <span id="leg-number">0</span> | Leg <span id="current-leg">0</span> - <span id="total-legs">0</span></div>
+                </div>
+            </div>
+
+            <!-- Scoring Input Area -->
+            <div id="scoring-input">
+                <div id="dart-display">
+                    <div class="dart-slot" id="dart1">-</div>
+                    <div class="dart-slot" id="dart2">-</div>
+                    <div class="dart-slot" id="dart3">-</div>
+                </div>
+                
+                <div id="turn-total-display">
+                    Turn: <span id="turn-total">0</span>
+                </div>
+            </div>
+
+            <!-- Number Pad -->
+            <div id="number-pad" class="number-pad">
+                <button class="num-btn" data-score="26">26</button>
+                <button class="num-btn" data-score="41">41</button>
+                <button class="num-btn" data-score="45">45</button>
+                <button class="num-btn" data-score="60">60</button>
+                
+                <button class="num-btn" data-score="81">81</button>
+                <button class="num-btn" data-score="85">85</button>
+                <button class="num-btn" data-score="100">100<br><small>×</small></button>
+                <button class="num-btn" data-score="140">140<br><small>+</small></button>
+                
+                <button class="num-btn" data-score="180">180<br><small>0/BUST</small></button>
+                <button class="num-btn" id="action-btn" class="action-btn">UNDO</button>
+                <button class="num-btn" id="submit-btn" class="submit-btn">MISS</button>
+                <button class="num-btn" id="menu-btn" class="menu-btn">MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Supabase and Online Scoring Logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="online-scoring-app.js"></script>
+</body>
+</html>

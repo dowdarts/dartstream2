@@ -432,21 +432,21 @@ const PlayOnline = {
         // Listen for game state changes
         this.listenForGameUpdates();
 
-        // Initialize the scoring app iframe with config
+        // Initialize the online scoring app iframe with config
         const iframe = document.getElementById('scoring-iframe');
-        iframe.contentWindow.postMessage({
-            type: 'initialize-game',
-            config: config
-        }, '*');
-
-        // Set initial turn control
-        const isMyTurn = (this.isHost && this.currentTurn === 'host') || 
-                         (!this.isHost && this.currentTurn === 'guest');
         
-        iframe.contentWindow.postMessage({
-            type: 'set-turn',
-            enabled: isMyTurn
-        }, '*');
+        // Wait for iframe to load
+        iframe.addEventListener('load', () => {
+            iframe.contentWindow.postMessage({
+                type: 'initialize-online-game',
+                config: {
+                    ...config,
+                    isHost: this.isHost,
+                    localPlayerNumber: this.isHost ? 1 : 2,
+                    roomCode: this.roomCode
+                }
+            }, '*');
+        }, { once: true });
     },
 
     // Original startMatch renamed and simplified for guest
