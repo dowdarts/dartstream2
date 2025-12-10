@@ -71,7 +71,16 @@
             log('Testing if match_stats table exists...');
             
             try {
-                const supabase = window.supabaseClient;
+                // Wait a moment for Supabase to initialize
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const supabase = window.supabaseClient || (typeof getSupabaseClient === 'function' ? getSupabaseClient() : null);
+                
+                if (!supabase) {
+                    log('❌ ERROR: Supabase client not initialized', true);
+                    log('Check that supabase-config.js loaded correctly', true);
+                    return;
+                }
                 
                 // Try to query the table
                 const { data, error } = await supabase
@@ -100,7 +109,15 @@
             log('Testing insert into match_stats...');
             
             try {
-                const supabase = window.supabaseClient;
+                // Wait a moment for Supabase to initialize
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const supabase = window.supabaseClient || (typeof getSupabaseClient === 'function' ? getSupabaseClient() : null);
+                
+                if (!supabase) {
+                    log('❌ ERROR: Supabase client not initialized', true);
+                    return;
+                }
                 
                 // Get a test player from library
                 const { data: players, error: playerError } = await supabase
@@ -173,7 +190,15 @@
             log('Fetching all match stats...');
             
             try {
-                const supabase = window.supabaseClient;
+                // Wait a moment for Supabase to initialize
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const supabase = window.supabaseClient || (typeof getSupabaseClient === 'function' ? getSupabaseClient() : null);
+                
+                if (!supabase) {
+                    log('❌ ERROR: Supabase client not initialized', true);
+                    return;
+                }
                 
                 const { data, error } = await supabase
                     .from('match_stats')
