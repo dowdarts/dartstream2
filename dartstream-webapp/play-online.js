@@ -93,8 +93,8 @@ const PlayOnline = {
         this.isHost = true;
         this.currentTurn = 'host'; // Host starts
         
-        // Generate 4-digit room code
-        this.roomCode = this.generateRoomCode();
+        // Use fixed room code for testing
+        this.roomCode = '1234';
         document.getElementById('generated-room-code').textContent = this.roomCode;
 
         // Create room in Supabase
