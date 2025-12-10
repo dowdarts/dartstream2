@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Match Stats</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background: #22c55e;
+            border: none;
+            border-radius: 8px;
+            color: white;
+        }
+        button:hover {
+            background: #16a34a;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            color: #ff4444;
+        }
+        .success {
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <h1>Match Stats Table Test</h1>
+    
+    <button onclick="testTableExists()">1. Check if Table Exists</button>
+    <button onclick="testInsert()">2. Test Insert Match Stats</button>
+    <button onclick="testSelect()">3. View All Match Stats</button>
+    <button onclick="clearOutput()">Clear Output</button>
+    
+    <div id="output"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, isError = false) {
+            const className = isError ? 'error' : 'success';
+            output.innerHTML += `<div class="${className}">${message}</div>\n`;
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        async function testTableExists() {
+            clearOutput();
+            log('Testing if match_stats table exists...');
+            
+            try {
+                const supabase = window.supabaseClient;
+                
+                // Try to query the table
+                const { data, error } = await supabase
+                    .from('match_stats')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    log('❌ ERROR: ' + error.message, true);
+                    log('Error details: ' + JSON.stringify(error, null, 2), true);
+                    
+                    if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                        log('\n⚠️ TABLE DOES NOT EXIST!', true);
+                        log('You need to run the SQL migration in Supabase Dashboard', true);
+                    }
+                } else {
+                    log('✅ Table exists! Found ' + (data ? data.length : 0) + ' records');
+                }
+            } catch (err) {
+                log('❌ Exception: ' + err.message, true);
+            }
+        }
+        
+        async function testInsert() {
+            clearOutput();
+            log('Testing insert into match_stats...');
+            
+            try {
+                const supabase = window.supabaseClient;
+                
+                // Get a test player from library
+                const { data: players, error: playerError } = await supabase
+                    .from('players')
+                    .select('id, firstName, lastName')
+                    .limit(1);
+                
+                if (playerError) {
+                    log('❌ Error fetching player: ' + playerError.message, true);
+                    return;
+                }
+                
+                if (!players || players.length === 0) {
+                    log('❌ No players found in library', true);
+                    return;
+                }
+                
+                const testPlayer = players[0];
+                log('Using test player: ' + testPlayer.firstName + ' ' + testPlayer.lastName);
+                
+                // Create test match data
+                const testMatchData = {
+                    match_id: 'TEST-' + Date.now(),
+                    player_library_id: testPlayer.id,
+                    opponent_name: 'Test Opponent',
+                    match_date: new Date().toISOString(),
+                    won: true,
+                    legs_won: 3,
+                    legs_lost: 1,
+                    sets_won: 1,
+                    sets_lost: 0,
+                    total_darts_thrown: 90,
+                    total_score: 1503,
+                    average_3dart: 50.10,
+                    first_9_average: 55.00,
+                    highest_checkout: 120,
+                    checkout_percentage: 75.00,
+                    count_180s: 2,
+                    count_171s: 1,
+                    count_95s: 3,
+                    count_100_plus: 5,
+                    count_120_plus: 4,
+                    count_140_plus: 3,
+                    count_160_plus: 2,
+                    leg_scores: [501, 301, 401],
+                    checkout_history: [120, 80, 100]
+                };
+                
+                log('\nInserting test data...');
+                
+                const { data, error } = await supabase
+                    .from('match_stats')
+                    .insert(testMatchData)
+                    .select();
+                
+                if (error) {
+                    log('❌ ERROR: ' + error.message, true);
+                    log('Error details: ' + JSON.stringify(error, null, 2), true);
+                } else {
+                    log('✅ Insert successful!');
+                    log('Inserted record: ' + JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                log('❌ Exception: ' + err.message, true);
+            }
+        }
+        
+        async function testSelect() {
+            clearOutput();
+            log('Fetching all match stats...');
+            
+            try {
+                const supabase = window.supabaseClient;
+                
+                const { data, error } = await supabase
+                    .from('match_stats')
+                    .select('*')
+                    .order('match_date', { ascending: false })
+                    .limit(10);
+                
+                if (error) {
+                    log('❌ ERROR: ' + error.message, true);
+                    log('Error details: ' + JSON.stringify(error, null, 2), true);
+                } else {
+                    log('✅ Found ' + (data ? data.length : 0) + ' records');
+                    if (data && data.length > 0) {
+                        log('\nRecords:');
+                        data.forEach((record, index) => {
+                            log(`\n--- Record ${index + 1} ---`);
+                            log(JSON.stringify(record, null, 2));
+                        });
+                    }
+                }
+            } catch (err) {
+                log('❌ Exception: ' + err.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
