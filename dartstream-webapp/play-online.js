@@ -93,31 +93,9 @@ const PlayOnline = {
         this.isHost = true;
         this.currentTurn = 'host'; // Host starts
         
-        // Use fixed room code for testing
-        this.roomCode = '1234';
+        // Generate random 4-digit room code
+        this.roomCode = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('generated-room-code').textContent = this.roomCode;
-
-        // Check if room already exists and clean it up
-        const { data: existingRooms } = await window.supabaseClient
-            .from('game_rooms')
-            .select('id')
-            .eq('room_code', this.roomCode);
-        
-        if (existingRooms && existingRooms.length > 0) {
-            console.log('🧹 Cleaning up existing room 1234');
-            // Delete existing room
-            const { error: deleteError } = await window.supabaseClient
-                .from('game_rooms')
-                .delete()
-                .eq('room_code', this.roomCode);
-            
-            if (deleteError) {
-                console.error('Error deleting room:', deleteError);
-            }
-            
-            // Wait a moment to ensure deletion completes
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
 
         // Create room in Supabase
         await this.createRoom();
@@ -184,28 +162,7 @@ const PlayOnline = {
                 }])
                 .select();
 
-            if (error) {
-                // If duplicate key error, try to reuse existing room
-                if (error.code === '23505') {
-                    console.log('Room 1234 already exists, reusing it');
-                    // Update the existing room to reset it
-                    const { data: updateData, error: updateError } = await window.supabaseClient
-                        .from('game_rooms')
-                        .update({ 
-                            host_id: this.localPlayerId,
-                            guest_id: null,
-                            status: 'waiting',
-                            created_at: new Date().toISOString()
-                        })
-                        .eq('room_code', this.roomCode)
-                        .select();
-                    
-                    if (updateError) throw updateError;
-                    console.log('Room reset:', updateData);
-                    return;
-                }
-                throw error;
-            }
+            if (error) throw error;
             console.log('Room created:', data);
         } catch (error) {
             console.error('Error creating room:', error);
