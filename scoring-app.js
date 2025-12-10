@@ -66,7 +66,9 @@ const ScoringApp = {
                     }
                 }
             },
-            matchSettings: { ...config }
+            matchSettings: { ...config },
+            // Track all legs for detailed match summary
+            allLegs: []
         };
         
         this.attachEventHandlers();
@@ -326,6 +328,9 @@ const ScoringApp = {
         
         player.legWins++;
         
+        // Store complete leg data for match summary
+        this.saveLegData(this.gameState.currentPlayer, checkoutScore);
+        
         this.gameState.currentVisit = [];
         this.gameState.dartsThrown = 0;
         this.gameState.turnTotal = 0;
@@ -392,6 +397,38 @@ const ScoringApp = {
         }
         
         this.updateGameScreen();
+    },
+    
+    // Save leg data for detailed match summary
+    saveLegData(winnerPlayerNum, checkoutScore) {
+        const p1 = this.gameState.players.player1;
+        const p2 = this.gameState.players.player2;
+        
+        const legData = {
+            legNumber: this.gameState.allLegs.length + 1,
+            setNumber: this.gameState.currentSet,
+            winner: winnerPlayerNum,
+            checkoutScore: checkoutScore,
+            player1: {
+                name: p1.name,
+                turns: [...p1.turnHistory],
+                legDarts: p1.legDarts,
+                legAverage: p1.legAvg,
+                legScore: p1.legScore,
+                finalScore: p1.score
+            },
+            player2: {
+                name: p2.name,
+                turns: [...p2.turnHistory],
+                legDarts: p2.legDarts,
+                legAverage: p2.legAvg,
+                legScore: p2.legScore,
+                finalScore: p2.score
+            }
+        };
+        
+        this.gameState.allLegs.push(legData);
+        console.log('Saved leg data:', legData);
     },
     
     // Check set win
@@ -529,7 +566,7 @@ const ScoringApp = {
                     count_120_plus: p1.achievements.count_120_plus,
                     count_140_plus: p1.achievements.count_140_plus,
                     count_160_plus: p1.achievements.count_160_plus,
-                    leg_scores: [], // Could store individual leg data
+                    leg_scores: this.gameState.allLegs,
                     checkout_history: []
                 };
                 savePromises.push(window.PlayerDB.recordMatchStats(p1MatchData));
@@ -559,7 +596,7 @@ const ScoringApp = {
                     count_120_plus: p2.achievements.count_120_plus,
                     count_140_plus: p2.achievements.count_140_plus,
                     count_160_plus: p2.achievements.count_160_plus,
-                    leg_scores: [],
+                    leg_scores: this.gameState.allLegs,
                     checkout_history: []
                 };
                 savePromises.push(window.PlayerDB.recordMatchStats(p2MatchData));

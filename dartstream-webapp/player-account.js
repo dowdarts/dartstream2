@@ -436,9 +436,10 @@ async function loadPlayerStats() {
                 const resultClass = match.won ? 'win' : 'loss';
                 const resultColor = match.won ? '#22c55e' : '#ef4444';
                 const resultText = match.won ? 'WIN' : 'LOSS';
+                const matchId = match.match_id || '';
                 
                 return `
-                    <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid ${resultColor};">
+                    <div onclick="viewMatchSummary('${matchId}')" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid ${resultColor}; cursor: pointer;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                             <span style="color: #fff; font-weight: bold;">${match.opponent || 'Unknown Opponent'}</span>
                             <span style="color: ${resultColor}; font-weight: bold; font-size: 12px;">${resultText}</span>
@@ -447,6 +448,9 @@ async function loadPlayerStats() {
                             <span>${matchDate}</span>
                             <span>Score: ${match.score}</span>
                             <span>Avg: ${match.average}</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 5px; font-size: 11px; color: #94a3b8;">
+                            👁️ Click to view detailed match summary
                         </div>
                     </div>
                 `;
@@ -773,6 +777,15 @@ window.PlayerAccountSystem = {
         }
     }
 };
+
+// View detailed match summary
+function viewMatchSummary(matchId) {
+    if (!matchId) {
+        alert('Match data not available');
+        return;
+    }
+    window.location.href = `match-summary.html?match_id=${matchId}`;
+}
 
 console.log('Player Account system initialized');
 

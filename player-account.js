@@ -435,9 +435,10 @@ async function loadPlayerStats() {
                 const matchDate = new Date(match.date).toLocaleDateString();
                 const resultClass = match.won ? 'win' : 'loss';
                 const resultText = match.won ? 'WIN' : 'LOSS';
+                const matchId = match.match_id || '';
                 
                 return `
-                    <div class="match-item ${resultClass}">
+                    <div class="match-item ${resultClass}" onclick="viewMatchSummary('${matchId}')" style="cursor: pointer;">
                         <div class="match-header">
                             <span class="match-opponent">vs ${match.opponent || 'Unknown'}</span>
                             <span class="match-result ${resultClass}">${resultText}</span>
@@ -446,6 +447,9 @@ async function loadPlayerStats() {
                             <span>${matchDate}</span>
                             <span>Score: ${match.score || 'N/A'}</span>
                             <span>Avg: ${(match.average || 0).toFixed(2)}</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 5px; font-size: 11px; color: #94a3b8;">
+                            👁️ Click to view detailed match summary
                         </div>
                     </div>
                 `;
@@ -771,6 +775,15 @@ window.PlayerAccountSystem = {
         }
     }
 };
+
+// View detailed match summary
+function viewMatchSummary(matchId) {
+    if (!matchId) {
+        alert('Match data not available');
+        return;
+    }
+    window.location.href = `match-summary.html?match_id=${matchId}`;
+}
 
 console.log('Player Account system initialized');
 
