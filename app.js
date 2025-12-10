@@ -695,7 +695,10 @@ function renderPlayerSelectionLists() {
             playerItem.classList.add('selected');
         }
         
-        playerItem.innerHTML = `<span>${playerName}</span>`;
+        // Add green checkmark if player has linked account
+        const checkmark = (player.account_linked_player_id && player.email) ? ' <span style="color: #22c55e; font-weight: bold;">✓</span>' : '';
+        
+        playerItem.innerHTML = `<span>${playerName}${checkmark}</span>`;
         playerItem.addEventListener('click', function() {
             selectPlayer(player, 'left');
         });
@@ -722,7 +725,10 @@ function renderPlayerSelectionLists() {
             playerItem.classList.add('selected');
         }
         
-        playerItem.innerHTML = `<span>${playerName}</span>`;
+        // Add green checkmark if player has linked account
+        const checkmark = (player.account_linked_player_id && player.email) ? ' <span style="color: #22c55e; font-weight: bold;">✓</span>' : '';
+        
+        playerItem.innerHTML = `<span>${playerName}${checkmark}</span>`;
         playerItem.addEventListener('click', function() {
             selectPlayer(player, 'right');
         });
