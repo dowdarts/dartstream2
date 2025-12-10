@@ -776,14 +776,14 @@ window.PlayerAccountSystem = {
     }
 };
 
-// View detailed match summary
-function viewMatchSummary(matchId) {
+// View detailed match summary - make it globally accessible
+window.viewMatchSummary = function(matchId) {
     if (!matchId) {
         alert('Match data not available');
         return;
     }
     window.location.href = `match-summary.html?match_id=${matchId}`;
-}
+};
 
 console.log('Player Account system initialized');
 
