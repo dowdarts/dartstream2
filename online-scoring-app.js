@@ -790,7 +790,7 @@ Thanks for playing!
                 if (this.gameState.currentInput) {
                     inputMode.textContent = this.gameState.currentInput;
                 } else if (this.gameState.turnTotal > 0) {
-                    inputMode.textContent = `Turn: ${this.gameState.turnTotal}`;
+                    inputMode.textContent = `${this.gameState.turnTotal}`;
                 } else {
                     inputMode.textContent = '';
                 }
