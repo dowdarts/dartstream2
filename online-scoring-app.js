@@ -98,13 +98,72 @@ const OnlineScoringApp = {
         // Attach event handlers
         this.attachEventHandlers();
         
+        // Show starting player selection screen
+        this.showStartingPlayerSelection();
+        
+        console.log('✅ Online Scoring App initialized');
+    },
+    
+    // Show starting player selection
+    showStartingPlayerSelection() {
+        const screen = document.getElementById('starting-player-screen');
+        const content = document.getElementById('starting-player-content');
+        
+        if (this.isHost) {
+            // Host can select starting player
+            content.innerHTML = `
+                <div class="starting-player-options">
+                    <button class="starting-player-btn" onclick="OnlineScoringApp.selectStartingPlayer(1)">
+                        ${this.gameState.players.player1.name} Starts
+                    </button>
+                    <button class="starting-player-btn" onclick="OnlineScoringApp.selectStartingPlayer(2)">
+                        ${this.gameState.players.player2.name} Starts
+                    </button>
+                </div>
+            `;
+        } else {
+            // Guest waits for host to select
+            content.innerHTML = `
+                <div class="guest-waiting-message">
+                    <p>Waiting for ${this.gameState.players.player1.name} to select starting player...</p>
+                </div>
+            `;
+        }
+        
+        screen.classList.add('active');
+    },
+    
+    // Select starting player (host only)
+    selectStartingPlayer(playerNumber) {
+        if (!this.isHost) return;
+        
+        // Set starting player
+        this.gameState.currentPlayer = playerNumber;
+        
+        // Broadcast selection to guest
+        this.realtimeChannel.send({
+            type: 'broadcast',
+            event: 'starting-player-selected',
+            payload: {
+                from: this.localPlayerNumber,
+                startingPlayer: playerNumber
+            }
+        });
+        
+        // Hide selection screen and start game
+        this.startGame();
+    },
+    
+    // Start the game after starting player is selected
+    startGame() {
+        document.getElementById('starting-player-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        
         // Update display
         this.updateDisplay();
         
         // Check turn control
         this.updateTurnControl();
-        
-        console.log('✅ Online Scoring App initialized');
     },
     
     // Wait for Supabase client to be available
@@ -143,6 +202,14 @@ const OnlineScoringApp = {
             .on('broadcast', { event: 'game-state' }, (payload) => {
                 console.log('📥 Received game-state:', payload.payload);
                 this.syncGameState(payload.payload);
+            })
+            .on('broadcast', { event: 'starting-player-selected' }, (payload) => {
+                console.log('📥 Received starting-player-selected:', payload.payload);
+                if (payload.payload.from !== this.localPlayerNumber) {
+                    // Guest received host's selection
+                    this.gameState.currentPlayer = payload.payload.startingPlayer;
+                    this.startGame();
+                }
             })
             .subscribe((status) => {
                 console.log(`📡 Channel status: ${status}`);
@@ -588,3 +655,6 @@ window.addEventListener('load', () => {
         window.parent.postMessage({ type: 'iframe-ready' }, '*');
     }, 500);
 });
+
+// Expose OnlineScoringApp globally for onclick handlers
+window.OnlineScoringApp = OnlineScoringApp;
