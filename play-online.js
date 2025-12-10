@@ -195,6 +195,30 @@ const PlayOnline = {
                     this.showGameConfig();
                 }
             })
+            .on('broadcast', { event: 'game-config' }, (payload) => {
+                const { from, config } = payload.payload;
+                if (from !== this.localPlayerId && !this.isHost) {
+                    console.log('Received game config from host:', config);
+                    this.currentTurn = config.startingPlayer;
+                    this.hostPlayerName = config.player1Name;
+                    this.guestPlayerName = config.player2Name;
+                    this.initializeMatch(config);
+                }
+            })
+            .on('broadcast', { event: 'game-state' }, (payload) => {
+                const { from, gameState } = payload.payload;
+                if (from !== this.localPlayerId) {
+                    console.log('Received game state from opponent:', gameState);
+                    this.updateLocalGameState(gameState);
+                }
+            })
+            .on('broadcast', { event: 'match-complete' }, (payload) => {
+                const { from, matchData } = payload.payload;
+                if (from !== this.localPlayerId) {
+                    console.log('Opponent completed match, saving stats...');
+                    this.saveRemoteMatchStats(matchData);
+                }
+            })
             .subscribe();
     },
 
@@ -250,9 +274,33 @@ const PlayOnline = {
 
             if (updateError) throw updateError;
 
-            // Subscribe to room channel for signaling
+            // Subscribe to room channel for signaling AND broadcasts
             this.supabaseChannel = window.supabaseClient
                 .channel(`room:${this.roomCode}`)
+                .on('broadcast', { event: 'game-config' }, (payload) => {
+                    const { from, config } = payload.payload;
+                    if (from !== this.localPlayerId && !this.isHost) {
+                        console.log('Received game config from host:', config);
+                        this.currentTurn = config.startingPlayer;
+                        this.hostPlayerName = config.player1Name;
+                        this.guestPlayerName = config.player2Name;
+                        this.initializeMatch(config);
+                    }
+                })
+                .on('broadcast', { event: 'game-state' }, (payload) => {
+                    const { from, gameState } = payload.payload;
+                    if (from !== this.localPlayerId) {
+                        console.log('Received game state from opponent:', gameState);
+                        this.updateLocalGameState(gameState);
+                    }
+                })
+                .on('broadcast', { event: 'match-complete' }, (payload) => {
+                    const { from, matchData } = payload.payload;
+                    if (from !== this.localPlayerId) {
+                        console.log('Opponent completed match, saving stats...');
+                        this.saveRemoteMatchStats(matchData);
+                    }
+                })
                 .subscribe();
 
             // Guest: Immediately show split screen with waiting message
@@ -772,36 +820,6 @@ const PlayOnline = {
             } else if (event.data.type === 'match-complete') {
                 console.log('Match completed:', event.data);
                 this.handleMatchComplete(event.data);
-            }
-        });
-
-        // Listen for game config from host (Guest only)
-        this.supabaseChannel.on('broadcast', { event: 'game-config' }, (payload) => {
-            const { from, config } = payload.payload;
-            if (from !== this.localPlayerId && !this.isHost) {
-                console.log('Received game config from host:', config);
-                this.currentTurn = config.startingPlayer;
-                this.hostPlayerName = config.player1Name;
-                this.guestPlayerName = config.player2Name;
-                this.initializeMatch(config);
-            }
-        });
-
-        // Listen for game state broadcasts
-        this.supabaseChannel.on('broadcast', { event: 'game-state' }, (payload) => {
-            const { from, gameState } = payload.payload;
-            if (from !== this.localPlayerId) {
-                console.log('Received game state from opponent:', gameState);
-                this.updateLocalGameState(gameState);
-            }
-        });
-
-        // Listen for match completion from opponent
-        this.supabaseChannel.on('broadcast', { event: 'match-complete' }, (payload) => {
-            const { from, matchData } = payload.payload;
-            if (from !== this.localPlayerId) {
-                console.log('Opponent completed match, saving stats...');
-                this.saveRemoteMatchStats(matchData);
             }
         });
     },
