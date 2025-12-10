@@ -289,17 +289,13 @@ const OnlineScoringApp = {
     handleNumberButtonClick(event) {
         const score = parseInt(event.currentTarget.getAttribute('data-score'));
         
-        // One button press = entire turn total (like original scoring app)
+        // Set the turn total (display only - don't complete turn yet)
         this.gameState.turnTotal = score;
-        this.gameState.dartsThrown = 3; // Mark as complete turn
+        this.gameState.dartsThrown = 3; // Mark as ready to submit
         
         this.updateDisplay();
         
-        // Broadcast to opponent
-        this.broadcastScoreInput(score);
-        
-        // Complete the turn immediately
-        setTimeout(() => this.completeTurn(), 300);
+        // Don't broadcast or complete turn yet - wait for SUBMIT button
     },
     
     // Add a dart score (kept for receiving opponent's scores)
@@ -380,14 +376,17 @@ const OnlineScoringApp = {
         this.broadcastScoreInput(-1); // -1 signals undo
     },
     
-    // Submit current input (MISS button) - scores 0 for the turn
+    // Submit current input (ENTER button) - confirms the score and switches turns
     submitCurrentInput() {
-        this.gameState.turnTotal = 0;
-        this.gameState.dartsThrown = 3;
+        if (this.gameState.turnTotal === 0 && this.gameState.dartsThrown === 0) {
+            // No score entered yet - ignore
+            return;
+        }
         
-        this.updateDisplay();
-        this.broadcastScoreInput(0);
+        // Broadcast the score to opponent
+        this.broadcastScoreInput(this.gameState.turnTotal);
         
+        // Complete the turn and switch
         setTimeout(() => this.completeTurn(), 300);
     },
     
@@ -531,22 +530,13 @@ const OnlineScoringApp = {
     
     // Handle keyboard input
     handleKeydown(e) {
-        // Numbers 0-9
-        if (e.key >= '0' && e.key <= '9') {
-            this.gameState.currentInput += e.key;
+        // Enter key - submit current score
+        if (e.key === 'Enter') {
+            this.submitCurrentInput();
         }
-        // Backspace
-        else if (e.key === 'Backspace') {
-            this.gameState.currentInput = this.gameState.currentInput.slice(0, -1);
-        }
-        // Enter
-        else if (e.key === 'Enter' && this.gameState.currentInput) {
-            const score = parseInt(this.gameState.currentInput);
-            if (score >= 0 && score <= 180) {
-                this.addDartScore(score);
-                this.broadcastScoreInput(score);
-            }
-            this.gameState.currentInput = '';
+        // Backspace/Delete - undo
+        else if (e.key === 'Backspace' || e.key === 'Delete') {
+            this.handleUndo();
         }
     },
     
