@@ -531,12 +531,28 @@ const OnlineScoringApp = {
 // Initialize when URL parameters are set
 window.addEventListener('load', () => {
     console.log('🎯 Online Scoring App page loaded');
+    const debugStatus = document.getElementById('debug-status');
+    if (debugStatus) debugStatus.textContent = 'Page loaded - waiting for parent message...';
     
     // Listen for initialization from parent window
     window.addEventListener('message', (event) => {
+        console.log('📨 Received message:', event.data);
+        
         if (event.data.type === 'initialize-online-game') {
-            console.log('📨 Received initialization config:', event.data.config);
+            console.log('✅ Received initialization config:', event.data.config);
+            if (debugStatus) debugStatus.textContent = 'Config received - initializing...';
+            
+            // Hide loading screen, show app
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
             OnlineScoringApp.initialize(event.data.config);
         }
     });
+    
+    // Debug: Send ready signal to parent
+    setTimeout(() => {
+        console.log('📤 Sending ready signal to parent');
+        window.parent.postMessage({ type: 'iframe-ready' }, '*');
+    }, 500);
 });

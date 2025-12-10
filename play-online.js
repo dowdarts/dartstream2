@@ -421,7 +421,7 @@ const PlayOnline = {
 
     // Initialize match with config
     initializeMatch(config) {
-        console.log('Initializing match with config:', config);
+        console.log('🎮 Initializing match with config:', config);
         
         // Update connection status
         this.updateConnectionStatus('Match in progress', true);
@@ -435,8 +435,20 @@ const PlayOnline = {
         // Initialize the online scoring app iframe with config
         const iframe = document.getElementById('scoring-iframe');
         
-        // Wait for iframe to load
-        iframe.addEventListener('load', () => {
+        console.log('📤 Sending config to iframe...');
+        
+        // Function to send config
+        const sendConfig = () => {
+            console.log('🚀 Posting message to iframe:', {
+                type: 'initialize-online-game',
+                config: {
+                    ...config,
+                    isHost: this.isHost,
+                    localPlayerNumber: this.isHost ? 1 : 2,
+                    roomCode: this.roomCode
+                }
+            });
+            
             iframe.contentWindow.postMessage({
                 type: 'initialize-online-game',
                 config: {
@@ -446,7 +458,17 @@ const PlayOnline = {
                     roomCode: this.roomCode
                 }
             }, '*');
-        }, { once: true });
+        };
+        
+        // Try sending immediately and also on iframe load
+        if (iframe.contentWindow) {
+            sendConfig();
+        }
+        
+        iframe.addEventListener('load', () => {
+            console.log('✅ Iframe loaded, sending config...');
+            setTimeout(sendConfig, 100);
+        });
     },
 
     // Original startMatch renamed and simplified for guest

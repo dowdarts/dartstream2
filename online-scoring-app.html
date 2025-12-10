@@ -53,8 +53,14 @@
         }
     </style>
 </head>
-<body>
-    <div id="app">
+<body style="margin: 0; background: #0f172a; color: white; font-family: Arial, sans-serif;">
+    <div id="loading-screen" style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column;">
+        <h1 style="color: #facc15;">🎯 Loading Online Scoring...</h1>
+        <p style="color: #94a3b8;">Waiting for game configuration...</p>
+        <div style="margin-top: 20px; color: #64748b; font-size: 0.8rem;" id="debug-status">Initializing...</div>
+    </div>
+    
+    <div id="app" style="display: none;">
         <!-- Room Code Banner -->
         <div id="room-code-banner" class="room-code-banner" style="display: none;">
             ONLINE MATCH • Room: <span id="room-code-display"></span>
