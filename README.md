@@ -301,8 +301,7 @@ Dartstream2/
 │
 └── 📚 Documentation
     ├── README.md                   # This file
-    ├── Scoring-app-basic-dart-logic.txt
-    └── scoringappcodereference.txt
+ 
 ```
 
 ---
@@ -493,9 +492,6 @@ FPS: 30
 - [ ] Social sharing of match results
 - [ ] PDF score sheets export
 - [ ] Mobile app versions (PWA)
-- [ ] Voice-activated scoring
-- [ ] AI-powered checkout suggestions
-- [ ] Video replay integration
 - [ ] Live streaming integration (YouTube, Twitch)
 
 ### Community Requests
@@ -541,7 +537,6 @@ For streaming production use.
 
 ## 🙏 Acknowledgments
 
-- Based on DartConnect scoring logic
 - Inspired by professional darts broadcasts
 - Built with Supabase for backend infrastructure
 - Community feedback and testing
