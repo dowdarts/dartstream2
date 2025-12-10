@@ -382,6 +382,15 @@ const ScoringApp = {
         this.gameState.currentInput = '';
         this.updateDualFunctionButtons();
         
+        // Notify parent window if in iframe (Play Online mode)
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'score-update',
+                gameState: this.gameState,
+                turnComplete: true
+            }, '*');
+        }
+        
         this.switchPlayer();
     },
     
@@ -497,9 +506,26 @@ const ScoringApp = {
         
         modal.style.display = 'flex';
         
-        // Attach save/discard handlers
-        document.getElementById('save-match-btn').onclick = () => this.saveMatchStats(winnerNum);
-        document.getElementById('discard-match-btn').onclick = () => this.discardMatch();
+        // Check if running in iframe (Play Online mode)
+        const isInIframe = window.parent !== window;
+        
+        if (isInIframe) {
+            // Notify parent window of match completion (for Play Online)
+            window.parent.postMessage({
+                type: 'match-complete',
+                winnerNum: winnerNum,
+                gameState: this.gameState
+            }, '*');
+            
+            // Auto-save in Play Online mode (parent handles the stats saving)
+            setTimeout(() => {
+                this.discardMatch();
+            }, 3000);
+        } else {
+            // Normal mode - attach save/discard handlers
+            document.getElementById('save-match-btn').onclick = () => this.saveMatchStats(winnerNum);
+            document.getElementById('discard-match-btn').onclick = () => this.discardMatch();
+        }
     },
     
     // Save match stats to database

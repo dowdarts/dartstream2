@@ -455,6 +455,14 @@
                 <div class="device-type">📱 All Devices</div>
                 <p class="future-badge">🔔 Track your progress across all matches</p>
             </a>
+
+            <a href="play-online.html" class="app-card" id="play-online-card" style="display: none;">
+                <div class="app-icon">🎥</div>
+                <h2>VideoStream</h2>
+                <p>Play online with video calling - split screen scoring and live video chat</p>
+                <div class="device-type">💻 Desktop / Laptop</div>
+                <p class="future-badge">🔐 Requires Account</p>
+            </a>
         </div>
 
         <div class="footer">
@@ -498,19 +506,49 @@
                     document.getElementById('logged-out-buttons').style.display = 'none';
                     document.getElementById('logged-in-section').style.display = 'block';
                     document.getElementById('user-name').textContent = userName;
-                    document.getElementById('my-stats-card').style.display = 'block';
+                    
+                    const myStatsCard = document.getElementById('my-stats-card');
+                    const playOnlineCard = document.getElementById('play-online-card');
+                    
+                    console.log('My Stats card element:', myStatsCard);
+                    console.log('Play Online card element:', playOnlineCard);
+                    
+                    if (myStatsCard) {
+                        myStatsCard.style.display = 'block';
+                        console.log('My Stats card display set to block');
+                    }
+                    if (playOnlineCard) {
+                        playOnlineCard.style.display = 'block';
+                        console.log('Play Online card display set to block');
+                    } else {
+                        console.error('Play Online card element NOT FOUND!');
+                    }
+                    
+                    console.log('Logged in - showing Play Online card');
                 } else {
                     // User is logged out
                     document.getElementById('logged-out-buttons').style.display = 'flex';
                     document.getElementById('logged-in-section').style.display = 'none';
-                    document.getElementById('my-stats-card').style.display = 'none';
+                    
+                    const myStatsCard = document.getElementById('my-stats-card');
+                    const playOnlineCard = document.getElementById('play-online-card');
+                    
+                    if (myStatsCard) myStatsCard.style.display = 'none';
+                    if (playOnlineCard) playOnlineCard.style.display = 'none';
+                    
+                    console.log('Logged out - hiding Play Online card');
                 }
             } catch (error) {
                 console.error('Error checking auth state:', error);
                 // Default to logged out state
                 document.getElementById('logged-out-buttons').style.display = 'flex';
                 document.getElementById('logged-in-section').style.display = 'none';
-                document.getElementById('my-stats-card').style.display = 'none';
+                
+                const myStatsCard = document.getElementById('my-stats-card');
+                const playOnlineCard = document.getElementById('play-online-card');
+                
+                if (myStatsCard) myStatsCard.style.display = 'none';
+                if (playOnlineCard) playOnlineCard.style.display = 'none';
             }
         }
         
