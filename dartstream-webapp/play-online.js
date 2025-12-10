@@ -344,17 +344,31 @@ const PlayOnline = {
         // Show split screen for host too
         document.getElementById('videostream-container').classList.remove('hidden');
 
-        // Load the game setup interface in the iframe
+        // Load player details from accounts
         await this.loadPlayerNames();
         
+        // Auto-configure game with default settings (host can change later)
+        const defaultConfig = {
+            gameType: '501',
+            startScore: 501,
+            doubleOut: false, // SIDO
+            player1Name: this.hostPlayerName,
+            player2Name: this.guestPlayerName,
+            player1Id: this.hostPlayerId,
+            player2Id: this.guestPlayerId,
+            totalLegs: 3,
+            legsFormat: 'best-of',
+            firstThrow: 'alternate',
+            roomCode: this.roomCode,
+            isOnlineMatch: true,
+            localPlayerNumber: this.isHost ? 1 : 2
+        };
+        
+        // Send to scoring iframe to show setup with these players pre-selected
         const iframe = document.getElementById('scoring-iframe');
         iframe.contentWindow.postMessage({
-            type: 'show-setup',
-            roomCode: this.roomCode,
-            hostPlayerName: this.hostPlayerName,
-            guestPlayerName: this.guestPlayerName,
-            hostPlayerId: this.hostPlayerId,
-            guestPlayerId: this.guestPlayerId
+            type: 'show-online-setup',
+            config: defaultConfig
         }, '*');
 
         // Update connection status
