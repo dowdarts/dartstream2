@@ -122,7 +122,7 @@
                 // Get a test player from library
                 const { data: players, error: playerError } = await supabase
                     .from('players')
-                    .select('id, firstName, lastName')
+                    .select('id, first_name, last_name')
                     .limit(1);
                 
                 if (playerError) {
@@ -136,7 +136,7 @@
                 }
                 
                 const testPlayer = players[0];
-                log('Using test player: ' + testPlayer.firstName + ' ' + testPlayer.lastName);
+                log('Using test player: ' + testPlayer.first_name + ' ' + testPlayer.last_name);
                 
                 // Create test match data
                 const testMatchData = {
