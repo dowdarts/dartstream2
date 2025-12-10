@@ -2231,10 +2231,23 @@ function handleBust() {
     
     alert(`BUST! Score reverts to ${player.preTurnScore}`);
     
+    // Count 3 darts used for the bust (affects average)
+    player.legDarts += 3;
+    player.matchDarts += 3;
+    // Bust adds 0 to score totals (affects average denominator but not numerator)
+    
+    // Recalculate averages with bust darts included
+    if (player.legDarts > 0) {
+        player.legAvg = (player.legScore / player.legDarts) * 3;
+    }
+    if (player.matchDarts > 0) {
+        player.matchAvg = (player.matchScore / player.matchDarts) * 3;
+    }
+    
     // Add bust entry to history with the turn total that caused the bust
     player.turnHistory.push({
-        darts: 3, // Assume 3 darts were used on a bust
-        total: gameState.turnTotal,
+        darts: 3, // 3 darts were used on a bust
+        total: 0, // Bust contributes 0 to score
         scoreAfter: player.preTurnScore, // Score stays the same after bust
         bust: true
     });
