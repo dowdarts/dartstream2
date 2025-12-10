@@ -966,7 +966,7 @@ body {
 }
 
 .player-name-large {
-    font-size: clamp(24px, 5vw, 48px);
+    font-size: clamp(28px, 6vw, 48px);
     font-weight: bold;
     text-align: center;
     line-height: 1;
@@ -1023,7 +1023,7 @@ body {
 }
 
 .score-large {
-    font-size: clamp(80px, 15vw, 180px);
+    font-size: clamp(100px, 18vw, 180px);
     font-weight: bold;
     transition: color 0.2s, text-shadow 0.2s;
     line-height: 0.9;
@@ -1627,7 +1627,7 @@ body {
 .bottom-controls {
     background: #000;
     flex-shrink: 0;
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 40px);
 }
 
 .control-bar {
@@ -1732,6 +1732,7 @@ body {
 .number-pad {
     background: #1a1a1a;
     padding: clamp(4px, 1vh, 8px);
+    padding-bottom: clamp(16px, 3vh, 32px);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: clamp(3px, 0.5vh, 6px);
@@ -2107,11 +2108,11 @@ body {
     }
     
     .score-large {
-        font-size: clamp(40px, 9vw, 70px);
+        font-size: clamp(60px, 14vw, 100px);
     }
     
     .avg-label {
-        font-size: clamp(9px, 2vw, 12px);
+        font-size: clamp(11px, 2.5vw, 14px);
     }
     
     .scoring-area {
@@ -2155,6 +2156,7 @@ body {
     
     .number-pad {
         padding: 2px;
+        padding-bottom: clamp(20px, 4vh, 40px) !important;
         gap: 2px;
     }
     
@@ -2164,7 +2166,7 @@ body {
     }
     
     .bottom-controls {
-        padding-bottom: 0;
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 50px) !important;
     }
     
     .game-logo {
@@ -2213,12 +2215,12 @@ body {
     }
     
     .player-name-large {
-        font-size: clamp(15px, 2.8vw, 22px);
+        font-size: clamp(24px, 5.5vw, 42px);
         margin-bottom: 4px;
     }
     
     .score-large {
-        font-size: clamp(44px, 8vw, 75px);
+        font-size: clamp(80px, 16vw, 140px);
     }
     
     .avg-label {
@@ -2266,6 +2268,7 @@ body {
     
     .number-pad {
         padding: 2px;
+        padding-bottom: clamp(18px, 3.5vh, 36px) !important;
         gap: 2px;
     }
     
@@ -2275,7 +2278,7 @@ body {
     }
     
     .bottom-controls {
-        padding-bottom: 0;
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 45px) !important;
     }
     
     .game-logo {
