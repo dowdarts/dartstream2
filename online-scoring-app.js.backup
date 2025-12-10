@@ -291,206 +291,16 @@ const OnlineScoringApp = {
     
     // Handle number button click
     handleNumberButtonClick(event) {
-        if (!this.isMyTurn()) return; // Can't input when not your turn
+        const digit = event.currentTarget.getAttribute('data-score');
         
-        const btn = event.currentTarget;
-        const digit = btn.getAttribute('data-score');
-        
-        // Check for dual-function buttons
-        if (btn.classList.contains('dual-function')) {
-            const hasInput = this.gameState.currentVisit.length > 0;
-            
-            if (hasInput) {
-                // Operation mode (×, 0, +)
-                const operation = btn.getAttribute('data-operation');
-                const lastScore = this.gameState.currentVisit[this.gameState.currentVisit.length - 1].score;
-                
-                if (operation === 'multiply') {
-                    this.addScore(lastScore * 3, false);
-                } else if (operation === 'zero') {
-                    this.addScore(0, false);
-                } else if (operation === 'plus') {
-                    this.addScore(lastScore * 2, true);
-                }
-            } else {
-                // Quick score mode (100, 180, 140)
-                const score = parseInt(digit);
-                this.addScore(score, false);
-            }
-        } else {
-            // Regular number button - add digit to current input
-            if (this.gameState.currentInput.length < 3 && this.gameState.currentVisit.length < 3) {
-                this.gameState.currentInput += digit;
-                this.updateDisplay();
-            }
-        }
-    },
-    
-    // Add a dart score
-    addScore(score, isDouble = false) {
-        if (!this.isMyTurn()) return;
-        if (this.gameState.currentVisit.length >= 3) return;
-        
-        const currentPlayerKey = `player${this.gameState.currentPlayer}`;
-        const player = this.gameState.players[currentPlayerKey];
-        
-        // Add dart to current visit
-        this.gameState.currentVisit.push({ score, isDouble });
-        this.gameState.currentInput = '';
-        this.gameState.dartsThrown = this.gameState.currentVisit.length;
-        
-        // Calculate turn total
-        this.gameState.turnTotal = this.gameState.currentVisit.reduce((sum, dart) => sum + dart.score, 0);
-        
-        // Calculate provisional score
-        const provisionalScore = player.preTurnScore - this.gameState.turnTotal;
-        
-        this.updateDualFunctionButtons();
-        
-        // Check for immediate bust
-        if (provisionalScore === 1 || provisionalScore < 0) {
-            this.handleBust();
-            return;
-        }
-        
-        // Check for win
-        if (provisionalScore === 0) {
-            if (isDouble || score === 50) {
-                this.handleWin();
-                return;
-            } else {
-                this.handleBust();
-                return;
-            }
-        }
-        
-        // Valid dart, continue turn
-        if (this.gameState.currentVisit.length === 3) {
-            setTimeout(() => {
-                const turnTotal = this.gameState.turnTotal;
-                this.broadcastScoreInput(turnTotal);
-                setTimeout(() => this.completeTurn(), 300);
-            }, 300);
-        } else {
+        // Add digit to current input (max 3 digits)
+        if (this.gameState.currentInput.length < 3) {
+            this.gameState.currentInput += digit;
             this.updateDisplay();
         }
     },
     
     // Add a dart score (kept for receiving opponent's scores)
-    // Update dual-function buttons based on game state
-    updateDualFunctionButtons() {
-        const hasInput = this.gameState.currentVisit.length > 0;
-        const dualButtons = document.querySelectorAll('.dual-function');
-        
-        dualButtons.forEach(btn => {
-            const defaultText = btn.getAttribute('data-default');
-            const altText = btn.getAttribute('data-alt');
-            
-            if (hasInput && altText) {
-                btn.textContent = altText;
-            } else if (defaultText) {
-                btn.textContent = defaultText;
-            }
-        });
-    },
-    
-    // Handle bust
-    handleBust() {
-        const currentPlayerKey = `player${this.gameState.currentPlayer}`;
-        const player = this.gameState.players[currentPlayerKey];
-        
-        alert(`BUST! Score reverts to ${player.preTurnScore}`);
-        
-        player.legDarts += this.gameState.currentVisit.length;
-        player.matchDarts += this.gameState.currentVisit.length;
-        player.score = player.preTurnScore;
-        
-        // Recalculate averages after bust
-        if (player.legDarts > 0) {
-            player.legAvg = Math.round((player.legScore / player.legDarts) * 3 * 10) / 10;
-        }
-        if (player.matchDarts > 0) {
-            player.matchAvg = Math.round((player.matchScore / player.matchDarts) * 3 * 10) / 10;
-        }
-        
-        this.gameState.currentVisit = [];
-        this.gameState.dartsThrown = 0;
-        this.gameState.turnTotal = 0;
-        this.gameState.currentInput = '';
-        this.updateDualFunctionButtons();
-        this.updateDisplay();
-        
-        // Broadcast bust and switch turns
-        this.broadcastTurnComplete();
-        this.switchPlayer();
-    },
-    
-    // Handle win
-    handleWin() {
-        const currentPlayerKey = `player${this.gameState.currentPlayer}`;
-        const player = this.gameState.players[currentPlayerKey];
-        
-        const finishingDart = this.gameState.currentVisit.length;
-        
-        player.legDarts += finishingDart;
-        player.matchDarts += finishingDart;
-        player.legScore = this.gameState.matchSettings.startScore;
-        player.matchScore += player.legScore;
-        player.score = 0;
-        
-        if (player.legDarts > 0) {
-            player.legAvg = Math.round((player.legScore / player.legDarts) * 3 * 10) / 10;
-        }
-        if (player.matchDarts > 0) {
-            player.matchAvg = Math.round((player.matchScore / player.matchDarts) * 3 * 10) / 10;
-        }
-        
-        const checkoutScore = this.gameState.turnTotal;
-        alert(`GAME SHOT! ${player.name} wins with a ${checkoutScore} checkout!`);
-        
-        player.legWins++;
-        
-        this.gameState.currentVisit = [];
-        this.gameState.dartsThrown = 0;
-        this.gameState.turnTotal = 0;
-        this.gameState.currentInput = '';
-        this.updateDualFunctionButtons();
-        this.updateDisplay();
-        
-        // TODO: Check for match win and save stats
-        // For now, just continue
-        setTimeout(() => this.startNewLeg(), 2000);
-    },
-    
-    // Start new leg
-    startNewLeg() {
-        this.gameState.currentLeg++;
-        
-        const startScore = this.gameState.matchSettings.startScore;
-        
-        this.gameState.players.player1.score = startScore;
-        this.gameState.players.player1.preTurnScore = startScore;
-        this.gameState.players.player1.legDarts = 0;
-        this.gameState.players.player1.legScore = 0;
-        this.gameState.players.player1.legAvg = 0;
-        this.gameState.players.player1.turnHistory = [];
-        
-        this.gameState.players.player2.score = startScore;
-        this.gameState.players.player2.preTurnScore = startScore;
-        this.gameState.players.player2.legDarts = 0;
-        this.gameState.players.player2.legScore = 0;
-        this.gameState.players.player2.legAvg = 0;
-        this.gameState.players.player2.turnHistory = [];
-        
-        this.gameState.visitNumber = 1;
-        this.gameState.currentVisit = [];
-        this.gameState.dartsThrown = 0;
-        this.gameState.turnTotal = 0;
-        
-        this.updateDisplay();
-    },
-    
-    // Add dart score (kept for compatibility)
     addDartScore(score) {
         // For online mode, this is only used when receiving opponent's input
         this.gameState.turnTotal = score;
@@ -564,28 +374,32 @@ const OnlineScoringApp = {
         }
     },
     
-    // Submit current input (ENTER button) - confirms the score
+    // Submit current input (ENTER button) - confirms the score and switches turns
     submitCurrentInput() {
-        if (!this.isMyTurn()) return;
-        
         if (this.gameState.currentInput) {
             const score = parseInt(this.gameState.currentInput);
             if (score <= 180) {
-                const currentPlayerKey = `player${this.gameState.currentPlayer}`;
-                const player = this.gameState.players[currentPlayerKey];
-                const provisionalScore = player.preTurnScore - this.gameState.turnTotal - score;
+                // Set turn total
+                this.gameState.turnTotal = score;
+                this.gameState.dartsThrown = 3;
                 
-                // Check if this might be a double finish
-                let isDouble = false;
-                if (provisionalScore === 0 && score <= 50 && score % 2 === 0) {
-                    isDouble = confirm(`Was this a DOUBLE ${score / 2}? (D${score / 2})`);
-                }
+                // Clear input
+                this.gameState.currentInput = '';
                 
-                this.addScore(score, isDouble);
+                // Broadcast to opponent
+                this.broadcastScoreInput(score);
+                
+                // Complete the turn
+                setTimeout(() => this.completeTurn(), 300);
             }
         } else {
-            // No input = miss (0)
-            this.addScore(0, false);
+            // No input = miss (score 0)
+            this.gameState.turnTotal = 0;
+            this.gameState.dartsThrown = 3;
+            this.gameState.currentInput = '';
+            
+            this.broadcastScoreInput(0);
+            setTimeout(() => this.completeTurn(), 300);
         }
     },
     
@@ -613,15 +427,13 @@ const OnlineScoringApp = {
         if (p2LegAvg) p2LegAvg.textContent = this.gameState.players.player2.legAvg;
         if (p2MatchAvg) p2MatchAvg.textContent = this.gameState.players.player2.matchAvg;
         
-        // Update input mode display (shows current input digits OR turn total OR waiting message)
+        // Update input mode display (shows current input digits OR waiting message)
         const inputMode = document.getElementById('input-mode');
         if (inputMode) {
             // Only update if it's my turn (don't overwrite waiting message)
             if (this.isMyTurn()) {
                 if (this.gameState.currentInput) {
                     inputMode.textContent = this.gameState.currentInput;
-                } else if (this.gameState.turnTotal > 0) {
-                    inputMode.textContent = `Turn: ${this.gameState.turnTotal}`;
                 } else {
                     inputMode.textContent = '';
                 }
