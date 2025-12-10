@@ -97,6 +97,21 @@ const PlayOnline = {
         this.roomCode = '1234';
         document.getElementById('generated-room-code').textContent = this.roomCode;
 
+        // Check if room already exists and clean it up
+        const { data: existingRooms } = await window.supabaseClient
+            .from('game_rooms')
+            .select('id')
+            .eq('room_code', this.roomCode);
+        
+        if (existingRooms && existingRooms.length > 0) {
+            console.log('🧹 Cleaning up existing room 1234');
+            // Delete existing room
+            await window.supabaseClient
+                .from('game_rooms')
+                .delete()
+                .eq('room_code', this.roomCode);
+        }
+
         // Create room in Supabase
         await this.createRoom();
         
