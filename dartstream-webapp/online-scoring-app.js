@@ -323,29 +323,47 @@ const OnlineScoringApp = {
     // Update the display
     updateDisplay() {
         // Update player scores
-        document.getElementById('player1-name').textContent = this.gameState.players.player1.name;
-        document.getElementById('player1-score').textContent = this.gameState.players.player1.score;
-        document.getElementById('player1-avg').textContent = `AVG: ${this.gameState.players.player1.matchAvg}`;
+        const player1NameEl = document.querySelector('#player1-display .player-name-large') || document.getElementById('player1-name');
+        const player1ScoreEl = document.querySelector('#player1-display .score-large') || document.getElementById('player1-score');
+        const player2NameEl = document.querySelector('#player2-display .player-name-large') || document.getElementById('player2-name');
+        const player2ScoreEl = document.querySelector('#player2-display .score-large') || document.getElementById('player2-score');
         
-        document.getElementById('player2-name').textContent = this.gameState.players.player2.name;
-        document.getElementById('player2-score').textContent = this.gameState.players.player2.score;
-        document.getElementById('player2-avg').textContent = `AVG: ${this.gameState.players.player2.matchAvg}`;
+        if (player1NameEl) player1NameEl.textContent = this.gameState.players.player1.name;
+        if (player1ScoreEl) player1ScoreEl.textContent = this.gameState.players.player1.score;
+        if (player2NameEl) player2NameEl.textContent = this.gameState.players.player2.name;
+        if (player2ScoreEl) player2ScoreEl.textContent = this.gameState.players.player2.score;
         
-        // Update dart display
-        for (let i = 0; i < 3; i++) {
-            const dartSlot = document.getElementById(`dart${i + 1}`);
-            dartSlot.textContent = this.gameState.currentVisit[i] !== undefined ? 
-                this.gameState.currentVisit[i] : '-';
+        // Update averages
+        const p1LegAvg = document.getElementById('player1-leg-avg');
+        const p1MatchAvg = document.getElementById('player1-match-avg');
+        const p2LegAvg = document.getElementById('player2-leg-avg');
+        const p2MatchAvg = document.getElementById('player2-match-avg');
+        
+        if (p1LegAvg) p1LegAvg.textContent = this.gameState.players.player1.legAvg;
+        if (p1MatchAvg) p1MatchAvg.textContent = this.gameState.players.player1.matchAvg;
+        if (p2LegAvg) p2LegAvg.textContent = this.gameState.players.player2.legAvg;
+        if (p2MatchAvg) p2MatchAvg.textContent = this.gameState.players.player2.matchAvg;
+        
+        // Update input mode display (shows current darts)
+        const inputMode = document.getElementById('input-mode');
+        if (inputMode) {
+            const dartsDisplay = this.gameState.currentVisit.map(score => score).join(' + ');
+            inputMode.textContent = dartsDisplay || `${this.gameState.dartsThrown}/3 darts`;
         }
         
-        // Update turn total
-        document.getElementById('turn-total').textContent = this.gameState.turnTotal;
-        
         // Highlight current player
-        document.getElementById('player1-score-area').style.backgroundColor = 
-            this.gameState.currentPlayer === 1 ? 'rgba(59, 130, 246, 0.3)' : '';
-        document.getElementById('player2-score-area').style.backgroundColor = 
-            this.gameState.currentPlayer === 2 ? 'rgba(239, 68, 68, 0.3)' : '';
+        const p1Display = document.getElementById('player1-display');
+        const p2Display = document.getElementById('player2-display');
+        
+        if (p1Display && p2Display) {
+            if (this.gameState.currentPlayer === 1) {
+                p1Display.classList.add('active');
+                p2Display.classList.remove('active');
+            } else {
+                p1Display.classList.remove('active');
+                p2Display.classList.add('active');
+            }
+        }
     },
     
     // Track achievements
