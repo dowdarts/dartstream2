@@ -267,9 +267,8 @@ const OnlineScoringApp = {
         const numberPad = document.getElementById('number-pad');
         const inputMode = document.getElementById('input-mode');
         
-        // Safety check - elements might not be ready yet
+        // Safety check - elements might not be ready yet (silently return)
         if (!numberPad || !inputMode) {
-            console.warn('⚠️ Turn control elements not ready yet');
             return;
         }
         
