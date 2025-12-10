@@ -264,33 +264,29 @@ const OnlineScoringApp = {
     
     // Update turn control (lock/unlock UI)
     updateTurnControl() {
-        const overlay = document.getElementById('turn-lock-overlay');
-        const opponentStatus = document.getElementById('opponent-status');
         const numberPad = document.getElementById('number-pad');
+        const inputMode = document.getElementById('input-mode');
         
         // Safety check - elements might not be ready yet
-        if (!overlay || !numberPad) {
+        if (!numberPad || !inputMode) {
             console.warn('⚠️ Turn control elements not ready yet');
             return;
         }
         
         if (this.isMyTurn()) {
-            // My turn - hide overlay, enable controls
-            overlay.style.display = 'none';
-            numberPad.style.opacity = '1';
+            // My turn - enable controls, show input normally
             numberPad.style.pointerEvents = 'all';
+            if (!this.gameState.currentInput) {
+                inputMode.textContent = '';
+            }
         } else {
-            // Opponent's turn - show overlay, disable controls
-            overlay.style.display = 'flex';
-            numberPad.style.opacity = '0.5';
+            // Opponent's turn - disable controls, show waiting message
             numberPad.style.pointerEvents = 'none';
             
-            if (opponentStatus) {
-                const opponentName = this.gameState.currentPlayer === 1 ? 
-                    this.gameState.players.player1.name : 
-                    this.gameState.players.player2.name;
-                opponentStatus.textContent = `${opponentName} is throwing...`;
-            }
+            const opponentName = this.gameState.currentPlayer === 1 ? 
+                this.gameState.players.player1.name : 
+                this.gameState.players.player2.name;
+            inputMode.textContent = `Waiting for ${opponentName}...`;
         }
     },
     
@@ -432,14 +428,18 @@ const OnlineScoringApp = {
         if (p2LegAvg) p2LegAvg.textContent = this.gameState.players.player2.legAvg;
         if (p2MatchAvg) p2MatchAvg.textContent = this.gameState.players.player2.matchAvg;
         
-        // Update input mode display (shows current input digits)
+        // Update input mode display (shows current input digits OR waiting message)
         const inputMode = document.getElementById('input-mode');
         if (inputMode) {
-            if (this.gameState.currentInput) {
-                inputMode.textContent = this.gameState.currentInput;
-            } else {
-                inputMode.textContent = '';
+            // Only update if it's my turn (don't overwrite waiting message)
+            if (this.isMyTurn()) {
+                if (this.gameState.currentInput) {
+                    inputMode.textContent = this.gameState.currentInput;
+                } else {
+                    inputMode.textContent = '';
+                }
             }
+            // If not my turn, the waiting message is already set by updateTurnControl
         }
         
         // Highlight current player

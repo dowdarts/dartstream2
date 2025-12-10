@@ -79,51 +79,6 @@
             flex-shrink: 0;
         }
         
-        .turn-lock-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            pointer-events: all;
-        }
-        
-        .turn-lock-overlay.active {
-            display: flex;
-        }
-        
-        .turn-lock-message {
-            background: #1e293b;
-            border: 3px solid #ef4444;
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            color: white;
-        }
-        
-        .turn-lock-message h2 {
-            color: #facc15;
-            margin: 0 0 15px 0;
-            font-size: 2rem;
-        }
-        
-        .opponent-indicator {
-            background: rgba(239, 68, 68, 0.2);
-            border: 2px solid #ef4444;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            color: #ef4444;
-            font-weight: bold;
-            margin: 15px 0;
-            font-size: 1.1rem;
-        }
-        
         /* Starting player selection screen */
         #starting-player-screen {
             display: none;
@@ -228,17 +183,6 @@
         <!-- Room Code Banner -->
         <div id="room-code-banner" class="room-code-banner">
             ONLINE MATCH • Room: <span id="room-code-display"></span>
-        </div>
-
-        <!-- Turn Lock Overlay (shown when it's opponent's turn) -->
-        <div id="turn-lock-overlay" class="turn-lock-overlay">
-            <div class="turn-lock-message">
-                <h2>🎯 Opponent's Turn</h2>
-                <p style="font-size: 1.1rem; margin: 10px 0;">Waiting for opponent to throw...</p>
-                <div class="opponent-indicator" id="opponent-status">
-                    Watch the scores update live
-                </div>
-            </div>
         </div>
 
         <!-- Main Game Screen (copied from scoring-app.html) -->
