@@ -437,7 +437,18 @@ const PlayOnline = {
         // Initialize the online scoring app iframe with config
         const iframe = document.getElementById('scoring-iframe');
         
+        if (!iframe) {
+            console.error('❌ Scoring iframe not found!');
+            return;
+        }
+        
         console.log('📤 Sending config to iframe...');
+        console.log('📊 Iframe dimensions:', {
+            width: iframe.offsetWidth,
+            height: iframe.offsetHeight,
+            display: window.getComputedStyle(iframe).display,
+            visibility: window.getComputedStyle(iframe).visibility
+        });
         
         // Function to send config
         const sendConfig = () => {
