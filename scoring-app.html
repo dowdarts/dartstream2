@@ -700,6 +700,34 @@
         </div>
     </div>
 
+    <!-- Forfeit Modal -->
+    <div id="forfeit-modal" class="modal-overlay">
+        <div class="modal-content set-complete-modal">
+            <div class="set-complete-header">
+                <div class="set-title">
+                    <div class="set-number">Exit Match</div>
+                    <div class="set-status" id="forfeit-status-text">Choose Outcome</div>
+                </div>
+            </div>
+            <h3 class="next-set-text" id="forfeit-instruction-text">Select who forfeits or declare a draw</h3>
+            <div class="match-stats-summary" id="forfeit-score-display" style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                <div style="text-align: center; font-size: 24px; font-weight: bold;">
+                    Current Score: <span id="forfeit-current-score">0-0</span>
+                </div>
+            </div>
+            <div class="set-complete-buttons" id="forfeit-options">
+                <button class="set-btn red" id="player1-forfeit-btn">Player 1 Forfeits</button>
+                <button class="set-btn red" id="player2-forfeit-btn">Player 2 Forfeits</button>
+            </div>
+            <div class="set-complete-buttons" id="draw-option" style="display: none;">
+                <button class="set-btn yellow" id="declare-draw-btn">Declare Draw</button>
+            </div>
+            <div class="set-complete-buttons">
+                <button class="set-btn gray" id="cancel-forfeit-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Set Complete Modal -->
     <div id="set-complete-modal" class="modal-overlay">
         <div class="modal-content set-complete-modal">

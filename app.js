@@ -1409,69 +1409,157 @@ document.getElementById('custom-game-link').addEventListener('click', function()
     showScreen('custom-game-screen');
 });
 
-// Back to Players button on game screen - with confirmation
+// Back to Players button on game screen - with forfeit logic
 document.getElementById('back-to-players').addEventListener('click', function() {
-    const confirmed = confirm('Are you sure you want to return to main menu? All game progress will be lost.');
-    if (confirmed) {
-        // Reset all game state
-        const startScore = gameState.matchSettings.startScore || 501;
-        
-        // Reset both players completely
-        gameState.players.player1.score = startScore;
-        gameState.players.player1.preTurnScore = startScore;
-        gameState.players.player1.darts = 0;
-        gameState.players.player1.legDarts = 0;
-        gameState.players.player1.matchDarts = 0;
-        gameState.players.player1.legScore = 0;
-        gameState.players.player1.matchScore = 0;
-        gameState.players.player1.legAvg = 0;
-        gameState.players.player1.matchAvg = 0;
-        gameState.players.player1.legWins = 0;
-        gameState.players.player1.setWins = 0;
-        gameState.players.player1.turnHistory = [];
-        
-        gameState.players.player2.score = startScore;
-        gameState.players.player2.preTurnScore = startScore;
-        gameState.players.player2.darts = 0;
-        gameState.players.player2.legDarts = 0;
-        gameState.players.player2.matchDarts = 0;
-        gameState.players.player2.legScore = 0;
-        gameState.players.player2.matchScore = 0;
-        gameState.players.player2.legAvg = 0;
-        gameState.players.player2.matchAvg = 0;
-        gameState.players.player2.legWins = 0;
-        gameState.players.player2.setWins = 0;
-        gameState.players.player2.turnHistory = [];
-        
-        // Reset game counters
-        gameState.currentVisit = [];
-        gameState.visitNumber = 1;
-        gameState.currentSet = 1;
-        gameState.currentLeg = 1;
-        gameState.dartsThrown = 0;
-        gameState.turnTotal = 0;
-        gameState.currentInput = '';
-        gameState.dartScores = [];
-        gameState.legStarter = null;
-        
-        // Update all score displays on player selection screen
-        const playerSelectSetScore = document.getElementById('player-select-set-score');
-        const playerSelectLegScore = document.getElementById('player-select-leg-score');
-        const playerSelectSetScoreBig = document.getElementById('player-select-set-score-big');
-        
-        if (playerSelectSetScore) {
-            playerSelectSetScore.textContent = '0 - 0';
-        }
-        if (playerSelectLegScore) {
-            playerSelectLegScore.textContent = '0 - 0';
-        }
-        if (playerSelectSetScoreBig) {
-            playerSelectSetScoreBig.textContent = '0 - 0';
-        }
-        
-        showScreen('player-selection-screen');
-    }
+    showForfeitModal();
 });
+
+// Forfeit Modal Functions
+function showForfeitModal() {
+    const modal = document.getElementById('forfeit-modal');
+    const p1 = gameState.players.player1;
+    const p2 = gameState.players.player2;
+    
+    // Get current score (legs or sets depending on match format)
+    const isSetMatch = gameState.matchSettings.format === 'set';
+    const score1 = isSetMatch ? p1.setWins : p1.legWins;
+    const score2 = isSetMatch ? p2.setWins : p2.legWins;
+    
+    // Update score display
+    const scoreDisplay = document.getElementById('forfeit-current-score');
+    const statusText = document.getElementById('forfeit-status-text');
+    const instructionText = document.getElementById('forfeit-instruction-text');
+    const drawOption = document.getElementById('draw-option');
+    const player1ForfeitBtn = document.getElementById('player1-forfeit-btn');
+    const player2ForfeitBtn = document.getElementById('player2-forfeit-btn');
+    
+    scoreDisplay.textContent = `${score1}-${score2}`;
+    player1ForfeitBtn.textContent = `${p1.name} Forfeits`;
+    player2ForfeitBtn.textContent = `${p2.name} Forfeits`;
+    
+    // Determine forfeit scenario
+    if (score1 === 0 && score2 === 0) {
+        // No score - must choose forfeit
+        statusText.textContent = 'No Score Recorded';
+        instructionText.textContent = 'Select which player forfeits this match';
+        drawOption.style.display = 'none';
+    } else if (score1 === score2) {
+        // Tied score - can choose forfeit or draw
+        statusText.textContent = 'Score Tied';
+        instructionText.textContent = 'Select forfeit winner or declare a draw';
+        drawOption.style.display = 'flex';
+    } else {
+        // One player ahead - they win, but can still forfeit current leg
+        const leader = score1 > score2 ? p1.name : p2.name;
+        statusText.textContent = `${leader} Leading`;
+        instructionText.textContent = 'Select outcome for incomplete leg/set';
+        drawOption.style.display = 'none';
+    }
+    
+    modal.style.display = 'flex';
+}
+
+// Player 1 Forfeits - Player 2 Wins
+document.getElementById('player1-forfeit-btn').addEventListener('click', function() {
+    handleForfeit('player2'); // Player 2 wins
+});
+
+// Player 2 Forfeits - Player 1 Wins
+document.getElementById('player2-forfeit-btn').addEventListener('click', function() {
+    handleForfeit('player1'); // Player 1 wins
+});
+
+// Declare Draw
+document.getElementById('declare-draw-btn').addEventListener('click', function() {
+    handleForfeit('draw');
+});
+
+// Cancel Forfeit
+document.getElementById('cancel-forfeit-btn').addEventListener('click', function() {
+    document.getElementById('forfeit-modal').style.display = 'none';
+});
+
+function handleForfeit(winner) {
+    const p1 = gameState.players.player1;
+    const p2 = gameState.players.player2;
+    const isSetMatch = gameState.matchSettings.format === 'set';
+    
+    // Close forfeit modal
+    document.getElementById('forfeit-modal').style.display = 'none';
+    
+    // Determine match outcome
+    let matchWinner = null;
+    let isDraw = false;
+    
+    if (winner === 'draw') {
+        isDraw = true;
+        matchWinner = null;
+    } else {
+        const score1 = isSetMatch ? p1.setWins : p1.legWins;
+        const score2 = isSetMatch ? p2.setWins : p2.legWins;
+        
+        if (score1 === 0 && score2 === 0) {
+            // No score - forfeit winner takes it
+            matchWinner = winner;
+        } else if (score1 === score2) {
+            // Tied - forfeit determines winner (unless draw selected)
+            matchWinner = winner;
+        } else {
+            // Someone ahead - they win (unless they forfeited)
+            if (score1 > score2) {
+                matchWinner = winner === 'player1' ? 'player1' : 'player2';
+            } else {
+                matchWinner = winner === 'player2' ? 'player2' : 'player1';
+            }
+        }
+    }
+    
+    // Show Match Complete modal with save option
+    showMatchCompleteAfterForfeit(matchWinner, isDraw);
+}
+
+function showMatchCompleteAfterForfeit(winner, isDraw) {
+    const modal = document.getElementById('match-complete-modal');
+    const winnerDisplay = document.getElementById('match-winner-display');
+    const winnerName = document.getElementById('match-winner-name');
+    const matchCompleteText = document.getElementById('match-complete-text');
+    const p1 = gameState.players.player1;
+    const p2 = gameState.players.player2;
+    
+    if (isDraw) {
+        winnerName.textContent = 'Match Draw';
+        matchCompleteText.textContent = 'Match ended in a draw';
+    } else {
+        const winnerPlayer = gameState.players[winner];
+        winnerName.textContent = winnerPlayer.name;
+        matchCompleteText.textContent = `${winnerPlayer.name} wins by forfeit!`;
+    }
+    
+    // Update final stats display
+    const statsDiv = document.getElementById('match-stats-summary');
+    const p1Stats = document.getElementById('player1-final-stats');
+    const p2Stats = document.getElementById('player2-final-stats');
+    
+    if (p1Stats && p2Stats) {
+        const isSetMatch = gameState.matchSettings.format === 'set';
+        
+        p1Stats.innerHTML = `
+            <strong>${p1.name}</strong><br>
+            ${isSetMatch ? 'Sets' : 'Legs'}: ${isSetMatch ? p1.setWins : p1.legWins}<br>
+            Average: ${p1.matchAvg.toFixed(2)}<br>
+            Darts: ${p1.matchDarts}
+        `;
+        
+        p2Stats.innerHTML = `
+            <strong>${p2.name}</strong><br>
+            ${isSetMatch ? 'Sets' : 'Legs'}: ${isSetMatch ? p2.setWins : p2.legWins}<br>
+            Average: ${p2.matchAvg.toFixed(2)}<br>
+            Darts: ${p2.matchDarts}
+        `;
+    }
+    
+    modal.style.display = 'flex';
+}
 
 // Connect button replaced with connection code display
 // No event listener needed anymore
