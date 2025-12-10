@@ -192,6 +192,14 @@
         
         #game-screen.active {
             display: block !important;
+            height: 100%;
+            min-height: 100vh;
+        }
+        
+        /* Make sure scoring area is properly sized */
+        .score-history {
+            min-height: 120px;
+            max-height: 200px;
         }
         
         /* Hide back button in online mode */
