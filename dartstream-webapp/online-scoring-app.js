@@ -221,26 +221,26 @@ const OnlineScoringApp = {
     // Handle number button click
     handleNumberButtonClick(event) {
         const score = parseInt(event.currentTarget.getAttribute('data-score'));
-        this.addDartScore(score);
         
-        // Broadcast to opponent
-        this.broadcastScoreInput(score);
-    },
-    
-    // Add a dart score
-    addDartScore(score) {
-        if (this.gameState.dartsThrown >= 3) return;
-        
-        this.gameState.currentVisit.push(score);
-        this.gameState.dartsThrown++;
-        this.gameState.turnTotal += score;
+        // One button press = entire turn total (like original scoring app)
+        this.gameState.turnTotal = score;
+        this.gameState.dartsThrown = 3; // Mark as complete turn
         
         this.updateDisplay();
         
-        // Auto-complete turn after 3 darts
-        if (this.gameState.dartsThrown === 3) {
-            setTimeout(() => this.completeTurn(), 500);
-        }
+        // Broadcast to opponent
+        this.broadcastScoreInput(score);
+        
+        // Complete the turn immediately
+        setTimeout(() => this.completeTurn(), 300);
+    },
+    
+    // Add a dart score (kept for receiving opponent's scores)
+    addDartScore(score) {
+        // For online mode, this is only used when receiving opponent's input
+        this.gameState.turnTotal = score;
+        this.gameState.dartsThrown = 3;
+        this.updateDisplay();
     },
     
     // Complete the current turn
@@ -300,13 +300,12 @@ const OnlineScoringApp = {
         this.updateTurnControl();
     },
     
-    // Handle undo
+    // Handle undo - reset the current turn
     handleUndo() {
-        if (this.gameState.dartsThrown === 0) return;
-        
-        const removedScore = this.gameState.currentVisit.pop();
-        this.gameState.dartsThrown--;
-        this.gameState.turnTotal -= removedScore;
+        // Reset turn to initial state
+        this.gameState.turnTotal = 0;
+        this.gameState.dartsThrown = 0;
+        this.gameState.currentVisit = [];
         
         this.updateDisplay();
         
@@ -314,10 +313,15 @@ const OnlineScoringApp = {
         this.broadcastScoreInput(-1); // -1 signals undo
     },
     
-    // Submit current input (MISS button)
+    // Submit current input (MISS button) - scores 0 for the turn
     submitCurrentInput() {
-        this.addDartScore(0);
+        this.gameState.turnTotal = 0;
+        this.gameState.dartsThrown = 3;
+        
+        this.updateDisplay();
         this.broadcastScoreInput(0);
+        
+        setTimeout(() => this.completeTurn(), 300);
     },
     
     // Update the display
@@ -344,11 +348,14 @@ const OnlineScoringApp = {
         if (p2LegAvg) p2LegAvg.textContent = this.gameState.players.player2.legAvg;
         if (p2MatchAvg) p2MatchAvg.textContent = this.gameState.players.player2.matchAvg;
         
-        // Update input mode display (shows current darts)
+        // Update input mode display (shows current turn total)
         const inputMode = document.getElementById('input-mode');
         if (inputMode) {
-            const dartsDisplay = this.gameState.currentVisit.map(score => score).join(' + ');
-            inputMode.textContent = dartsDisplay || `${this.gameState.dartsThrown}/3 darts`;
+            if (this.gameState.turnTotal > 0) {
+                inputMode.textContent = this.gameState.turnTotal.toString();
+            } else {
+                inputMode.textContent = '';
+            }
         }
         
         // Highlight current player
@@ -425,17 +432,14 @@ const OnlineScoringApp = {
         if (payload.from === this.localPlayerNumber) return; // Ignore own broadcasts
         
         if (payload.score === -1) {
-            // Undo
-            if (this.gameState.dartsThrown > 0) {
-                const removedScore = this.gameState.currentVisit.pop();
-                this.gameState.dartsThrown--;
-                this.gameState.turnTotal -= removedScore;
-            }
+            // Undo - reset turn
+            this.gameState.turnTotal = 0;
+            this.gameState.dartsThrown = 0;
+            this.gameState.currentVisit = [];
         } else {
-            // Add score
-            this.gameState.currentVisit.push(payload.score);
-            this.gameState.dartsThrown = payload.dartsThrown;
+            // Set turn total (one input = entire turn)
             this.gameState.turnTotal = payload.turnTotal;
+            this.gameState.dartsThrown = 3;
         }
         
         this.updateDisplay();
