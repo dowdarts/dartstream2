@@ -27,6 +27,12 @@ const PlayOnline = {
         // Wait for Supabase to be ready
         await this.waitForSupabase();
         
+        if (!window.supabaseClient) {
+            console.error('Failed to initialize Supabase client');
+            alert('Failed to connect to database. Please refresh the page.');
+            return;
+        }
+        
         // Check if user is authenticated
         const { data: { session } } = await window.supabaseClient.auth.getSession();
         if (!session) {
@@ -43,17 +49,39 @@ const PlayOnline = {
     },
 
     waitForSupabase() {
-        return new Promise((resolve) => {
-            if (window.supabaseClient) {
-                resolve();
-            } else {
-                const checkInterval = setInterval(() => {
-                    if (window.supabaseClient) {
-                        clearInterval(checkInterval);
+        return new Promise((resolve, reject) => {
+            const maxAttempts = 50;
+            let attempts = 0;
+            
+            const checkClient = () => {
+                attempts++;
+                
+                // Try to get the client using the global function
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client) {
+                        console.log('Supabase client ready!');
                         resolve();
+                        return;
                     }
-                }, 100);
-            }
+                }
+                
+                // Also check if it already exists on window
+                if (window.supabaseClient) {
+                    console.log('Supabase client found on window!');
+                    resolve();
+                    return;
+                }
+                
+                if (attempts >= maxAttempts) {
+                    reject(new Error('Timeout waiting for Supabase to load'));
+                    return;
+                }
+                
+                setTimeout(checkClient, 100);
+            };
+            
+            checkClient();
         });
     },
 
@@ -116,6 +144,14 @@ const PlayOnline = {
     // Create room in Supabase
     async createRoom() {
         try {
+            // Ensure client is ready
+            if (!window.supabaseClient) {
+                await this.waitForSupabase();
+            }
+            if (!window.supabaseClient) {
+                throw new Error('Supabase client not initialized');
+            }
+
             const { data, error } = await window.supabaseClient
                 .from('game_rooms')
                 .insert([{
@@ -136,6 +172,14 @@ const PlayOnline = {
 
     // Listen for opponent joining
     async listenForOpponent() {
+        // Ensure client is ready
+        if (!window.supabaseClient) {
+            await this.waitForSupabase();
+        }
+        if (!window.supabaseClient) {
+            throw new Error('Supabase client not initialized');
+        }
+
         this.supabaseChannel = window.supabaseClient
             .channel(`room:${this.roomCode}`)
             .on('postgres_changes', {
@@ -165,15 +209,29 @@ const PlayOnline = {
         this.roomCode = code;
 
         try {
+            // Ensure client is ready
+            if (!window.supabaseClient) {
+                await this.waitForSupabase();
+            }
+            if (!window.supabaseClient) {
+                throw new Error('Supabase client not initialized');
+            }
+
             // Find room
             const { data: rooms, error: findError } = await window.supabaseClient
                 .from('game_rooms')
                 .select('*')
                 .eq('room_code', code)
                 .eq('status', 'waiting')
-                .single();
+                .maybeSingle();
 
-            if (findError || !rooms) {
+            if (findError) {
+                console.error('Database error:', findError);
+                alert('Error searching for room. Please try again.');
+                return;
+            }
+
+            if (!rooms) {
                 alert('Room not found or already in use');
                 return;
             }
@@ -192,7 +250,7 @@ const PlayOnline = {
             if (updateError) throw updateError;
 
             // Subscribe to room channel for signaling
-            this.subabaseChannel = window.supabaseClient
+            this.supabaseChannel = window.supabaseClient
                 .channel(`room:${this.roomCode}`)
                 .subscribe();
 

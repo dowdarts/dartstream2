@@ -428,7 +428,24 @@ const PlayerDB = {
 
 // Make PlayerDB available globally for ES6 modules
 window.PlayerDB = PlayerDB;
+window.getSupabaseClient = getSupabaseClient;
 window.supabaseConfigReady = true;
+
+// Initialize Supabase client with retry logic
+function initializeSupabase() {
+    const client = getSupabaseClient();
+    if (client) {
+        console.log('Supabase client initialized successfully');
+        console.log('window.supabaseClient:', window.supabaseClient);
+    } else {
+        console.log('Waiting for Supabase library to load...');
+        setTimeout(initializeSupabase, 100);
+    }
+}
+
+// Start initialization
+initializeSupabase();
+
 console.log('PlayerDB registered on window object');
 console.log('window.PlayerDB:', window.PlayerDB);
 
