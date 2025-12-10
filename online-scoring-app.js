@@ -165,11 +165,54 @@ const OnlineScoringApp = {
         document.getElementById('starting-player-screen').classList.remove('active');
         document.getElementById('game-screen').classList.add('active');
         
+        // Initialize first round with arrow pointing to starting player
+        this.initializeFirstRound();
+        
         // Update display
         this.updateDisplay();
         
         // Check turn control
         this.updateTurnControl();
+    },
+    
+    // Initialize first round entry
+    initializeFirstRound() {
+        const scoreHistory = document.getElementById('score-history');
+        if (!scoreHistory) return;
+        
+        // Clear any existing entries
+        scoreHistory.innerHTML = '';
+        
+        // Create first round entry
+        const roundEntry = document.createElement('div');
+        roundEntry.className = 'score-entry';
+        roundEntry.id = 'round-1';
+        
+        // Left column (Player 1's score)
+        const leftCol = document.createElement('div');
+        leftCol.className = 'player-column';
+        leftCol.id = 'round-1-p1';
+        
+        // Center column (round number and arrow)
+        const centerCol = document.createElement('div');
+        centerCol.className = 'turn-info';
+        centerCol.id = 'round-1-center';
+        const arrow = this.gameState.currentPlayer === 1 ? '\u2192' : '\u2190';
+        centerCol.innerHTML = `
+            <span class=\"turn-arrow\" id=\"round-1-arrow\">${arrow}</span>
+            <span class=\"turn-number\">1</span>
+        `;
+        
+        // Right column (Player 2's score)
+        const rightCol = document.createElement('div');
+        rightCol.className = 'player-column';
+        rightCol.id = 'round-1-p2';
+        
+        roundEntry.appendChild(leftCol);
+        roundEntry.appendChild(centerCol);
+        roundEntry.appendChild(rightCol);
+        
+        scoreHistory.appendChild(roundEntry);
     },
     
     // Wait for Supabase client to be available
@@ -684,44 +727,64 @@ Thanks for playing!
         if (!scoreHistory) return;
         
         const playerNumber = playerKey === 'player1' ? 1 : 2;
+        const roundNumber = Math.ceil(this.gameState.visitNumber / 2);
         
-        // Create score entry
-        const entry = document.createElement('div');
-        entry.className = 'score-entry';
-        entry.id = `visit-${this.gameState.visitNumber}`;
+        // Check if we need to create a new round entry or update existing
+        let roundEntry = document.getElementById(`round-${roundNumber}`);
         
-        // Left column (Player 1's score if they threw)
-        const leftCol = document.createElement('div');
-        leftCol.className = 'player-column';
-        if (playerNumber === 1) {
-            leftCol.innerHTML = `<div class="darts">${turnTotal}</div>`;
+        if (!roundEntry) {
+            // Create new round entry
+            roundEntry = document.createElement('div');
+            roundEntry.className = 'score-entry';
+            roundEntry.id = `round-${roundNumber}`;
+            
+            // Left column (Player 1's score)
+            const leftCol = document.createElement('div');
+            leftCol.className = 'player-column';
+            leftCol.id = `round-${roundNumber}-p1`;
+            
+            // Center column (round number and arrow)
+            const centerCol = document.createElement('div');
+            centerCol.className = 'turn-info';
+            centerCol.id = `round-${roundNumber}-center`;
+            centerCol.innerHTML = `
+                <span class="turn-arrow" id="round-${roundNumber}-arrow"></span>
+                <span class="turn-number">${roundNumber}</span>
+            `;
+            
+            // Right column (Player 2's score)
+            const rightCol = document.createElement('div');
+            rightCol.className = 'player-column';
+            rightCol.id = `round-${roundNumber}-p2`;
+            
+            roundEntry.appendChild(leftCol);
+            roundEntry.appendChild(centerCol);
+            roundEntry.appendChild(rightCol);
+            
+            // Add to history (at the top)
+            scoreHistory.insertBefore(roundEntry, scoreHistory.firstChild);
         }
         
-        // Center column (visit number and arrow)
-        const centerCol = document.createElement('div');
-        centerCol.className = 'turn-info';
-        const arrow = playerNumber === 1 ? '←' : '→';
-        centerCol.innerHTML = `
-            <span class="turn-number">${this.gameState.visitNumber}</span>
-            <span class="turn-arrow">${arrow}</span>
-        `;
-        
-        // Right column (Player 2's score if they threw)
-        const rightCol = document.createElement('div');
-        rightCol.className = 'player-column';
-        if (playerNumber === 2) {
-            rightCol.innerHTML = `<div class="darts">${turnTotal}</div>`;
+        // Update the player's score in the round
+        const playerCol = document.getElementById(`round-${roundNumber}-p${playerNumber}`);
+        if (playerCol) {
+            playerCol.innerHTML = `<div class="darts">${turnTotal}</div>`;
         }
         
-        entry.appendChild(leftCol);
-        entry.appendChild(centerCol);
-        entry.appendChild(rightCol);
-        
-        // Add to history (at the top)
-        scoreHistory.insertBefore(entry, scoreHistory.firstChild);
+        // Update arrow to point to NEXT player
+        this.updateRoundArrow(roundNumber);
         
         // Auto-scroll to show newest entry
         scoreHistory.scrollTop = 0;
+    },
+    
+    // Update round arrow to point to current player
+    updateRoundArrow(roundNumber) {
+        const arrow = document.getElementById(`round-${roundNumber}-arrow`);
+        if (arrow) {
+            // Arrow points to current player (whose turn it is NOW)
+            arrow.textContent = this.gameState.currentPlayer === 1 ? '→' : '←';
+        }
     },
     
     // Handle undo - delete last digit from input
@@ -796,6 +859,12 @@ Thanks for playing!
                 }
             }
             // If not my turn, the waiting message is already set by updateTurnControl
+        }
+        
+        // Update all round arrows to show current turn
+        const currentRound = Math.ceil(this.gameState.visitNumber / 2);
+        for (let i = 1; i <= currentRound; i++) {
+            this.updateRoundArrow(i);
         }
         
         // Highlight current player
