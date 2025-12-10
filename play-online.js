@@ -279,12 +279,15 @@ const PlayOnline = {
                 .channel(`room:${this.roomCode}`)
                 .on('broadcast', { event: 'game-config' }, (payload) => {
                     const { from, config } = payload.payload;
+                    console.log('📡 Guest received game-config broadcast:', payload);
                     if (from !== this.localPlayerId && !this.isHost) {
-                        console.log('Received game config from host:', config);
+                        console.log('✅ Valid config from host, initializing match:', config);
                         this.currentTurn = config.startingPlayer;
                         this.hostPlayerName = config.player1Name;
                         this.guestPlayerName = config.player2Name;
                         this.initializeMatch(config);
+                    } else {
+                        console.log('⚠️ Ignoring own broadcast or not guest');
                     }
                 })
                 .on('broadcast', { event: 'game-state' }, (payload) => {
@@ -319,19 +322,13 @@ const PlayOnline = {
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('videostream-container').classList.remove('hidden');
 
-        // Show waiting message in scoring iframe
-        const iframe = document.getElementById('scoring-iframe');
-        iframe.contentWindow.postMessage({
-            type: 'show-waiting',
-            roomCode: this.roomCode,
-            message: 'Host is preparing match...'
-        }, '*');
-
         // Update connection status
         this.updateConnectionStatus('Connected - Waiting for host', true);
 
         // Listen for game updates (will receive config when host sends it)
         this.listenForGameUpdates();
+        
+        console.log('🎮 Guest waiting for game config from host...');
     },
 
     // Show game configuration screen (Host only after both players connect)
