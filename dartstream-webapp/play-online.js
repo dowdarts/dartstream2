@@ -389,9 +389,6 @@ const PlayOnline = {
             const hostName = hostAccount ? `${hostAccount.first_name} ${hostAccount.last_name}` : 'Host Player';
             const guestName = guestAccount ? `${guestAccount.first_name} ${guestAccount.last_name}` : 'Guest Player';
 
-            document.getElementById('host-player-name').textContent = hostName;
-            document.getElementById('guest-player-name').textContent = guestName;
-
             // Store for game initialization
             this.hostPlayerName = hostName;
             this.guestPlayerName = guestName;
@@ -400,83 +397,18 @@ const PlayOnline = {
 
         } catch (error) {
             console.error('Error loading player names:', error);
-            document.getElementById('host-player-name').textContent = 'Host Player';
-            document.getElementById('guest-player-name').textContent = 'Guest Player';
+            // Use defaults if fetch fails
+            this.hostPlayerName = 'Host Player';
+            this.guestPlayerName = 'Guest Player';
+            this.hostPlayerId = null;
+            this.guestPlayerId = null;
         }
-    },
-
-    // Cancel game config and disconnect
-    cancelGameConfig() {
-        if (confirm('Cancel match? This will disconnect both players.')) {
-            this.disconnect();
-            window.location.reload();
-        }
-    },
-
-    // Confirm game configuration and start match (Host only)
-    async confirmGameConfig() {
-        // Get configuration values
-        const gameType = document.getElementById('online-game-type').value;
-        const matchFormat = document.getElementById('online-match-format').value;
-        const startingPlayer = document.getElementById('online-starting-player').value;
-
-        // Parse game type (e.g., "501-sido" -> startScore: 501, doubleOut: false)
-        const [score, inOut] = gameType.split('-');
-        const startScore = parseInt(score);
-        const doubleOut = inOut === 'dido';
-
-        // Parse match format
-        let totalLegs = 1;
-        let legsFormat = 'first-to';
-        
-        if (matchFormat === 'best-of-3') totalLegs = 3;
-        else if (matchFormat === 'best-of-5') totalLegs = 5;
-        else if (matchFormat === 'best-of-7') totalLegs = 7;
-        else if (matchFormat === 'best-of-3-sets') totalLegs = 3; // Sets mode
-        else if (matchFormat === 'best-of-5-sets') totalLegs = 5; // Sets mode
-
-        if (matchFormat.includes('best-of')) {
-            legsFormat = 'best-of';
-        }
-
-        // Set initial turn based on starting player
-        this.currentTurn = startingPlayer; // 'host' or 'guest'
-
-        // Create game config
-        const gameConfig = {
-            gameType: gameType,
-            startScore: startScore,
-            doubleOut: doubleOut,
-            player1Name: this.hostPlayerName,
-            player2Name: this.guestPlayerName,
-            player1Id: this.hostPlayerId,
-            player2Id: this.guestPlayerId,
-            totalLegs: totalLegs,
-            legsFormat: legsFormat,
-            startingPlayer: startingPlayer
-        };
-
-        console.log('Game config:', gameConfig);
-
-        // Broadcast config to guest
-        await this.supabaseChannel.send({
-            type: 'broadcast',
-            event: 'game-config',
-            payload: { from: this.localPlayerId, config: gameConfig }
-        });
-
-        // Start the match
-        this.initializeMatch(gameConfig);
     },
 
     // Initialize match with config
     initializeMatch(config) {
         console.log('Initializing match with config:', config);
         
-        // Hide config, show main interface
-        document.getElementById('game-config-screen').classList.add('hidden');
-        document.getElementById('videostream-container').classList.remove('hidden');
-
         // Update connection status
         this.updateConnectionStatus('Match in progress', true);
 
