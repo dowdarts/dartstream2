@@ -6,7 +6,12 @@
     <title>DartStream Online Scoring</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Online-specific styles */
+        /* Online-specific overrides */
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        
         .room-code-banner {
             background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
             color: #0f172a;
@@ -15,46 +20,70 @@
             font-weight: bold;
             font-size: 0.9rem;
             border-bottom: 3px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+        
         .turn-lock-overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
             pointer-events: all;
         }
+        
+        .turn-lock-overlay.active {
+            display: flex;
+        }
+        
         .turn-lock-message {
             background: #1e293b;
             border: 3px solid #ef4444;
             border-radius: 12px;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
             color: white;
         }
+        
         .turn-lock-message h2 {
             color: #facc15;
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
+            font-size: 2rem;
         }
+        
         .opponent-indicator {
             background: rgba(239, 68, 68, 0.2);
             border: 2px solid #ef4444;
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             text-align: center;
             color: #ef4444;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 15px 0;
+            font-size: 1.1rem;
+        }
+        
+        /* Force game screen to display */
+        #game-screen {
+            display: block !important;
+        }
+        
+        /* Hide back button in online mode */
+        #back-to-players {
+            display: none !important;
         }
     </style>
 </head>
-<body style="margin: 0; background: #0f172a; color: white; font-family: Arial, sans-serif;">
-    <div id="loading-screen" style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column;">
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; background: #0f172a; color: white;">
         <h1 style="color: #facc15;">🎯 Loading Online Scoring...</h1>
         <p style="color: #94a3b8;">Waiting for game configuration...</p>
         <div style="margin-top: 20px; color: #64748b; font-size: 0.8rem;" id="debug-status">Initializing...</div>
@@ -62,12 +91,12 @@
     
     <div id="app" style="display: none;">
         <!-- Room Code Banner -->
-        <div id="room-code-banner" class="room-code-banner" style="display: none;">
+        <div id="room-code-banner" class="room-code-banner">
             ONLINE MATCH • Room: <span id="room-code-display"></span>
         </div>
 
         <!-- Turn Lock Overlay (shown when it's opponent's turn) -->
-        <div id="turn-lock-overlay" class="turn-lock-overlay" style="display: none;">
+        <div id="turn-lock-overlay" class="turn-lock-overlay">
             <div class="turn-lock-message">
                 <h2>🎯 Opponent's Turn</h2>
                 <p style="font-size: 1.1rem; margin: 10px 0;">Waiting for opponent to throw...</p>
@@ -77,65 +106,89 @@
             </div>
         </div>
 
-        <!-- Main Scoring Screen -->
-        <div id="scoring-screen" class="screen" style="display: block !important; padding: 20px; background: #0f172a;">
-            <!-- Include standard scoring app layout -->
-            <div id="game-screen-header">
-                <div id="scoreboard-display">
-                    <div id="score-area">
-                        <div id="player1-score-area" class="player-score-area">
-                            <div id="player1-name" class="player-name">Player 1</div>
-                            <div id="player1-score" class="player-score">501</div>
-                            <div id="player1-avg" class="player-avg">AVG: 0.00</div>
-                        </div>
-                        <div id="player2-score-area" class="player-score-area">
-                            <div id="player2-name" class="player-name">Player 2</div>
-                            <div id="player2-score" class="player-score">501</div>
-                            <div id="player2-avg" class="player-avg">AVG: 0.00</div>
+        <!-- Main Game Screen (copied from scoring-app.html) -->
+        <div id="game-screen" class="screen">
+            <div class="scoreboard-header">
+                <div class="player-header left" id="player1-display">
+                    <div class="player-info">
+                        <div class="player-name-large">Player 1</div>
+                        <div class="score-large">501</div>
+                        <div class="averages-display">
+                            <div class="avg-label red" id="player1-leg-avg">0.00</div>
+                            <div class="avg-label red" id="player1-match-avg">0.00</div>
                         </div>
                     </div>
                 </div>
-                
-                <div id="match-info">
-                    <div id="set-leg-display">Set <span id="set-number">0</span> - <span id="leg-number">0</span> | Leg <span id="current-leg">0</span> - <span id="total-legs">0</span></div>
+                <div class="timer-display">
+                    <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
+                    <div class="version-text">ONLINE</div>
+                </div>
+                <div class="player-header right" id="player2-display">
+                    <div class="player-info">
+                        <div class="player-name-large">Player 2</div>
+                        <div class="score-large">501</div>
+                        <div class="averages-display">
+                            <div class="avg-label red" id="player2-leg-avg">0.00</div>
+                            <div class="avg-label red" id="player2-match-avg">0.00</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Scoring Input Area -->
-            <div id="scoring-input">
-                <div id="dart-display">
-                    <div class="dart-slot" id="dart1">-</div>
-                    <div class="dart-slot" id="dart2">-</div>
-                    <div class="dart-slot" id="dart3">-</div>
+            <div class="control-bar">
+                <button class="control-btn" id="back-to-players">Back to Main Menu</button>
+                <h2 class="set-score-inline">Set <span class="score-display" id="set-score-display">0 - 0</span> | Leg <span class="score-display" id="leg-score-display">0 - 0</span></h2>
+                <div class="control-btn gold" id="connection-code-display-3" style="cursor: default; font-size: clamp(18px, 3vw, 20px); font-weight: bold; letter-spacing: 3px;">ONLINE</div>
+            </div>
+
+            <div class="scoring-area">
+                <div class="score-history" id="score-history">
+                    <!-- Score entries will be added here dynamically -->
                 </div>
                 
-                <div id="turn-total-display">
-                    Turn: <span id="turn-total">0</span>
+                <!-- Good Shot Display -->
+                <div id="good-shot-display" class="good-shot-display" style="display: none;">
+                    <div class="good-shot-text" id="good-shot-text"></div>
                 </div>
             </div>
 
-            <!-- Number Pad -->
-            <div id="number-pad" class="number-pad">
-                <button class="num-btn" data-score="26">26</button>
-                <button class="num-btn" data-score="41">41</button>
-                <button class="num-btn" data-score="45">45</button>
-                <button class="num-btn" data-score="60">60</button>
-                
-                <button class="num-btn" data-score="81">81</button>
-                <button class="num-btn" data-score="85">85</button>
-                <button class="num-btn" data-score="100">100<br><small>×</small></button>
-                <button class="num-btn" data-score="140">140<br><small>+</small></button>
-                
-                <button class="num-btn" data-score="180">180<br><small>0/BUST</small></button>
-                <button class="num-btn" id="action-btn" class="action-btn">UNDO</button>
-                <button class="num-btn" id="submit-btn" class="submit-btn">MISS</button>
-                <button class="num-btn" id="menu-btn" class="menu-btn">MENU</button>
+            <div class="bottom-controls">
+                <div class="input-bar">
+                    <button class="input-btn yellow" id="action-btn">UNDO</button>
+                    <div class="input-mode" id="input-mode"></div>
+                    <button class="input-btn red" id="submit-btn">MISS</button>
+                </div>
+
+                <div class="number-pad">
+                    <button class="num-btn edge" data-score="26">26</button>
+                    <button class="num-btn" data-score="1">1</button>
+                    <button class="num-btn" data-score="2">2</button>
+                    <button class="num-btn" data-score="3">3</button>
+                    <button class="num-btn edge" data-score="45">45</button>
+                    
+                    <button class="num-btn edge" data-score="40">40</button>
+                    <button class="num-btn" data-score="4">4</button>
+                    <button class="num-btn" data-score="5">5</button>
+                    <button class="num-btn" data-score="6">6</button>
+                    <button class="num-btn edge" data-score="60">60</button>
+                    
+                    <button class="num-btn edge" data-score="41">41</button>
+                    <button class="num-btn" data-score="7">7</button>
+                    <button class="num-btn" data-score="8">8</button>
+                    <button class="num-btn" data-score="9">9</button>
+                    <button class="num-btn edge" data-score="81">81</button>
+                    
+                    <button class="num-btn edge" data-score="43">43</button>
+                    <button class="num-btn special green dual-function" id="btn-100-multiply" data-score="100" data-operation="multiply" data-default="100" data-alt="×">100</button>
+                    <button class="num-btn special red dual-function" id="btn-180-zero" data-score="180" data-operation="zero" data-default="180" data-alt="0">180</button>
+                    <button class="num-btn special green dual-function" id="btn-140-plus" data-score="140" data-operation="plus" data-default="140" data-alt="+">140</button>
+                    <button class="num-btn edge" data-score="85">85</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Load Supabase and Online Scoring Logic -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="online-scoring-app.js"></script>
+    <script type="module" src="online-scoring-app.js"></script>
 </body>
 </html>
