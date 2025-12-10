@@ -217,6 +217,15 @@ const OnlineScoringApp = {
                     this.startGame();
                 }
             })
+            .on('broadcast', { event: 'control-request' }, (payload) => {
+                console.log('📥 Received control-request:', payload.payload);
+                if (payload.payload.from !== this.localPlayerNumber) {
+                    // Opponent requested control
+                    this.gameState.currentPlayer = payload.payload.requestedBy;
+                    this.updateDisplay();
+                    this.updateTurnControl();
+                }
+            })
             .subscribe((status) => {
                 console.log(`📡 Channel status: ${status}`);
                 if (status === 'SUBSCRIBED') {
@@ -281,18 +290,38 @@ const OnlineScoringApp = {
         if (this.isMyTurn()) {
             // My turn - enable controls, show input normally
             numberPad.style.pointerEvents = 'all';
-            if (!this.gameState.currentInput) {
-                inputMode.textContent = '';
-            }
+            inputMode.className = 'input-mode';
+            inputMode.textContent = this.gameState.currentInput || '';
+            inputMode.style.cursor = 'default';
+            inputMode.onclick = null;
         } else {
-            // Opponent's turn - disable controls, show waiting message
+            // Opponent's turn - disable controls, show Take Control button
             numberPad.style.pointerEvents = 'none';
-            
-            const opponentName = this.gameState.currentPlayer === 1 ? 
-                this.gameState.players.player1.name : 
-                this.gameState.players.player2.name;
-            inputMode.textContent = `Waiting for ${opponentName}...`;
+            inputMode.className = 'input-mode take-control-btn';
+            inputMode.textContent = 'Take Control';
+            inputMode.style.cursor = 'pointer';
+            inputMode.onclick = () => this.requestControl();
         }
+    },
+    
+    // Request control from opponent
+    requestControl() {
+        console.log('🎮 Requesting control from opponent');
+        
+        // Broadcast control request
+        this.realtimeChannel.send({
+            type: 'broadcast',
+            event: 'control-request',
+            payload: {
+                from: this.localPlayerNumber,
+                requestedBy: this.localPlayerNumber
+            }
+        });
+        
+        // Switch control immediately
+        this.gameState.currentPlayer = this.localPlayerNumber;
+        this.updateDisplay();
+        this.updateTurnControl();
     },
     
     // Handle number button click
@@ -655,7 +684,6 @@ Thanks for playing!
         if (!scoreHistory) return;
         
         const playerNumber = playerKey === 'player1' ? 1 : 2;
-        const playerName = this.gameState.players[playerKey].name;
         
         // Create score entry
         const entry = document.createElement('div');
@@ -666,10 +694,7 @@ Thanks for playing!
         const leftCol = document.createElement('div');
         leftCol.className = 'player-column';
         if (playerNumber === 1) {
-            leftCol.innerHTML = `
-                <div class="player-name">${playerName}</div>
-                <div class="darts">${turnTotal}</div>
-            `;
+            leftCol.innerHTML = `<div class="darts">${turnTotal}</div>`;
         }
         
         // Center column (visit number and arrow)
@@ -685,10 +710,7 @@ Thanks for playing!
         const rightCol = document.createElement('div');
         rightCol.className = 'player-column';
         if (playerNumber === 2) {
-            rightCol.innerHTML = `
-                <div class="player-name">${playerName}</div>
-                <div class="darts">${turnTotal}</div>
-            `;
+            rightCol.innerHTML = `<div class="darts">${turnTotal}</div>`;
         }
         
         entry.appendChild(leftCol);
@@ -869,6 +891,16 @@ Thanks for playing!
             // Set turn total (one input = entire turn)
             this.gameState.turnTotal = payload.turnTotal;
             this.gameState.dartsThrown = 3;
+            
+            // Update opponent's live score display
+            const currentPlayerKey = `player${this.gameState.currentPlayer}`;
+            const player = this.gameState.players[currentPlayerKey];
+            const potentialScore = player.preTurnScore - payload.turnTotal;
+            
+            // Show potential score to remote player
+            if (potentialScore >= 0) {
+                player.score = potentialScore;
+            }
         }
         
         this.updateDisplay();

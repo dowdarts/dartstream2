@@ -1745,6 +1745,18 @@ body {
     border: 2px solid #ffd700;
 }
 
+.input-mode.take-control-btn {
+    background: linear-gradient(to bottom, #ffd700 0%, #b8860b 100%);
+    color: #000;
+    border-color: #ffd700;
+    transition: all 0.3s;
+}
+
+.input-mode.take-control-btn:hover {
+    background: linear-gradient(to bottom, #ffed4e 0%, #ffd700 100%);
+    transform: scale(1.05);
+}
+
 .number-pad {
     background: #1a1a1a;
     padding: clamp(4px, 1vh, 8px);
