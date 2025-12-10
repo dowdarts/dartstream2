@@ -271,21 +271,22 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: clamp(1rem, 2vw, 2rem);
-            margin-top: clamp(1rem, 2vh, 1.5rem);
-            padding: clamp(1rem, 2vh, 1.5rem) 0;
+            gap: clamp(1.5rem, 3vw, 3rem);
+            margin-top: clamp(1.5rem, 3vh, 2.5rem);
+            padding: clamp(1.5rem, 3vh, 2.5rem) 0;
         }
 
         .partner-logos img {
-            height: clamp(100px, 18vw, 150px);
+            height: clamp(180px, 25vw, 280px);
             width: auto;
             object-fit: contain;
             opacity: 0.9;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
         .partner-logos img:hover {
             opacity: 1;
+            transform: scale(1.05);
         }
 
         /* Tablet optimizations */
