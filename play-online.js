@@ -1008,10 +1008,10 @@ const PlayOnline = {
     }
 };
 
+// Expose globally immediately so onclick handlers work
+window.PlayOnline = PlayOnline;
+
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
     PlayOnline.init();
 });
-
-// Expose globally
-window.PlayOnline = PlayOnline;
