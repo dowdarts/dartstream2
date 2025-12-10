@@ -26,11 +26,15 @@ CREATE POLICY "Users can create rooms" ON game_rooms
 
 CREATE POLICY "Users can view their rooms" ON game_rooms
     FOR SELECT TO authenticated
-    USING (auth.uid() = host_id OR auth.uid() = guest_id);
+    USING (
+        auth.uid() = host_id 
+        OR auth.uid() = guest_id 
+        OR status = 'waiting'  -- Allow anyone to see waiting rooms
+    );
 
 CREATE POLICY "Users can update their rooms" ON game_rooms
     FOR UPDATE TO authenticated
-    USING (auth.uid() = host_id OR auth.uid() = guest_id);
+    USING (auth.uid() = host_id OR auth.uid() = guest_id OR status = 'waiting');
 
 CREATE POLICY "Users can delete their rooms" ON game_rooms
     FOR DELETE TO authenticated

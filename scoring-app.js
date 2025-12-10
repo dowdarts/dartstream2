@@ -386,7 +386,11 @@ const ScoringApp = {
         if (window.parent !== window) {
             window.parent.postMessage({
                 type: 'score-update',
-                gameState: this.gameState,
+                player1Score: this.gameState.players.player1.score,
+                player2Score: this.gameState.players.player2.score,
+                player1Avg: this.gameState.players.player1.legAvg,
+                player2Avg: this.gameState.players.player2.legAvg,
+                currentPlayer: this.gameState.currentPlayer,
                 turnComplete: true
             }, '*');
         }
@@ -816,3 +820,58 @@ const ScoringApp = {
 
 // Make ScoringApp globally available
 window.ScoringApp = ScoringApp;
+
+// ===== IFRAME MODE - Listen for turn control from parent =====
+// When embedded in play-online.html, this enables/disables scoring based on whose turn it is
+window.addEventListener('message', (event) => {
+    const iframe = window.frameElement;
+    const isInIframe = window.self !== window.top;
+    
+    if (!isInIframe) return; // Only process messages when in iframe
+    
+    if (event.data.type === 'set-turn') {
+        const enabled = event.data.enabled;
+        console.log('Turn control:', enabled ? 'ENABLED' : 'DISABLED');
+        
+        // Disable/enable all input buttons
+        const buttons = document.querySelectorAll('.num-btn, .action-btn, .score-input-btn');
+        buttons.forEach(btn => {
+            if (enabled) {
+                btn.removeAttribute('disabled');
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.setAttribute('disabled', 'true');
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        });
+        
+        // Show visual indicator
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen) {
+            if (enabled) {
+                gameScreen.classList.remove('opponent-turn');
+                gameScreen.classList.add('your-turn');
+            } else {
+                gameScreen.classList.remove('your-turn');
+                gameScreen.classList.add('opponent-turn');
+            }
+        }
+    }
+    
+    if (event.data.type === 'update-game-state') {
+        // Update local game state from opponent's input
+        const remoteState = event.data.gameState;
+        console.log('Syncing game state from opponent:', remoteState);
+        
+        // Update the scoring display without enabling controls
+        if (ScoringApp.gameState && remoteState.score !== undefined) {
+            // Update scores from opponent
+            ScoringApp.gameState.players.player1.score = remoteState.player1Score;
+            ScoringApp.gameState.players.player2.score = remoteState.player2Score;
+            ScoringApp.updateDisplay();
+        }
+    }
+});
+
