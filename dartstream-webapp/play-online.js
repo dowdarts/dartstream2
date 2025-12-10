@@ -336,18 +336,12 @@ const PlayOnline = {
 
     // Show game configuration screen (Host only after both players connect)
     async showGameConfig() {
-        console.log('Showing game configuration...');
+        console.log('✅ Both players connected - showing game configuration...');
         
-        // Hide setup screens
-        document.getElementById('setup-screen').classList.add('hidden');
-        
-        // Show split screen for host too
-        document.getElementById('videostream-container').classList.remove('hidden');
-
         // Load player details from accounts
         await this.loadPlayerNames();
         
-        // Auto-configure game with default settings (host can change later)
+        // Auto-start with default 501 SIDO Best of 3
         const defaultConfig = {
             gameType: '501',
             startScore: 501,
@@ -358,24 +352,30 @@ const PlayOnline = {
             player2Id: this.guestPlayerId,
             totalLegs: 3,
             legsFormat: 'best-of',
-            firstThrow: 'alternate',
-            roomCode: this.roomCode,
-            isOnlineMatch: true,
-            localPlayerNumber: this.isHost ? 1 : 2
+            firstThrow: 'player1', // Host starts
+            roomCode: this.roomCode
         };
         
-        // Send to scoring iframe to show setup with these players pre-selected
-        const iframe = document.getElementById('scoring-iframe');
-        iframe.contentWindow.postMessage({
-            type: 'show-online-setup',
-            config: defaultConfig
-        }, '*');
-
+        console.log('🎮 Starting match with config:', defaultConfig);
+        
+        // Hide setup screens
+        document.getElementById('setup-screen').classList.add('hidden');
+        
+        // Show split screen
+        document.getElementById('videostream-container').classList.remove('hidden');
+        
+        // Broadcast config to guest
+        this.supabaseChannel.send({
+            type: 'broadcast',
+            event: 'game-config',
+            payload: { from: this.localPlayerId, config: defaultConfig }
+        });
+        
+        // Initialize match for host
+        this.initializeMatch(defaultConfig);
+        
         // Update connection status
-        this.updateConnectionStatus('Connected - Configure match', true);
-
-        // Listen for setup completion from iframe
-        this.listenForGameUpdates();
+        this.updateConnectionStatus('Match in progress', true);
     },
 
     // Load player names from player_accounts table
@@ -761,33 +761,15 @@ const PlayOnline = {
     listenForGameUpdates() {
         // Listen for scoring updates from iframe
         window.addEventListener('message', (event) => {
-            if (event.data.type === 'game-config-complete') {
-                // Host finished configuring match
-                console.log('Game config completed:', event.data.config);
-                const config = event.data.config;
-                
-                // Set current turn
-                this.currentTurn = config.startingPlayer;
-                this.hostPlayerName = config.player1Name;
-                this.guestPlayerName = config.player2Name;
-                
-                // Broadcast config to guest
-                this.supabaseChannel.send({
-                    type: 'broadcast',
-                    event: 'game-config',
-                    payload: { from: this.localPlayerId, config: config }
-                });
-                
-                // Initialize match for host
-                this.initializeMatch(config);
-            }
-            else if (event.data.type === 'score-update') {
+            if (event.data.type === 'score-update') {
                 console.log('Score updated:', event.data);
                 this.broadcastGameState(event.data);
                 this.switchTurn();
             } else if (event.data.type === 'match-complete') {
                 console.log('Match completed:', event.data);
                 this.handleMatchComplete(event.data);
+            } else if (event.data.type === 'iframe-ready') {
+                console.log('✅ Iframe is ready');
             }
         });
     },
