@@ -1647,9 +1647,22 @@ function applyEditedScore() {
         player.turnHistory[turnIndex].total = newScore;
         
         // Recalculate all scores from this point forward
-        recalculateScoresFromTurn(gameState.editModePlayer, turnIndex);
+        const finalScore = recalculateScoresFromTurn(gameState.editModePlayer, turnIndex);
         
         console.log(`Updated Player ${gameState.editModePlayer} Turn ${turnIndex + 1} to ${newScore}`);
+        
+        // Check if the edited score resulted in a win (score = 0)
+        if (finalScore === 0) {
+            // Exit edit mode first
+            const winningPlayer = gameState.editModePlayer;
+            exitEditMode();
+            updateGameScreen();
+            
+            // Set current player to the winning player before calling handleLegWin
+            gameState.currentPlayer = winningPlayer;
+            handleLegWin();
+            return;
+        }
     }
     
     // If in clicked edit mode and game progress exists, return to it
@@ -1661,6 +1674,13 @@ function applyEditedScore() {
     
     exitEditMode();
     updateGameScreen();
+    
+    // Check if the edited score resulted in a win (score = 0)
+    if (player.score === 0) {
+        // Set current player to the winning player before calling handleLegWin
+        gameState.currentPlayer = gameState.editModePlayer;
+        handleLegWin();
+    }
 }
 
 function deleteTurnFromHistory(player, turnIndex) {
@@ -1762,6 +1782,9 @@ function recalculateScoresFromTurn(player, fromTurnIndex) {
     playerData.legScore = legScore;
     playerData.legDarts = legDarts;
     playerData.legAvg = legDarts > 0 ? (legScore / legDarts) * 3 : 0;
+    
+    // Return the current score so caller can check for win condition
+    return currentScore;
 }
 
 
