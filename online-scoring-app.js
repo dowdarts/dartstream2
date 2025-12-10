@@ -266,22 +266,31 @@ const OnlineScoringApp = {
     updateTurnControl() {
         const overlay = document.getElementById('turn-lock-overlay');
         const opponentStatus = document.getElementById('opponent-status');
+        const numberPad = document.getElementById('number-pad');
+        
+        // Safety check - elements might not be ready yet
+        if (!overlay || !numberPad) {
+            console.warn('⚠️ Turn control elements not ready yet');
+            return;
+        }
         
         if (this.isMyTurn()) {
             // My turn - hide overlay, enable controls
             overlay.style.display = 'none';
-            document.getElementById('number-pad').style.opacity = '1';
-            document.getElementById('number-pad').style.pointerEvents = 'all';
+            numberPad.style.opacity = '1';
+            numberPad.style.pointerEvents = 'all';
         } else {
             // Opponent's turn - show overlay, disable controls
             overlay.style.display = 'flex';
-            document.getElementById('number-pad').style.opacity = '0.5';
-            document.getElementById('number-pad').style.pointerEvents = 'none';
+            numberPad.style.opacity = '0.5';
+            numberPad.style.pointerEvents = 'none';
             
-            const opponentName = this.gameState.currentPlayer === 1 ? 
-                this.gameState.players.player1.name : 
-                this.gameState.players.player2.name;
-            opponentStatus.textContent = `${opponentName} is throwing...`;
+            if (opponentStatus) {
+                const opponentName = this.gameState.currentPlayer === 1 ? 
+                    this.gameState.players.player1.name : 
+                    this.gameState.players.player2.name;
+                opponentStatus.textContent = `${opponentName} is throwing...`;
+            }
         }
     },
     
