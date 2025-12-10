@@ -527,8 +527,24 @@ const ScoringApp = {
             }, 3000);
         } else {
             // Normal mode - attach save/discard handlers
-            document.getElementById('save-match-btn').onclick = () => this.saveMatchStats(winnerNum);
-            document.getElementById('discard-match-btn').onclick = () => this.discardMatch();
+            const saveBtn = document.getElementById('save-match-btn');
+            const discardBtn = document.getElementById('discard-match-btn');
+            
+            console.log('Setting up button handlers:', saveBtn, discardBtn);
+            
+            if (saveBtn) {
+                saveBtn.onclick = () => {
+                    console.log('Save button clicked!');
+                    this.saveMatchStats(winnerNum);
+                };
+            }
+            
+            if (discardBtn) {
+                discardBtn.onclick = () => {
+                    console.log('Discard button clicked!');
+                    this.discardMatch();
+                };
+            }
         }
     },
     

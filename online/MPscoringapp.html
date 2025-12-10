@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <link rel="icon" type="image/png" href="dartstream-logo.png">
+    <meta name="application-name" content="DartStream Scoring App">
+    <meta name="apple-mobile-web-app-title" content="DartStream Scoring App">
+    <link rel="icon" type="image/png" href="MPdartstream-logo.png">
+    <link rel="apple-touch-icon" href="MPdartstream-logo.png">
+    <link rel="manifest" href="MPmanifest-scoring.json">
     <title>DartStream - Professional Dart Live Streaming Tools</title>
-    <link rel="stylesheet" href="styles.css">
+    <script src="MPbrowser-detect.js"></script>
+    <link rel="stylesheet" href="MPstyles.css">
 </head>
 <body>
     
@@ -295,6 +300,7 @@
                         class="player-input" 
                         placeholder="First Name"
                         autocomplete="off"
+                        autocapitalize="words"
                         inputmode="text">
                     <input 
                         type="text" 
@@ -302,10 +308,11 @@
                         class="player-input" 
                         placeholder="Last Name"
                         autocomplete="off"
+                        autocapitalize="words"
                         inputmode="text">
                     
                     <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Nationality</label>
-                    <select id="new-player-nationality" class="player-input" style="margin-bottom: 15px;" aria-label="Select player nationality">
+                    <select id="new-player-nationality" class="player-input" style="margin-bottom: 15px;">
                         <option value="">Select Nationality</option>
                         <option value="flags/Flag_of_Canada-512x256.png">Canada</option>
                         <option value="flags/Flag_of_United_States-512x269.png">United States</option>
@@ -342,6 +349,7 @@
                         class="player-input" 
                         placeholder="First Name"
                         autocomplete="off"
+                        autocapitalize="words"
                         inputmode="text">
                     <input 
                         type="text" 
@@ -349,6 +357,7 @@
                         class="player-input" 
                         placeholder="Last Name"
                         autocomplete="off"
+                        autocapitalize="words"
                         inputmode="text">
                     
                     <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Player ID</label>
@@ -372,7 +381,7 @@
                         style="margin-bottom: 15px;">
                     
                     <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Nationality</label>
-                    <select id="edit-player-nationality" class="player-input" style="margin-bottom: 15px;" aria-label="Select player nationality">
+                    <select id="edit-player-nationality" class="player-input" style="margin-bottom: 15px;">
                         <option value="">Select Nationality</option>
                         <option value="flags/Flag_of_Canada-512x256.png">Canada</option>
                         <option value="flags/Flag_of_United_States-512x269.png">United States</option>
@@ -645,13 +654,13 @@
             <h2 class="modal-title">How many darts to finish?</h2>
             <div class="finish-darts-buttons">
                 <button class="finish-dart-btn" data-darts="1">
-                    <img src="button 1.png" alt="1 Dart">
+                    <img src="MPbutton 1.png" alt="1 Dart">
                 </button>
                 <button class="finish-dart-btn" data-darts="2">
-                    <img src="button 2.png" alt="2 Darts">
+                    <img src="MPbutton 2.png" alt="2 Darts">
                 </button>
                 <button class="finish-dart-btn" data-darts="3">
-                    <img src="button 3.png" alt="3 Darts">
+                    <img src="MPbutton 3.png" alt="3 Darts">
                 </button>
             </div>
         </div>
@@ -687,7 +696,10 @@
                 </div>
             </div>
             <div class="set-complete-buttons">
-                <button class="set-btn yellow" id="discard-match-btn">Return to Main Menu</button>
+                <button class="set-btn green" id="save-match-btn" style="font-size: 18px; padding: 15px 30px;">End Match / Save Stats</button>
+            </div>
+            <div class="set-complete-buttons">
+                <button class="set-btn yellow" id="discard-match-btn">End Without Saving</button>
             </div>
         </div>
     </div>
@@ -752,7 +764,7 @@
 
     <!-- Load Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
+    <script src="MPsupabase-config.js"></script>
     <script type="module">
         // Import modules
         import { PlayerLibraryModule } from './player-library.js';
@@ -766,7 +778,7 @@
         PlayerLibraryModule.initialize();
         GameSetupModule.initialize();
     </script>
-    <script src="scoring-app.js"></script>
-    <script src="app.js"></script>
+    <script src="MPscoring-app.js"></script>
+    <script src="MPapp.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 // Game State
 const gameState = {
-    currentScreen: 'player-selection-screen',
+    currentScreen: 'starting-player-screen',
     gameMode: null,
     matchActive: false, // Track if match is in progress
     players: {
@@ -150,87 +150,10 @@ function clearSavedGameState() {
     console.log('🗑️ Cleared saved match');
 }
 
-// Initialize default player library
+// Initialize default player library - DISABLED
 async function initializePlayerLibrary() {
-    console.log('Starting player library initialization...');
-    
-    // First, try to load from localStorage for instant display
-    const cachedPlayers = localStorage.getItem('playerLibrary');
-    if (cachedPlayers) {
-        try {
-            gameState.playerLibrary = JSON.parse(cachedPlayers);
-            console.log('Loaded players from localStorage:', gameState.playerLibrary.length);
-        } catch (error) {
-            console.error('Error parsing cached players:', error);
-            gameState.playerLibrary = [];
-        }
-    }
-    
-    // Then sync with Supabase in the background
-    try {
-        console.log('Fetching players from Supabase...');
-        const players = await PlayerDB.getAllPlayers();
-        console.log('Players fetched from Supabase:', players);
-        
-        if (players.length > 0) {
-            gameState.playerLibrary = players;
-            // Save to localStorage
-            localStorage.setItem('playerLibrary', JSON.stringify(players));
-            console.log('Synced players with Supabase:', players.length);
-        } else {
-            console.log('No players in database, adding defaults...');
-            // If no players in database, add default players
-            const defaultPlayers = [
-                { firstName: 'Aubrey', lastName: 'Holland' },
-                { firstName: 'Beth', lastName: 'Beniot' },
-                { firstName: 'Bill', lastName: 'Ferris' },
-                { firstName: 'Cecil', lastName: 'Dow' },
-                { firstName: 'Chief', lastName: 'saulnier' },
-                { firstName: 'Chris', lastName: 'Ross' },
-                { firstName: 'Cindy', lastName: 'Smith' },
-                { firstName: 'Connie', lastName: 'Dow' },
-                { firstName: 'Corey', lastName: 'Obrien' },
-                { firstName: 'Cory', lastName: 'Wallace' },
-                { firstName: 'Currie', lastName: 'Matheson' },
-                { firstName: 'Dan', lastName: 'B' },
-                { firstName: 'Dave', lastName: 'Cormier' },
-                { firstName: 'Dave', lastName: 'Pepperdean' },
-                { firstName: 'Dawn', lastName: 'Leblanc' },
-                { firstName: 'Dee', lastName: 'Cormier' },
-                { firstName: 'Denis', lastName: 'Cormier' },
-                { firstName: 'Denis', lastName: 'Leblanc' },
-                { firstName: 'Don', lastName: ',' },
-                { firstName: 'Eddie', lastName: 'Trevors' },
-                { firstName: 'Emma', lastName: 'B' },
-                { firstName: 'Eugene', lastName: 'I' },
-                { firstName: 'Fred', lastName: 'D' },
-                { firstName: 'Gerry', lastName: 'Johnston' }
-            ];
-            
-            // Add default players to database
-            for (const player of defaultPlayers) {
-                try {
-                    await PlayerDB.addPlayer(player.firstName, player.lastName);
-                } catch (error) {
-                    console.error('Error adding default player:', error);
-                }
-            }
-            
-            // Reload from database and save to localStorage
-            const freshPlayers = await PlayerDB.getAllPlayers();
-            gameState.playerLibrary = freshPlayers;
-            localStorage.setItem('playerLibrary', JSON.stringify(freshPlayers));
-            console.log('Added default players, total:', freshPlayers.length);
-        }
-    } catch (error) {
-        console.error('Error syncing with Supabase:', error);
-        // If Supabase fails and we have no cached data, use empty array
-        if (!cachedPlayers) {
-            gameState.playerLibrary = [];
-        }
-    }
-    
-    console.log('Player library initialized. Total players:', gameState.playerLibrary.length);
+    // Player library functionality removed
+    gameState.playerLibrary = [];
 }
 
 // Screen Navigation
@@ -990,6 +913,12 @@ document.getElementById('start-player1').addEventListener('click', function() {
     // Highlight player 1's score box
     document.querySelector('.player-header.left').classList.add('active');
     document.querySelector('.player-header.right').classList.remove('active');
+    
+    // Sync game start for multiplayer
+    if (window.GameStateSync && window.GameStateSync.syncGameState) {
+        window.GameStateSync.syncGameState(gameState);
+    }
+    
     startGame();
 });
 
@@ -1005,6 +934,12 @@ document.getElementById('start-player2').addEventListener('click', function() {
     // Highlight player 2's score box
     document.querySelector('.player-header.right').classList.add('active');
     document.querySelector('.player-header.left').classList.remove('active');
+    
+    // Sync game start for multiplayer
+    if (window.GameStateSync && window.GameStateSync.syncGameState) {
+        window.GameStateSync.syncGameState(gameState);
+    }
+    
     startGame();
 });
 
@@ -1434,7 +1369,7 @@ document.getElementById('custom-game-link').addEventListener('click', function()
 });
 
 // Back to Players button on game screen - with forfeit logic
-document.getElementById('back-to-players').addEventListener('click', function() {
+document.getElementById('back-to-players')?.addEventListener('click', function() {
     showForfeitModal();
 });
 
@@ -2303,6 +2238,11 @@ function addDigit(digit) {
     if (gameState.isEditMode && gameState.currentInput === gameState.editModeOriginalScore.toString()) {
         gameState.currentInput = digit;
         updateGameScreen();
+        
+        // Sync for real-time display
+        if (window.GameStateSync && window.GameStateSync.syncGameState) {
+            window.GameStateSync.syncGameState(gameState);
+        }
         return;
     }
     
@@ -2315,6 +2255,11 @@ function addDigit(digit) {
         if (isValidDartScore(potentialValue)) {
             gameState.currentInput = potentialInput;
             updateGameScreen();
+            
+            // Sync for real-time display
+            if (window.GameStateSync && window.GameStateSync.syncGameState) {
+                window.GameStateSync.syncGameState(gameState);
+            }
         }
         // If adding this digit would create an invalid score, ignore it
     }
@@ -2331,6 +2276,11 @@ function addScore(score) {
     
     // Update display to show provisional score
     updateGameScreen();
+    
+    // Sync for real-time display
+    if (window.GameStateSync && window.GameStateSync.syncGameState) {
+        window.GameStateSync.syncGameState(gameState);
+    }
 }
 
 function confirmScore() {
@@ -2515,8 +2465,13 @@ function getMinimumDartsToFinish(score) {
         return 1;
     }
     
-    // Can finish in 2 darts: Any checkout from 41-110 that's possible
-    // Common 2-dart finishes include most scores in this range
+    // Can finish in 2 darts: Any checkout from 3-110 that's possible
+    // Odd numbers 3-40 can be finished in 2 darts
+    if (score >= 3 && score <= 40 && score % 2 !== 0) {
+        return 2;
+    }
+    
+    // Common 2-dart finishes include most scores 41-110
     if (score >= 41 && score <= 110) {
         // Impossible 2-dart finishes in this range
         const impossible2Dart = [99, 103, 105, 107, 109];
@@ -2740,6 +2695,11 @@ function submitTurn() {
     // Sync BEFORE switching - shows score with current player still active
     if (window.GameStateSync && window.GameStateSync.syncGameState) {
         window.GameStateSync.syncGameState(gameState);
+    }
+    
+    // Release multiplayer control when submitting score
+    if (window.MultiplayerControl && window.MultiplayerControl.releaseControl) {
+        window.MultiplayerControl.releaseControl();
     }
     
     // Switch to next player
@@ -3520,64 +3480,15 @@ window.addEventListener('DOMContentLoaded', async function() {
     
     await initializePlayerLibrary();
     
-    // Check for saved game state
-    const savedState = restoreGameState();
-    if (savedState) {
-        const timeSaved = new Date(savedState.timestamp || Date.now()).toLocaleTimeString();
-        const shouldRestore = confirm(
-            `Found a saved match from ${timeSaved}.\n\n` +
-            `${savedState.players.player1.name} (${savedState.players.player1.score}) vs ${savedState.players.player2.name} (${savedState.players.player2.score})\n` +
-            `Legs: ${savedState.players.player1.legWins} - ${savedState.players.player2.legWins}\n` +
-            `Sets: ${savedState.players.player1.setWins} - ${savedState.players.player2.setWins}\n\n` +
-            `Would you like to continue this match?`
-        );
-
-        if (shouldRestore) {
-            console.log('📂 Restoring saved match');
-            
-            // Restore all game state (except playerLibrary which we already loaded)
-            Object.assign(gameState, savedState);
-            gameState.matchActive = true;
-            
-            // Get or create connection code for Supabase sync
-            if (window.GameStateSync) {
-                // This will reuse existing session code or create new one
-                const connectionCode = window.GameStateSync.startNewMatch();
-                
-                // Update all connection code displays
-                const codeDisplay1 = document.getElementById('connection-code-display');
-                const codeDisplay2 = document.getElementById('connection-code-display-2');
-                const codeDisplay3 = document.getElementById('connection-code-display-3');
-                const codeDisplayGameType = document.getElementById('connection-code-display-game-type');
-                
-                if (codeDisplay1) codeDisplay1.textContent = connectionCode;
-                if (codeDisplay2) codeDisplay2.textContent = connectionCode;
-                if (codeDisplay3) codeDisplay3.textContent = connectionCode;
-                if (codeDisplayGameType) codeDisplayGameType.textContent = connectionCode;
-                
-                // Sync the restored state to Supabase
-                window.GameStateSync.syncGameState(gameState);
-                
-                console.log('🔗 Reconnected to scoreboard with code:', connectionCode);
-            }
-            
-            // Show the game screen directly
-            showScreen('game-screen');
-            updateGameScreen();
-            updateActionButtonText();
-            
-            // Initialize event handlers (same as normal game flow)
-            initializeEventHandlers();
-            
-            return; // Skip normal initialization
-        } else {
-            // User declined, clear the saved state
-            clearSavedGameState();
-        }
-    }
+    // Clear any saved game state (removed restore prompt)
+    clearSavedGameState();
     
-    renderPlayerSelectionLists();
-    showScreen('player-selection-screen');
+    // Skip renderPlayerSelectionLists since we removed player selection screen
+    // renderPlayerSelectionLists();
+    showScreen('starting-player-screen');
+    
+    // Update starting player screen with default player names
+    updateStartingPlayerScreen();
     
     // Initialize event handlers for normal game start
     initializeEventHandlers();
@@ -3847,6 +3758,10 @@ function initializeEventHandlers() {
     
     console.log('All scoring event handlers attached');
     console.log('Keyboard shortcuts enabled: 0-9 for numbers, Enter to submit, Backspace to undo');
+    
+    // Expose functions for multiplayer control
+    window.updateGameUI = updateGameScreen;
+    window.showScreen = showScreen;
     
     // Start heartbeat to keep match visible in Match Central
     // Send heartbeat every 1 minute when game is active

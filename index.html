@@ -456,7 +456,7 @@
                 <p class="future-badge">🔔 Track your progress across all matches</p>
             </a>
 
-            <a href="play-online.html" class="app-card" id="play-online-card" style="display: none;">
+            <a href="#" class="app-card" id="videostream-card" style="display: none;" onclick="startVideoStreamMatch(); return false;">
                 <div class="app-icon">🎥</div>
                 <h2>VideoStream</h2>
                 <p>Play online with video calling - split screen scoring and live video chat</p>
@@ -508,35 +508,35 @@
                     document.getElementById('user-name').textContent = userName;
                     
                     const myStatsCard = document.getElementById('my-stats-card');
-                    const playOnlineCard = document.getElementById('play-online-card');
+                    const videostreamCard = document.getElementById('videostream-card');
                     
                     console.log('My Stats card element:', myStatsCard);
-                    console.log('Play Online card element:', playOnlineCard);
+                    console.log('VideoStream card element:', videostreamCard);
                     
                     if (myStatsCard) {
                         myStatsCard.style.display = 'block';
                         console.log('My Stats card display set to block');
                     }
-                    if (playOnlineCard) {
-                        playOnlineCard.style.display = 'block';
-                        console.log('Play Online card display set to block');
+                    if (videostreamCard) {
+                        videostreamCard.style.display = 'block';
+                        console.log('VideoStream card display set to block');
                     } else {
-                        console.error('Play Online card element NOT FOUND!');
+                        console.error('VideoStream card element NOT FOUND!');
                     }
                     
-                    console.log('Logged in - showing Play Online card');
+                    console.log('Logged in - showing VideoStream card');
                 } else {
                     // User is logged out
                     document.getElementById('logged-out-buttons').style.display = 'flex';
                     document.getElementById('logged-in-section').style.display = 'none';
                     
                     const myStatsCard = document.getElementById('my-stats-card');
-                    const playOnlineCard = document.getElementById('play-online-card');
+                    const videostreamCard = document.getElementById('videostream-card');
                     
                     if (myStatsCard) myStatsCard.style.display = 'none';
-                    if (playOnlineCard) playOnlineCard.style.display = 'none';
+                    if (videostreamCard) videostreamCard.style.display = 'none';
                     
-                    console.log('Logged out - hiding Play Online card');
+                    console.log('Logged out - hiding VideoStream card');
                 }
             } catch (error) {
                 console.error('Error checking auth state:', error);
@@ -545,10 +545,10 @@
                 document.getElementById('logged-in-section').style.display = 'none';
                 
                 const myStatsCard = document.getElementById('my-stats-card');
-                const playOnlineCard = document.getElementById('play-online-card');
+                const videostreamCard = document.getElementById('videostream-card');
                 
                 if (myStatsCard) myStatsCard.style.display = 'none';
-                if (playOnlineCard) playOnlineCard.style.display = 'none';
+                if (videostreamCard) videostreamCard.style.display = 'none';
             }
         }
         
@@ -563,6 +563,60 @@
                 alert('Error signing out. Please try again.');
             }
         });
+        
+        // VideoStream match starter
+        async function startVideoStreamMatch() {
+            try {
+                const supabase = getSupabaseClient();
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    alert('Please log in first');
+                    return;
+                }
+                
+                // Get user's player card
+                const { data: playerData } = await supabase
+                    .from('player_accounts')
+                    .select('account_linked_player_id, first_name, last_name')
+                    .eq('user_id', user.id)
+                    .single();
+                
+                if (!playerData) {
+                    alert('Player account not found. Please create a player card first.');
+                    return;
+                }
+                
+                const playerName = `${playerData.first_name} ${playerData.last_name}`;
+                
+                // Generate random room code
+                const roomCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+                
+                // Create room in database
+                const { error: roomError } = await supabase
+                    .from('game_rooms')
+                    .insert({
+                        room_code: roomCode,
+                        host_user_id: user.id,
+                        host_name: playerName,
+                        status: 'waiting',
+                        created_at: new Date().toISOString()
+                    });
+                
+                if (roomError) {
+                    console.error('Room creation error:', roomError);
+                    alert('Failed to create room');
+                    return;
+                }
+                
+                // Redirect to VideoStreamscoringapp as host
+                window.location.href = `VideoStreamscoringapp.html?room=${roomCode}&host=true&player=${encodeURIComponent(playerName)}`;
+                
+            } catch (error) {
+                console.error('Error starting VideoStream match:', error);
+                alert('Error starting match. Please try again.');
+            }
+        }
         
         // Check auth state on page load
         checkAuthState();

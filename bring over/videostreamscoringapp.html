@@ -3,8 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="DartStream Scoring App">
+    <meta name="apple-mobile-web-app-title" content="DartStream Scoring App">
     <link rel="icon" type="image/png" href="dartstream-logo.png">
+    <link rel="apple-touch-icon" href="dartstream-logo.png">
+    <link rel="manifest" href="manifest-scoring.json">
     <title>DartStream - Professional Dart Live Streaming Tools</title>
+    <script src="browser-detect.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -59,11 +67,6 @@
                     </button>
                 </div>
                 <button class="back-btn" id="back-from-game-type">Back to Starting Player</button>
-            </div>
-            
-            <div class="bottom-bar-dark">
-                <button class="bottom-btn-dark green" id="select-players-game-type-btn">Select Players</button>
-                <div class="bottom-btn-dark gold connection-code-display" id="connection-code-display-game-type" style="cursor: pointer; font-size: clamp(18px, 4vw, 24px); font-weight: bold; letter-spacing: 4px;" title="Click to copy">----</div>
             </div>
         </div>
 
@@ -202,199 +205,6 @@
             </div>
         </div>
 
-        <!-- Player Selection Screen -->
-        <div id="player-selection-screen" class="screen active">
-            <div class="game-header">
-                <h2 class="set-score">Set <span class="score-display" id="player-select-set-score">0 - 0</span> | Leg <span class="score-display" id="player-select-leg-score">0 - 0</span></h2>
-            </div>
-            
-            <div class="player-names-bar">
-                <div class="player-name left" id="player1-name-display">Home</div>
-                <div class="match-format">Singles</div>
-                <div class="player-name right" id="player2-name-display">Away</div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="action-btn green" id="start-game-btn">Start Game</button>
-            </div>
-
-            <div class="action-buttons">
-                <button class="action-btn gold" id="reset-picks-left">Reset Picks</button>
-                <button class="action-btn" id="manage-library">Manage Player Library</button>
-                <button class="action-btn gold" id="reset-picks-right">Reset Picks</button>
-            </div>
-            
-            <div class="action-buttons">
-                <button class="action-btn red" id="exit-to-index" onclick="window.location.href='index.html'">Exit to Main Menu</button>
-            </div>
-
-            <div class="opponent-selection">
-                <div class="opponent-column">
-                    <h3>Left Opponent</h3>
-                    <div class="selected-player-display" id="left-selected-display">Select player from list below</div>
-                    <div class="player-list" id="left-player-list"></div>
-                </div>
-
-                <div class="alphabet-nav">
-                    <!-- Gray separator bar -->
-                </div>
-
-                <div class="opponent-column">
-                    <h3>Right Opponent</h3>
-                    <div class="selected-player-display" id="right-selected-display">Select player from list below</div>
-                    <div class="player-list" id="right-player-list"></div>
-                </div>
-            </div>
-
-            <div class="bottom-bar" style="display: none;">
-                <button class="bottom-btn green" id="select-players-btn">Select Players</button>
-            </div>
-
-            <div class="match-info-bar">
-                <div class="match-avg">0 / 0.0<br>Match</div>
-                <div class="set-display">S1</div>
-                <div class="set-score-big" id="player-select-set-score-big">0 - 0</div>
-                <div class="legs-format">(3)</div>
-                <div class="match-avg">0 / 0.0<br>Match</div>
-            </div>
-        </div>
-
-        <!-- Player Library Modal -->
-        <div id="player-library-modal" class="modal">
-            <div class="modal-dialog">
-                <div class="modal-header">
-                    <h2>Player Library</h2>
-                    <button class="close-modal">✕</button>
-                </div>
-                <div class="library-actions">
-                    <button class="lib-btn">Reset</button>
-                    <button class="lib-btn">New</button>
-                    <button class="lib-btn">Edit</button>
-                    <button class="lib-btn">Delete</button>
-                </div>
-                <div class="player-grid" id="player-grid"></div>
-                <div class="library-footer">
-                    <button class="lib-footer-btn">Backup Library</button>
-                    <button id="library-continue-btn" class="lib-footer-btn green">Continue</button>
-                    <button class="lib-footer-btn gold">Download Library</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add New Player Modal -->
-        <div id="add-player-modal" class="modal">
-            <div class="modal-dialog small-dialog">
-                <div class="modal-header">
-                    <h2>Player Details</h2>
-                    <button class="close-modal" id="close-add-player">✕</button>
-                </div>
-                <div class="modal-content">
-                    <input 
-                        type="text" 
-                        id="new-player-firstname" 
-                        class="player-input" 
-                        placeholder="First Name"
-                        autocomplete="off"
-                        inputmode="text">
-                    <input 
-                        type="text" 
-                        id="new-player-lastname" 
-                        class="player-input" 
-                        placeholder="Last Name"
-                        autocomplete="off"
-                        inputmode="text">
-                    
-                    <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Nationality</label>
-                    <select id="new-player-nationality" class="player-input" style="margin-bottom: 15px;" aria-label="Select player nationality">
-                        <option value="">Select Nationality</option>
-                        <option value="flags/Flag_of_Canada-512x256.png">Canada</option>
-                        <option value="flags/Flag_of_United_States-512x269.png">United States</option>
-                        <option value="flags/Flag_of_England-512x307.png">England</option>
-                        <option value="flags/Flag_of_United_Kingdom-512x256.png">United Kingdom</option>
-                        <option value="flags/Flag_of_Wales-512x307.png">Wales</option>
-                        <option value="flags/Flag_of_Scotland-512x307.png">Scotland</option>
-                        <option value="flags/Flag_of_Philippines-512x256.png">Philippines</option>
-                        <option value="flags/Flag_of_France-512x341.png">France</option>
-                        <option value="flags/Flag_of_Germany-512x307.png">Germany</option>
-                        <option value="flags/Flag_of_Norway-512x371.png">Norway</option>
-                        <option value="flags/Flag_of_Sweden-512x318.png">Sweden</option>
-                        <option value="flags/Flag_of_Russia-512x341.png">Russia</option>
-                        <option value="flags/Flag_of_South_Korea-512x341.png">South Korea</option>
-                    </select>
-                    
-                    <button class="continue-btn green" id="add-player-submit">Add Player</button>
-                    <button class="continue-btn red" id="add-player-cancel">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Edit Player Modal -->
-        <div id="edit-player-modal" class="modal">
-            <div class="modal-dialog small-dialog">
-                <div class="modal-header">
-                    <h2>Edit Player Details</h2>
-                    <button class="close-modal" id="close-edit-player">✕</button>
-                </div>
-                <div class="modal-content">
-                    <input 
-                        type="text" 
-                        id="edit-player-firstname" 
-                        class="player-input" 
-                        placeholder="First Name"
-                        autocomplete="off"
-                        inputmode="text">
-                    <input 
-                        type="text" 
-                        id="edit-player-lastname" 
-                        class="player-input" 
-                        placeholder="Last Name"
-                        autocomplete="off"
-                        inputmode="text">
-                    
-                    <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Player ID</label>
-                    <input 
-                        type="text" 
-                        id="edit-player-id" 
-                        class="player-input" 
-                        placeholder="Player ID"
-                        autocomplete="off"
-                        inputmode="text"
-                        style="margin-bottom: 15px;">
-                    
-                    <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Email Address (for stats linking)</label>
-                    <input 
-                        type="email" 
-                        id="edit-player-email" 
-                        class="player-input" 
-                        placeholder="Email Address"
-                        autocomplete="off"
-                        inputmode="email"
-                        style="margin-bottom: 15px;">
-                    
-                    <label style="color: white; font-size: 14px; margin-top: 10px; display: block;">Nationality</label>
-                    <select id="edit-player-nationality" class="player-input" style="margin-bottom: 15px;" aria-label="Select player nationality">
-                        <option value="">Select Nationality</option>
-                        <option value="flags/Flag_of_Canada-512x256.png">Canada</option>
-                        <option value="flags/Flag_of_United_States-512x269.png">United States</option>
-                        <option value="flags/Flag_of_England-512x307.png">England</option>
-                        <option value="flags/Flag_of_United_Kingdom-512x256.png">United Kingdom</option>
-                        <option value="flags/Flag_of_Wales-512x307.png">Wales</option>
-                        <option value="flags/Flag_of_Scotland-512x307.png">Scotland</option>
-                        <option value="flags/Flag_of_Philippines-512x256.png">Philippines</option>
-                        <option value="flags/Flag_of_France-512x341.png">France</option>
-                        <option value="flags/Flag_of_Germany-512x307.png">Germany</option>
-                        <option value="flags/Flag_of_Norway-512x371.png">Norway</option>
-                        <option value="flags/Flag_of_Sweden-512x318.png">Sweden</option>
-                        <option value="flags/Flag_of_Russia-512x341.png">Russia</option>
-                        <option value="flags/Flag_of_South_Korea-512x341.png">South Korea</option>
-                    </select>
-                    
-                    <button class="continue-btn green" id="edit-player-submit">Update Player</button>
-                    <button class="continue-btn red" id="edit-player-cancel">Cancel</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Match Settings Modal -->
         <div id="match-settings-modal" class="modal">
             <div class="modal-dialog">
@@ -484,7 +294,6 @@
 
             <div class="bottom-bar">
                 <button class="bottom-btn green" id="select-players-btn2">Select Players</button>
-                <div class="bottom-btn gold" id="connection-code-display" style="cursor: default; font-size: clamp(18px, 4vw, 24px); font-weight: bold; letter-spacing: 4px;">----</div>
             </div>
 
             <div class="match-info-bar">
@@ -497,7 +306,7 @@
         </div>
 
         <!-- Starting Player Selection Screen -->
-        <div id="starting-player-screen" class="screen">
+        <div id="starting-player-screen" class="screen active">
             <div class="scoreboard-header">
                 <div class="player-header left">
                     <div class="player-name-large" id="starting-player1-name-top">Matthew Dow</div>
@@ -539,22 +348,6 @@
             <div class="bottom-bar">
                 <h2 class="set-score-bottom">Set <span class="score-display">0 - 0</span> | Leg <span class="score-display">0 - 0</span></h2>
             </div>
-
-            <div class="bottom-bar-dark">
-                <button class="bottom-btn-dark green" id="select-players-starting-screen-btn">Select Players</button>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="bottom-btn-dark gold" id="connection-code-display-2" style="cursor: default; font-size: clamp(18px, 4vw, 24px); font-weight: bold; letter-spacing: 4px;">----</div>
-                    <button class="bottom-btn-dark" id="generate-new-code-btn" style="padding: 8px 16px; font-size: clamp(12px, 2.5vw, 16px); background: #4a5f7a;">🔄 New Code</button>
-                </div>
-            </div>
-
-            <div class="match-info-bar">
-                <div class="match-avg">0 / 0.0<br>Match</div>
-                <div class="set-display">S1</div>
-                <div class="set-score-big yellow">0 - 0</div>
-                <div class="legs-format">(3)</div>
-                <div class="match-avg">0 / 0.0<br>Match</div>
-            </div>
         </div>
 
         <!-- Main Game Screen -->
@@ -587,9 +380,7 @@
             </div>
 
             <div class="control-bar">
-                <button class="control-btn" id="back-to-players">Back to Main Menu</button>
-                <h2 class="set-score-inline">Set <span class="score-display" id="set-score-display">0 - 0</span> | Leg <span class="score-display" id="leg-score-display">0 - 0</span></h2>
-                <div class="control-btn gold" id="connection-code-display-3" style="cursor: default; font-size: clamp(18px, 3vw, 20px); font-weight: bold; letter-spacing: 3px;">----</div>
+                <h2 class="set-score-inline" style="width: 100%; text-align: center;">Set <span class="score-display" id="set-score-display">0 - 0</span> | Leg <span class="score-display" id="leg-score-display">0 - 0</span></h2>
             </div>
 
             <div class="scoring-area">
@@ -739,34 +530,16 @@
             </div>
             <h3 class="next-set-text" id="next-set-text">Next Set: Play 501 SIDO Again</h3>
             <div class="set-complete-buttons">
-                <button class="set-btn yellow" id="change-players-btn">Change Players</button>
                 <button class="set-btn green" id="next-set-btn">Next Set</button>
                 <button class="set-btn yellow" id="change-game-btn">Change Game</button>
             </div>
             <div class="set-complete-buttons">
-                <button class="set-btn gray" id="edit-match-settings-btn">Edit Match Settings</button>
-                <button class="set-btn green" id="end-match-btn">End Match / Save Stats</button>
+                <button class="set-btn yellow" id="edit-match-settings-btn">Back to Starting Player</button>
+                <button class="set-btn red" id="end-match-btn">End Match</button>
             </div>
         </div>
     </div>
 
-    <!-- Load Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script type="module">
-        // Import modules
-        import { PlayerLibraryModule } from './player-library.js';
-        import { GameSetupModule } from './game-setup.js';
-        
-        // Make them globally available
-        window.PlayerLibraryModule = PlayerLibraryModule;
-        window.GameSetupModule = GameSetupModule;
-        
-        // Initialize modules
-        PlayerLibraryModule.initialize();
-        GameSetupModule.initialize();
-    </script>
-    <script src="scoring-app.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

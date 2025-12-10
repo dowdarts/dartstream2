@@ -1503,6 +1503,111 @@ document.getElementById('cancel-forfeit-btn').addEventListener('click', function
     document.getElementById('forfeit-modal').style.display = 'none';
 });
 
+// Helper function to save match stats
+async function saveCurrentMatchStats(winnerNum) {
+    try {
+        console.log('Saving match stats, winner:', winnerNum);
+        
+        const p1 = gameState.players.player1;
+        const p2 = gameState.players.player2;
+        
+        // Get player library IDs from PlayerDB
+        const players = await window.PlayerDB.getAllPlayers();
+        
+        // Find players by name match (firstName + lastName)
+        const player1Data = players.find(p => `${p.firstName} ${p.lastName}` === p1.name);
+        const player2Data = players.find(p => `${p.firstName} ${p.lastName}` === p2.name);
+        
+        if (!player1Data || !player2Data) {
+            console.log('Players not found in library');
+            alert('Match ended! (Stats not saved - players not found in library)');
+            return false;
+        }
+        
+        // Check if players have linked accounts
+        if (!player1Data.account_linked_player_id && !player2Data.account_linked_player_id) {
+            console.log('No linked accounts found');
+            alert('Match ended! (No player accounts linked for stats tracking)');
+            return false;
+        }
+        
+        const matchId = `match_${Date.now()}`;
+        const matchDate = new Date().toISOString();
+        const allLegs = window.ScoringApp?.gameState?.allLegs || [];
+        
+        const savePromises = [];
+        
+        if (player1Data.account_linked_player_id) {
+            const p1MatchData = {
+                match_id: matchId,
+                player_library_id: player1Data.id,
+                opponent_name: p2.name,
+                match_date: matchDate,
+                won: winnerNum === 1,
+                legs_won: p1.legWins,
+                legs_lost: p2.legWins,
+                sets_won: p1.setWins,
+                sets_lost: p2.setWins,
+                total_darts_thrown: p1.matchDarts,
+                total_score: p1.matchScore,
+                average_3dart: p1.matchAvg,
+                first_9_average: 0,
+                highest_checkout: 0,
+                checkout_percentage: 0,
+                count_180s: p1.achievements.count_180s || 0,
+                count_171s: p1.achievements.count_171s || 0,
+                count_95s: p1.achievements.count_95s || 0,
+                count_100_plus: p1.achievements.count_100_plus || 0,
+                count_120_plus: p1.achievements.count_120_plus || 0,
+                count_140_plus: p1.achievements.count_140_plus || 0,
+                count_160_plus: p1.achievements.count_160_plus || 0,
+                leg_scores: allLegs,
+                checkout_history: []
+            };
+            savePromises.push(window.PlayerDB.recordMatchStats(p1MatchData));
+        }
+        
+        if (player2Data.account_linked_player_id) {
+            const p2MatchData = {
+                match_id: matchId,
+                player_library_id: player2Data.id,
+                opponent_name: p1.name,
+                match_date: matchDate,
+                won: winnerNum === 2,
+                legs_won: p2.legWins,
+                legs_lost: p1.legWins,
+                sets_won: p2.setWins,
+                sets_lost: p1.setWins,
+                total_darts_thrown: p2.matchDarts,
+                total_score: p2.matchScore,
+                average_3dart: p2.matchAvg,
+                first_9_average: 0,
+                highest_checkout: 0,
+                checkout_percentage: 0,
+                count_180s: p2.achievements.count_180s || 0,
+                count_171s: p2.achievements.count_171s || 0,
+                count_95s: p2.achievements.count_95s || 0,
+                count_100_plus: p2.achievements.count_100_plus || 0,
+                count_120_plus: p2.achievements.count_120_plus || 0,
+                count_140_plus: p2.achievements.count_140_plus || 0,
+                count_160_plus: p2.achievements.count_160_plus || 0,
+                leg_scores: allLegs,
+                checkout_history: []
+            };
+            savePromises.push(window.PlayerDB.recordMatchStats(p2MatchData));
+        }
+        
+        await Promise.all(savePromises);
+        alert('Match stats saved successfully!');
+        return true;
+        
+    } catch (error) {
+        console.error('Error saving match stats:', error);
+        alert('Error saving match stats.');
+        return false;
+    }
+}
+
 function handleForfeit(winner) {
     const p1 = gameState.players.player1;
     const p2 = gameState.players.player2;
@@ -1580,6 +1685,35 @@ function showMatchCompleteAfterForfeit(winner, isDraw) {
             Average: ${p2.matchAvg.toFixed(2)}<br>
             Darts: ${p2.matchDarts}
         `;
+    }
+    
+    // Attach save/discard button handlers
+    const saveBtn = document.getElementById('save-match-btn');
+    const discardBtn = document.getElementById('discard-match-btn');
+    
+    console.log('Setting up forfeit button handlers:', saveBtn, discardBtn);
+    
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            console.log('Save forfeit match clicked!');
+            const winnerNum = winner === 'player1' ? 1 : (winner === 'player2' ? 2 : null);
+            if (winnerNum) {
+                await saveCurrentMatchStats(winnerNum);
+            } else {
+                console.log('Cannot save draw match stats');
+                alert('Match ended in a draw (stats not saved)');
+            }
+            modal.style.display = 'none';
+            showScreen('game-mode-screen');
+        };
+    }
+    
+    if (discardBtn) {
+        discardBtn.onclick = () => {
+            console.log('Discard forfeit match clicked!');
+            modal.style.display = 'none';
+            showScreen('game-mode-screen');
+        };
     }
     
     modal.style.display = 'flex';
@@ -1674,6 +1808,13 @@ function applyEditedScore() {
     
     exitEditMode();
     updateGameScreen();
+    
+    // Check if the edited score resulted in a win (score = 0)
+    if (player.score === 0) {
+        // Set current player to the winning player before calling handleLegWin
+        gameState.currentPlayer = gameState.editModePlayer;
+        handleLegWin();
+    }
 }
 
 function deleteTurnFromHistory(player, turnIndex) {
