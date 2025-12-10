@@ -92,6 +92,12 @@ const OnlineScoringApp = {
         document.getElementById('room-code-banner').style.display = 'block';
         document.getElementById('room-code-display').textContent = this.roomCode;
         
+        // Clear score history on initialization
+        const scoreHistory = document.getElementById('score-history');
+        if (scoreHistory) {
+            scoreHistory.innerHTML = '';
+        }
+        
         // Setup Realtime connection
         this.setupRealtimeChannel();
         
@@ -487,6 +493,12 @@ const OnlineScoringApp = {
         this.gameState.dartsThrown = 0;
         this.gameState.turnTotal = 0;
         
+        // Clear score history
+        const scoreHistory = document.getElementById('score-history');
+        if (scoreHistory) {
+            scoreHistory.innerHTML = '';
+        }
+        
         this.updateDisplay();
     },
     
@@ -540,6 +552,12 @@ const OnlineScoringApp = {
         // Store pre-turn score for next turn
         player.preTurnScore = player.score;
         
+        // Add to score history before switching
+        this.addScoreHistoryEntry(currentPlayerKey, this.gameState.turnTotal);
+        
+        // Increment visit number
+        this.gameState.visitNumber++;
+        
         // Switch turns
         this.gameState.currentPlayer = this.gameState.currentPlayer === 1 ? 2 : 1;
         this.gameState.currentVisit = [];
@@ -553,6 +571,59 @@ const OnlineScoringApp = {
         // Update display and turn control
         this.updateDisplay();
         this.updateTurnControl();
+    },
+    
+    // Add score history entry
+    addScoreHistoryEntry(playerKey, turnTotal) {
+        const scoreHistory = document.getElementById('score-history');
+        if (!scoreHistory) return;
+        
+        const playerNumber = playerKey === 'player1' ? 1 : 2;
+        const playerName = this.gameState.players[playerKey].name;
+        
+        // Create score entry
+        const entry = document.createElement('div');
+        entry.className = 'score-entry';
+        entry.id = `visit-${this.gameState.visitNumber}`;
+        
+        // Left column (Player 1's score if they threw)
+        const leftCol = document.createElement('div');
+        leftCol.className = 'player-column';
+        if (playerNumber === 1) {
+            leftCol.innerHTML = `
+                <div class="player-name">${playerName}</div>
+                <div class="darts">${turnTotal}</div>
+            `;
+        }
+        
+        // Center column (visit number and arrow)
+        const centerCol = document.createElement('div');
+        centerCol.className = 'turn-info';
+        const arrow = playerNumber === 1 ? '←' : '→';
+        centerCol.innerHTML = `
+            <span class="turn-number">${this.gameState.visitNumber}</span>
+            <span class="turn-arrow">${arrow}</span>
+        `;
+        
+        // Right column (Player 2's score if they threw)
+        const rightCol = document.createElement('div');
+        rightCol.className = 'player-column';
+        if (playerNumber === 2) {
+            rightCol.innerHTML = `
+                <div class="player-name">${playerName}</div>
+                <div class="darts">${turnTotal}</div>
+            `;
+        }
+        
+        entry.appendChild(leftCol);
+        entry.appendChild(centerCol);
+        entry.appendChild(rightCol);
+        
+        // Add to history (at the top)
+        scoreHistory.insertBefore(entry, scoreHistory.firstChild);
+        
+        // Auto-scroll to show newest entry
+        scoreHistory.scrollTop = 0;
     },
     
     // Handle undo - delete last digit from input
