@@ -543,8 +543,18 @@ window.addEventListener('load', () => {
             if (debugStatus) debugStatus.textContent = 'Config received - initializing...';
             
             // Hide loading screen, show app
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
+            const loadingScreen = document.getElementById('loading-screen');
+            const app = document.getElementById('app');
+            if (loadingScreen) loadingScreen.style.display = 'none';
+            if (app) {
+                app.style.display = 'block';
+                app.style.height = '100vh';
+                app.style.width = '100%';
+            }
+            
+            // Show room code banner
+            const roomBanner = document.getElementById('room-code-banner');
+            if (roomBanner) roomBanner.style.display = 'block';
             
             OnlineScoringApp.initialize(event.data.config);
         }
