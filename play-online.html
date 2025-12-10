@@ -402,64 +402,6 @@
         </div>
     </div>
 
-    <!-- Game Configuration Screen (Host Only) -->
-    <div id="game-config-screen" class="setup-screen hidden">
-        <div class="setup-card" style="max-width: 700px;">
-            <h1>Configure Match</h1>
-            <p style="color: #94a3b8; margin-bottom: 30px;">Both players connected! Configure the match settings below.</p>
-            
-            <!-- Player Display -->
-            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-                <div style="flex: 1; background: #0f172a; border: 2px solid #3b82f6; border-radius: 12px; padding: 20px; text-align: center;">
-                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">HOST</div>
-                    <div id="host-player-name" style="color: #facc15; font-size: 1.5rem; font-weight: bold;">Loading...</div>
-                </div>
-                <div style="flex: 1; background: #0f172a; border: 2px solid #ef4444; border-radius: 12px; padding: 20px; text-align: center;">
-                    <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">GUEST</div>
-                    <div id="guest-player-name" style="color: #facc15; font-size: 1.5rem; font-weight: bold;">Loading...</div>
-                </div>
-            </div>
-
-            <!-- Game Type -->
-            <div style="margin-bottom: 20px; text-align: left;">
-                <label style="color: #94a3b8; display: block; margin-bottom: 8px; font-weight: bold;">Game Type</label>
-                <select id="online-game-type" style="width: 100%; padding: 12px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: white; font-size: 1rem;">
-                    <option value="301-sido">301 SIDO</option>
-                    <option value="301-dido">301 DIDO</option>
-                    <option value="501-sido" selected>501 SIDO</option>
-                    <option value="501-dido">501 DIDO</option>
-                </select>
-            </div>
-
-            <!-- Match Format -->
-            <div style="margin-bottom: 20px; text-align: left;">
-                <label style="color: #94a3b8; display: block; margin-bottom: 8px; font-weight: bold;">Match Format</label>
-                <select id="online-match-format" style="width: 100%; padding: 12px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: white; font-size: 1rem;">
-                    <option value="single-leg">Single Leg</option>
-                    <option value="best-of-3" selected>Best of 3 Legs</option>
-                    <option value="best-of-5">Best of 5 Legs</option>
-                    <option value="best-of-7">Best of 7 Legs</option>
-                    <option value="best-of-3-sets">Best of 3 Sets</option>
-                    <option value="best-of-5-sets">Best of 5 Sets</option>
-                </select>
-            </div>
-
-            <!-- Starting Player -->
-            <div style="margin-bottom: 30px; text-align: left;">
-                <label style="color: #94a3b8; display: block; margin-bottom: 8px; font-weight: bold;">Starting Player</label>
-                <select id="online-starting-player" style="width: 100%; padding: 12px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: white; font-size: 1rem;">
-                    <option value="host">Host Starts</option>
-                    <option value="guest">Guest Starts</option>
-                </select>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <button class="setup-btn" onclick="PlayOnline.cancelGameConfig()" style="flex: 1;">Cancel</button>
-                <button class="setup-btn host" onclick="PlayOnline.confirmGameConfig()" style="flex: 2;">Start Match</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Main VideoStream Interface -->
     <div id="videostream-container" class="videostream-container hidden">
         <!-- Left Panel: Scoring App -->

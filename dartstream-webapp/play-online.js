@@ -255,23 +255,65 @@ const PlayOnline = {
                 .channel(`room:${this.roomCode}`)
                 .subscribe();
 
-            this.startMatch();
+            // Guest: Immediately show split screen with waiting message
+            this.showGuestWaitingScreen();
         } catch (error) {
             console.error('Error joining room:', error);
             alert('Failed to join room. Please try again.');
         }
     },
 
+    // Show guest waiting screen (split screen with video + waiting message)
+    showGuestWaitingScreen() {
+        console.log('Guest: Showing split screen, waiting for host configuration...');
+        
+        // Hide setup, show main interface
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('videostream-container').classList.remove('hidden');
+
+        // Show waiting message in scoring iframe
+        const iframe = document.getElementById('scoring-iframe');
+        iframe.contentWindow.postMessage({
+            type: 'show-waiting',
+            roomCode: this.roomCode,
+            message: 'Host is preparing match...'
+        }, '*');
+
+        // Update connection status
+        this.updateConnectionStatus('Connected - Waiting for host', true);
+
+        // Listen for game updates (will receive config when host sends it)
+        this.listenForGameUpdates();
+    },
+
     // Show game configuration screen (Host only after both players connect)
     async showGameConfig() {
         console.log('Showing game configuration...');
         
-        // Hide setup, show config screen
+        // Hide setup screens
         document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('game-config-screen').classList.remove('hidden');
+        
+        // Show split screen for host too
+        document.getElementById('videostream-container').classList.remove('hidden');
 
-        // Fetch and display player names from their accounts
+        // Load the game setup interface in the iframe
         await this.loadPlayerNames();
+        
+        const iframe = document.getElementById('scoring-iframe');
+        iframe.contentWindow.postMessage({
+            type: 'show-setup',
+            roomCode: this.roomCode,
+            hostPlayerName: this.hostPlayerName,
+            guestPlayerName: this.guestPlayerName,
+            hostPlayerId: this.hostPlayerId,
+            guestPlayerId: this.guestPlayerId
+        }, '*');
+
+        // Update connection status
+        this.updateConnectionStatus('Connected - Configure match', true);
+
+        // Listen for setup completion from iframe
+        this.listenForGameUpdates();
     },
 
     // Load player names from player_accounts table
@@ -703,7 +745,27 @@ const PlayOnline = {
     listenForGameUpdates() {
         // Listen for scoring updates from iframe
         window.addEventListener('message', (event) => {
-            if (event.data.type === 'score-update') {
+            if (event.data.type === 'game-config-complete') {
+                // Host finished configuring match
+                console.log('Game config completed:', event.data.config);
+                const config = event.data.config;
+                
+                // Set current turn
+                this.currentTurn = config.startingPlayer;
+                this.hostPlayerName = config.player1Name;
+                this.guestPlayerName = config.player2Name;
+                
+                // Broadcast config to guest
+                this.supabaseChannel.send({
+                    type: 'broadcast',
+                    event: 'game-config',
+                    payload: { from: this.localPlayerId, config: config }
+                });
+                
+                // Initialize match for host
+                this.initializeMatch(config);
+            }
+            else if (event.data.type === 'score-update') {
                 console.log('Score updated:', event.data);
                 this.broadcastGameState(event.data);
                 this.switchTurn();

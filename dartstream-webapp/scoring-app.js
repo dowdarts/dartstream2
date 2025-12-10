@@ -839,6 +839,22 @@ window.addEventListener('message', (event) => {
         
         // Initialize the game
         ScoringApp.initialize(config);
+        
+        // Add room code display if available
+        if (config.roomCode) {
+            const gameScreen = document.getElementById('game-screen');
+            if (gameScreen) {
+                // Add room code banner at top of game screen
+                const roomCodeBanner = document.createElement('div');
+                roomCodeBanner.id = 'online-room-code-banner';
+                roomCodeBanner.style.cssText = 'background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-bottom: 2px solid #facc15; padding: 10px; text-align: center;';
+                roomCodeBanner.innerHTML = `
+                    <div style="color: #94a3b8; font-size: 0.7rem;">ONLINE MATCH • ROOM CODE</div>
+                    <div style="color: #facc15; font-size: 1.2rem; font-weight: bold; letter-spacing: 0.3rem;">${config.roomCode}</div>
+                `;
+                gameScreen.insertBefore(roomCodeBanner, gameScreen.firstChild);
+            }
+        }
     }
     
     if (event.data.type === 'set-turn') {
@@ -869,6 +885,151 @@ window.addEventListener('message', (event) => {
                 gameScreen.classList.remove('your-turn');
                 gameScreen.classList.add('opponent-turn');
             }
+        }
+    }
+    
+    if (event.data.type === 'show-waiting') {
+        // Guest: Show waiting screen with room code
+        const roomCode = event.data.roomCode;
+        const message = event.data.message;
+        
+        console.log('Showing waiting screen for guest...');
+        
+        // Create waiting screen overlay
+        const setupScreen = document.getElementById('setup-screen');
+        if (setupScreen) {
+            setupScreen.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center;">
+                    <div style="background: rgba(30, 41, 59, 0.9); border: 2px solid #334155; border-radius: 16px; padding: 40px; max-width: 500px;">
+                        <h1 style="color: #facc15; font-size: 2rem; margin-bottom: 20px;">⏳ Waiting for Host</h1>
+                        <p style="color: #94a3b8; font-size: 1.2rem; margin-bottom: 20px;">${message}</p>
+                        <div style="background: #0f172a; border: 2px solid #facc15; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                            <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">Room Code</div>
+                            <div style="color: #facc15; font-size: 2.5rem; font-weight: bold; letter-spacing: 0.5rem;">${roomCode}</div>
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px;">
+                            <p style="color: #10b981; margin: 0; font-size: 0.9rem;">✅ Connected - Video call active</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setupScreen.classList.add('active');
+        }
+    }
+    
+    if (event.data.type === 'show-setup') {
+        // Host: Show game setup interface with pre-selected players
+        const roomCode = event.data.roomCode;
+        const player1Name = event.data.hostPlayerName;
+        const player2Name = event.data.guestPlayerName;
+        const player1Id = event.data.hostPlayerId;
+        const player2Id = event.data.guestPlayerId;
+        
+        console.log('Showing setup screen for host...', { player1Name, player2Name });
+        
+        // Auto-fill player names and show setup screen
+        // Import GameSetup module functionality inline for Play Online mode
+        const setupScreen = document.getElementById('setup-screen');
+        if (setupScreen) {
+            setupScreen.innerHTML = `
+                <div class="setup-container" style="padding: 20px;">
+                    <div style="background: rgba(30, 41, 59, 0.9); border: 2px solid #334155; border-radius: 12px; padding: 30px;">
+                        <h1 style="color: #facc15; text-align: center; margin-bottom: 20px;">Configure Online Match</h1>
+                        
+                        <div style="background: #0f172a; border: 2px solid #facc15; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                            <div style="color: #94a3b8; font-size: 0.8rem;">Room Code</div>
+                            <div style="color: #facc15; font-size: 1.5rem; font-weight: bold; letter-spacing: 0.3rem;">${roomCode}</div>
+                        </div>
+                        
+                        <!-- Players Display -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div style="background: #0f172a; border: 2px solid #3b82f6; border-radius: 8px; padding: 15px; text-align: center;">
+                                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px;">HOST (You)</div>
+                                <div style="color: #facc15; font-size: 1.2rem; font-weight: bold;">${player1Name}</div>
+                            </div>
+                            <div style="background: #0f172a; border: 2px solid #ef4444; border-radius: 8px; padding: 15px; text-align: center;">
+                                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px;">GUEST</div>
+                                <div style="color: #facc15; font-size: 1.2rem; font-weight: bold;">${player2Name}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Game Type Selection -->
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label style="color: #94a3b8; display: block; margin-bottom: 5px; font-weight: bold;">Game Type</label>
+                            <select id="online-game-type-select" class="select-input" style="width: 100%; padding: 10px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: white;">
+                                <option value="301-sido">301 SIDO</option>
+                                <option value="301-dido">301 DIDO</option>
+                                <option value="501-sido" selected>501 SIDO</option>
+                                <option value="501-dido">501 DIDO</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Match Format -->
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label style="color: #94a3b8; display: block; margin-bottom: 5px; font-weight: bold;">Match Format</label>
+                            <select id="online-format-select" class="select-input" style="width: 100%; padding: 10px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: white;">
+                                <option value="single-leg">Single Leg</option>
+                                <option value="best-of-3" selected>Best of 3 Legs</option>
+                                <option value="best-of-5">Best of 5 Legs</option>
+                                <option value="best-of-7">Best of 7 Legs</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Starting Player -->
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label style="color: #94a3b8; display: block; margin-bottom: 5px; font-weight: bold;">Starting Player</label>
+                            <select id="online-starting-player-select" class="select-input" style="width: 100%; padding: 10px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: white;">
+                                <option value="host">${player1Name} (Host)</option>
+                                <option value="guest">${player2Name} (Guest)</option>
+                            </select>
+                        </div>
+                        
+                        <button id="online-start-match-btn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 12px; color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer;">
+                            Start Match
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            setupScreen.classList.add('active');
+            
+            // Add event listener to start button
+            document.getElementById('online-start-match-btn').addEventListener('click', () => {
+                const gameType = document.getElementById('online-game-type-select').value;
+                const matchFormat = document.getElementById('online-format-select').value;
+                const startingPlayer = document.getElementById('online-starting-player-select').value;
+                
+                // Parse settings
+                const [score, inOut] = gameType.split('-');
+                const startScore = parseInt(score);
+                const doubleOut = inOut === 'dido';
+                
+                let totalLegs = 1;
+                let legsFormat = 'first-to';
+                if (matchFormat === 'best-of-3') { totalLegs = 3; legsFormat = 'best-of'; }
+                else if (matchFormat === 'best-of-5') { totalLegs = 5; legsFormat = 'best-of'; }
+                else if (matchFormat === 'best-of-7') { totalLegs = 7; legsFormat = 'best-of'; }
+                
+                const config = {
+                    gameType: gameType,
+                    startScore: startScore,
+                    doubleOut: doubleOut,
+                    player1Name: player1Name,
+                    player2Name: player2Name,
+                    player1Id: player1Id,
+                    player2Id: player2Id,
+                    totalLegs: totalLegs,
+                    legsFormat: legsFormat,
+                    startingPlayer: startingPlayer,
+                    roomCode: roomCode
+                };
+                
+                // Send config to parent Play Online
+                window.parent.postMessage({
+                    type: 'game-config-complete',
+                    config: config
+                }, '*');
+            });
         }
     }
     
