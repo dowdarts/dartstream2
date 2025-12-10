@@ -17,7 +17,16 @@ const gameState = {
             setWins: 0, 
             matchAvg: 0, 
             legAvg: 0,
-            turnHistory: [] // Track all turns for undo
+            turnHistory: [], // Track all turns for undo
+            achievements: {
+                count_180s: 0,
+                count_171s: 0,
+                count_95s: 0,
+                count_100_plus: 0,
+                count_120_plus: 0,
+                count_140_plus: 0,
+                count_160_plus: 0
+            }
         },
         player2: { 
             name: 'Away', 
@@ -32,7 +41,16 @@ const gameState = {
             setWins: 0, 
             matchAvg: 0, 
             legAvg: 0,
-            turnHistory: []
+            turnHistory: [],
+            achievements: {
+                count_180s: 0,
+                count_171s: 0,
+                count_95s: 0,
+                count_100_plus: 0,
+                count_120_plus: 0,
+                count_140_plus: 0,
+                count_160_plus: 0
+            }
         }
     },
     currentPlayer: 2, // 1 or 2
@@ -2501,6 +2519,16 @@ function submitTurn() {
         player.matchAvg = (player.matchScore / player.matchDarts) * 3;
     }
     
+    // Track achievements for this turn
+    const turnScore = gameState.turnTotal;
+    if (turnScore === 180) player.achievements.count_180s++;
+    if (turnScore === 171) player.achievements.count_171s++;
+    if (turnScore === 95) player.achievements.count_95s++;
+    if (turnScore >= 100) player.achievements.count_100_plus++;
+    if (turnScore >= 120) player.achievements.count_120_plus++;
+    if (turnScore >= 140) player.achievements.count_140_plus++;
+    if (turnScore >= 160) player.achievements.count_160_plus++;
+    
     // Save to history
     player.turnHistory.push({
         darts: 3, // Assuming 3 darts per turn
@@ -2721,12 +2749,8 @@ function showSetCompleteModal() {
             const p1 = gameState.players.player1;
             const p2 = gameState.players.player2;
             
-            // Get achievements from ScoringApp's gameState (where they are tracked)
-            const p1Achievements = window.ScoringApp?.gameState?.players?.player1?.achievements || {};
-            const p2Achievements = window.ScoringApp?.gameState?.players?.player2?.achievements || {};
-            
-            console.log('Player 1 achievements:', p1Achievements);
-            console.log('Player 2 achievements:', p2Achievements);
+            console.log('Player 1 achievements:', p1.achievements);
+            console.log('Player 2 achievements:', p2.achievements);
             
             // Determine winner based on current set wins
             const winnerNum = p1.setWins > p2.setWins ? 1 : 2;
@@ -2768,6 +2792,10 @@ function showSetCompleteModal() {
             const matchId = `match_${Date.now()}`;
             const matchDate = new Date().toISOString();
             
+            // Get leg data from ScoringApp if available
+            const allLegs = window.ScoringApp?.gameState?.allLegs || [];
+            console.log('All legs data:', allLegs);
+            
             // Prepare match data for both players
             const savePromises = [];
             
@@ -2788,14 +2816,14 @@ function showSetCompleteModal() {
                     first_9_average: 0,
                     highest_checkout: 0,
                     checkout_percentage: 0,
-                    count_180s: p1Achievements.count_180s || 0,
-                    count_171s: p1Achievements.count_171s || 0,
-                    count_95s: p1Achievements.count_95s || 0,
-                    count_100_plus: p1Achievements.count_100_plus || 0,
-                    count_120_plus: p1Achievements.count_120_plus || 0,
-                    count_140_plus: p1Achievements.count_140_plus || 0,
-                    count_160_plus: p1Achievements.count_160_plus || 0,
-                    leg_scores: [],
+                    count_180s: p1.achievements.count_180s || 0,
+                    count_171s: p1.achievements.count_171s || 0,
+                    count_95s: p1.achievements.count_95s || 0,
+                    count_100_plus: p1.achievements.count_100_plus || 0,
+                    count_120_plus: p1.achievements.count_120_plus || 0,
+                    count_140_plus: p1.achievements.count_140_plus || 0,
+                    count_160_plus: p1.achievements.count_160_plus || 0,
+                    leg_scores: allLegs,
                     checkout_history: []
                 };
                 savePromises.push(window.PlayerDB.recordMatchStats(p1MatchData));
@@ -2818,14 +2846,14 @@ function showSetCompleteModal() {
                     first_9_average: 0,
                     highest_checkout: 0,
                     checkout_percentage: 0,
-                    count_180s: p2Achievements.count_180s || 0,
-                    count_171s: p2Achievements.count_171s || 0,
-                    count_95s: p2Achievements.count_95s || 0,
-                    count_100_plus: p2Achievements.count_100_plus || 0,
-                    count_120_plus: p2Achievements.count_120_plus || 0,
-                    count_140_plus: p2Achievements.count_140_plus || 0,
-                    count_160_plus: p2Achievements.count_160_plus || 0,
-                    leg_scores: [],
+                    count_180s: p2.achievements.count_180s || 0,
+                    count_171s: p2.achievements.count_171s || 0,
+                    count_95s: p2.achievements.count_95s || 0,
+                    count_100_plus: p2.achievements.count_100_plus || 0,
+                    count_120_plus: p2.achievements.count_120_plus || 0,
+                    count_140_plus: p2.achievements.count_140_plus || 0,
+                    count_160_plus: p2.achievements.count_160_plus || 0,
+                    leg_scores: allLegs,
                     checkout_history: []
                 };
                 savePromises.push(window.PlayerDB.recordMatchStats(p2MatchData));
