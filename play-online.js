@@ -44,6 +44,29 @@ const PlayOnline = {
         this.localPlayerId = session.user.id;
         console.log('User authenticated:', this.localPlayerId);
 
+        // Check for URL parameters (coming from index.html)
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomParam = urlParams.get('room');
+        const hostParam = urlParams.get('host');
+        
+        if (roomParam && hostParam === 'true') {
+            // Host mode - use room from URL
+            this.roomCode = roomParam;
+            this.isHost = true;
+            console.log('🎯 Host mode - Room:', this.roomCode);
+            
+            // Show the interface and wait for guest
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('videostream-container').classList.remove('hidden');
+            
+            // Listen for guest joining
+            await this.listenForOpponent();
+            
+            // Enumerate media devices
+            await this.enumerateDevices();
+            return;
+        }
+
         // Enumerate media devices
         await this.enumerateDevices();
     },

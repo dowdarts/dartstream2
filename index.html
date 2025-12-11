@@ -607,8 +607,8 @@
                     return;
                 }
                 
-                // Redirect to VideoStreamscoringapp as host
-                window.location.href = `VideoStreamscoringapp.html?room=${roomCode}&host=true&player=${encodeURIComponent(playerName)}`;
+                // Redirect to play-online.html with host config
+                window.location.href = `play-online.html?room=${roomCode}&host=true&player=${encodeURIComponent(playerName)}`;
                 
             } catch (error) {
                 console.error('Error starting VideoStream match:', error);
