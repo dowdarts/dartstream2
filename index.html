@@ -596,16 +596,14 @@
                 const { error: roomError } = await supabase
                     .from('game_rooms')
                     .insert({
-                        room_code: roomCode,
-                        host_user_id: user.id,
-                        host_name: playerName,
-                        status: 'waiting',
-                        created_at: new Date().toISOString()
+                        room_code: roomCode.toString(),
+                        host_id: user.id,
+                        status: 'waiting'
                     });
                 
                 if (roomError) {
                     console.error('Room creation error:', roomError);
-                    alert('Failed to create room');
+                    alert('Failed to create room: ' + roomError.message);
                     return;
                 }
                 
