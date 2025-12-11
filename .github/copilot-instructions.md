@@ -1,5 +1,23 @@
 # DartStream AI Coding Instructions
 
+## What This File Does
+
+This file contains **instructions for AI coding assistants** (GitHub Copilot, cloud-based coding agents, and other AI developer tools) to understand the DartStream project architecture, conventions, and best practices.
+
+**Purpose:**
+- Provides context about the modular ES6 architecture
+- Explains database schema and Supabase integration patterns
+- Documents coding conventions and common troubleshooting steps
+- Guides AI agents to make consistent, minimal, and architecturally-sound changes
+
+**When AI agents read this file**, they will:
+- Understand how to work with the vanilla JavaScript ES6 module system
+- Know which files to edit for specific types of changes (player library, game setup, scoring logic)
+- Follow the correct patterns for async Supabase initialization
+- Avoid common pitfalls like module import errors or breaking the global window.* bridge pattern
+
+---
+
 ## Project Overview
 DartStream is a professional darts scoring and streaming platform built with **vanilla JavaScript (ES6 modules), HTML5, and CSS3**. No build tools, bundlers, or frameworks—just pure web standards. The app runs entirely client-side with Supabase as the backend database.
 
