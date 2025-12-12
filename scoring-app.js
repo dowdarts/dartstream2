@@ -343,9 +343,22 @@ const ScoringApp = {
         this.gameState.currentInput = '';
         this.updateDualFunctionButtons();
         
-        this.updateGameScreen();
+        // Sync immediately with checkout data so scoreboard shows the animation
+        if (window.GameStateSync) {
+            window.GameStateSync.syncGameState(this.gameState);
+        }
         
-        setTimeout(() => this.checkSetWin(), 4000);
+        // Wait for animation to complete (3.5s) before clearing lastCheckout and updating UI
+        setTimeout(() => {
+            // Clear checkout data after animation completes
+            player.lastCheckout = null;
+            
+            // Now update the screen to show the final state
+            this.updateGameScreen();
+            
+            // Check for set/match win after animation
+            this.checkSetWin();
+        }, 3500);
     },
     
     // Complete turn
@@ -684,7 +697,6 @@ const ScoringApp = {
         this.gameState.players.player1.legScore = 0;
         this.gameState.players.player1.legAvg = 0;
         this.gameState.players.player1.turnHistory = [];
-        this.gameState.players.player1.lastCheckout = null;
         
         this.gameState.players.player2.score = startScore;
         this.gameState.players.player2.preTurnScore = startScore;
@@ -692,7 +704,6 @@ const ScoringApp = {
         this.gameState.players.player2.legScore = 0;
         this.gameState.players.player2.legAvg = 0;
         this.gameState.players.player2.turnHistory = [];
-        this.gameState.players.player2.lastCheckout = null;
         
         this.gameState.visitNumber = 1;
         this.gameState.currentVisit = [];
