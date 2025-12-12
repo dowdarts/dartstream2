@@ -345,7 +345,7 @@ const ScoringApp = {
         
         this.updateGameScreen();
         
-        setTimeout(() => this.checkSetWin(), 1000);
+        setTimeout(() => this.checkSetWin(), 4000);
     },
     
     // Complete turn
@@ -684,6 +684,7 @@ const ScoringApp = {
         this.gameState.players.player1.legScore = 0;
         this.gameState.players.player1.legAvg = 0;
         this.gameState.players.player1.turnHistory = [];
+        this.gameState.players.player1.lastCheckout = null;
         
         this.gameState.players.player2.score = startScore;
         this.gameState.players.player2.preTurnScore = startScore;
@@ -691,6 +692,7 @@ const ScoringApp = {
         this.gameState.players.player2.legScore = 0;
         this.gameState.players.player2.legAvg = 0;
         this.gameState.players.player2.turnHistory = [];
+        this.gameState.players.player2.lastCheckout = null;
         
         this.gameState.visitNumber = 1;
         this.gameState.currentVisit = [];
