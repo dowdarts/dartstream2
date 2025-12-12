@@ -584,6 +584,7 @@ const GameStateSync = {
                     legWins: state.players?.player1?.legWins || 0,
                     setWins: state.players?.player1?.setWins || 0,
                     turnHistory: state.players?.player1?.turnHistory || [],
+                    lastCheckout: state.players?.player1?.lastCheckout || null,
                     isActive: state.currentPlayer === 1
                 },
                 
@@ -599,6 +600,7 @@ const GameStateSync = {
                     legWins: state.players?.player2?.legWins || 0,
                     setWins: state.players?.player2?.setWins || 0,
                     turnHistory: state.players?.player2?.turnHistory || [],
+                    lastCheckout: state.players?.player2?.lastCheckout || null,
                     isActive: state.currentPlayer === 2
                 },
                 

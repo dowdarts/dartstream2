@@ -52,7 +52,10 @@ const PlayOnline = {
         const hostParam = urlParams.get('host');
         const playerParam = urlParams.get('player');
         
+        console.log('🔍 URL params:', { roomParam, hostParam, playerParam });
+        
         if (roomParam && hostParam === 'true') {
+            console.log('✅ Detected host mode from URL params');
             // Host mode - use room from URL
             this.roomCode = roomParam;
             this.isHost = true;
@@ -124,6 +127,12 @@ const PlayOnline = {
             await this.enumerateDevices();
             return;
         }
+
+        console.log('ℹ️ No URL params - showing setup screen for Host/Join selection');
+        
+        // Make sure setup screen is visible
+        document.getElementById('setup-screen').classList.remove('hidden');
+        document.getElementById('videostream-container').classList.add('hidden');
 
         // Enumerate media devices
         await this.enumerateDevices();

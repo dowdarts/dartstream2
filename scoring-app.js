@@ -328,6 +328,12 @@ const ScoringApp = {
         
         player.legWins++;
         
+        // Store checkout data for scoreboard display
+        player.lastCheckout = {
+            score: checkoutScore,
+            darts: finishingDart
+        };
+        
         // Store complete leg data for match summary
         this.saveLegData(this.gameState.currentPlayer, checkoutScore);
         
