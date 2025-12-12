@@ -805,6 +805,11 @@ const ScoringApp = {
         
         // Update set/leg score displays
         this.updateSetLegScores();
+        
+        // Sync game state to Supabase for scoreboard
+        if (window.GameStateSync) {
+            window.GameStateSync.syncGameState(this.gameState);
+        }
     },
     
     // Update set and leg score displays
