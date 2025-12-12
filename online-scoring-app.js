@@ -1104,6 +1104,15 @@ window.addEventListener('load', () => {
                 OnlineScoringApp.initialize(event.data.config);
             }, 100);
         }
+        
+        if (event.data.type === 'update-player-names') {
+            console.log('📝 Updating player names:', event.data.config);
+            // Update player names in the UI
+            const player2NameEl = document.getElementById('player2-name');
+            if (player2NameEl && event.data.config.player2Name) {
+                player2NameEl.textContent = event.data.config.player2Name;
+            }
+        }
     });
     
     // Debug: Send ready signal to parent

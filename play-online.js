@@ -33,33 +33,91 @@ const PlayOnline = {
             return;
         }
         
-        // Check if user is authenticated
+        // Check if user is authenticated (optional)
         const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) {
-            alert('Please sign in to use Play Online features');
-            window.location.href = 'player-account.html';
-            return;
+        if (session) {
+            this.localPlayerId = session.user.id;
+            this.isGuest = false;
+            console.log('User authenticated:', this.localPlayerId);
+        } else {
+            // Generate temporary guest ID for non-authenticated users
+            this.localPlayerId = 'guest-' + Math.random().toString(36).substr(2, 9);
+            this.isGuest = true;
+            console.log('Guest mode - no authentication:', this.localPlayerId);
         }
-
-        this.localPlayerId = session.user.id;
-        console.log('User authenticated:', this.localPlayerId);
 
         // Check for URL parameters (coming from index.html)
         const urlParams = new URLSearchParams(window.location.search);
         const roomParam = urlParams.get('room');
         const hostParam = urlParams.get('host');
+        const playerParam = urlParams.get('player');
         
         if (roomParam && hostParam === 'true') {
             // Host mode - use room from URL
             this.roomCode = roomParam;
             this.isHost = true;
+            this.hostPlayerName = playerParam || 'Host Player';
             console.log('🎯 Host mode - Room:', this.roomCode);
             
-            // Show the interface and wait for guest
+            // Show the interface and display room code
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('videostream-container').classList.remove('hidden');
             
-            // Listen for guest joining
+            // Show host setup with room code
+            document.getElementById('initial-setup').classList.add('hidden');
+            document.getElementById('host-setup').classList.remove('hidden');
+            document.getElementById('generated-room-code').textContent = this.roomCode;
+            
+            // Load host player data and initialize scoring app immediately
+            console.log('🔄 Loading host player data for user:', this.localPlayerId);
+            try {
+                if (this.isGuest) {
+                    // Use default name for guest users
+                    this.hostPlayerName = playerParam || 'Player 1';
+                    console.log('👤 Guest mode - using default name:', this.hostPlayerName);
+                } else {
+                    // Load from database for authenticated users
+                    const { data: playerData, error: playerError } = await window.supabaseClient
+                        .from('player_accounts')
+                        .select('first_name, last_name')
+                        .eq('user_id', this.localPlayerId)
+                        .single();
+
+                    console.log('📊 Player data query result:', { playerData, playerError });
+
+                    if (playerError) {
+                        console.error('❌ Error loading player data:', playerError);
+                        this.hostPlayerName = playerParam || 'Host Player';
+                    } else {
+                        this.hostPlayerName = `${playerData.first_name} ${playerData.last_name}`;
+                        console.log('✅ Host player name:', this.hostPlayerName);
+                    }
+                }
+
+                // Create default config for host (guest will be filled in when they join)
+                const defaultConfig = {
+                    gameType: '501',
+                    startScore: 501,
+                    player1Name: this.hostPlayerName,
+                    player2Name: 'Waiting for opponent...',
+                    totalLegs: 3,
+                    isHost: true,
+                    localPlayerNumber: 1,
+                    roomCode: this.roomCode
+                };
+
+                console.log('🎮 Initializing scoring app with config:', defaultConfig);
+                
+                // Initialize the scoring app iframe
+                await this.initializeMatch(defaultConfig);
+                console.log('✅ Scoring app initialization complete');
+                
+            } catch (error) {
+                console.error('❌ Error initializing host mode:', error);
+                console.error('Stack:', error.stack);
+            }
+            
+            // Listen for guest joining (will update config when guest arrives)
             await this.listenForOpponent();
             
             // Enumerate media devices
@@ -166,6 +224,12 @@ const PlayOnline = {
 
     // Create room in Supabase
     async createRoom() {
+        // Skip database creation for guest users
+        if (this.isGuest) {
+            console.log('Guest mode - skipping database room creation');
+            return;
+        }
+        
         try {
             // Ensure client is ready
             if (!window.supabaseClient) {
@@ -214,6 +278,10 @@ const PlayOnline = {
                 console.log('Room updated:', payload);
                 if (payload.new.guest_id && payload.new.status === 'active') {
                     this.opponentId = payload.new.guest_id;
+                    
+                    // Load guest player name and update scoring app config
+                    this.updateConfigWithGuest(payload.new.guest_id);
+                    
                     // Host shows game config screen when guest joins
                     this.showGameConfig();
                 }
@@ -354,6 +422,50 @@ const PlayOnline = {
         console.log('🎮 Guest waiting for game config from host...');
     },
 
+    // Update scoring app config when guest joins (Host only)
+    async updateConfigWithGuest(guestId) {
+        try {
+            // Load guest player name
+            const { data: guestData, error: guestError } = await window.supabaseClient
+                .from('player_accounts')
+                .select('first_name, last_name')
+                .eq('user_id', guestId)
+                .single();
+
+            if (guestError) {
+                console.error('Error loading guest data:', guestError);
+                this.guestPlayerName = 'Guest Player';
+            } else {
+                this.guestPlayerName = `${guestData.first_name} ${guestData.last_name}`;
+            }
+
+            // Update the scoring app iframe with guest name
+            const updatedConfig = {
+                gameType: '501',
+                startScore: 501,
+                player1Name: this.hostPlayerName,
+                player2Name: this.guestPlayerName,
+                totalLegs: 3,
+                isHost: true,
+                localPlayerNumber: 1,
+                roomCode: this.roomCode
+            };
+
+            console.log('📝 Updating scoring app with guest:', updatedConfig);
+            
+            // Send updated config to iframe
+            const iframe = document.getElementById('scoring-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({
+                    type: 'update-player-names',
+                    config: updatedConfig
+                }, '*');
+            }
+        } catch (error) {
+            console.error('Error updating config with guest:', error);
+        }
+    },
+
     // Show game configuration screen (Host only after both players connect)
     async showGameConfig() {
         console.log('✅ Both players connected - showing game configuration...');
@@ -406,6 +518,16 @@ const PlayOnline = {
     // Load player names from player_accounts table
     async loadPlayerNames() {
         try {
+            // Use default names for guest users
+            if (this.isGuest) {
+                this.hostPlayerName = 'Player 1';
+                this.guestPlayerName = 'Player 2';
+                this.hostPlayerId = null;
+                this.guestPlayerId = null;
+                console.log('Guest mode - using default player names');
+                return;
+            }
+            
             if (!window.supabaseClient) {
                 await this.waitForSupabase();
             }
