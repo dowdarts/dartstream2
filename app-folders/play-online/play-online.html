@@ -65,7 +65,7 @@
     <!-- Main App Container -->
     <div class="play-online-container">
         
-        <!-- SCREEN 1: Host or Join -->
+        <!-- SCREEN 1: Create or Join Room -->
         <div id="hostOrJoinScreen" class="screen active">
             <div class="screen-content">
                 <div class="setup-card welcome-card">
@@ -76,18 +76,18 @@
                     </div>
                     
                     <div class="room-options-grid">
-                        <!-- Host Game Option -->
+                        <!-- Create Room Option -->
                         <div class="room-option-card host-card">
                             <div class="option-icon">🆕</div>
-                            <h3>Host Game</h3>
-                            <p>Start a new video game session. You'll get a unique 4-digit code to share with your opponent.</p>
-                            <button id="hostGameBtn" class="btn btn-primary btn-large btn-prominent">
-                                Host Game
+                            <h3>Create Room</h3>
+                            <p>Generate a unique 4-digit code to share with your opponent. Code expires in 60 seconds.</p>
+                            <button id="createRoomBtn" class="btn btn-primary btn-large btn-prominent">
+                                Create Room #
                             </button>
                             <div class="option-features">
                                 <span>✓ Get unique code</span>
-                                <span>✓ Invite opponent</span>
-                                <span>✓ Start video call</span>
+                                <span>✓ Share with opponent</span>
+                                <span>✓ 60 second expiry</span>
                             </div>
                         </div>
                         
@@ -96,11 +96,11 @@
                             <span class="divider-text">or</span>
                         </div>
                         
-                        <!-- Join Game Option -->
+                        <!-- Join Room Option -->
                         <div class="room-option-card join-card">
                             <div class="option-icon">🔗</div>
-                            <h3>Join Game</h3>
-                            <p id="joinPromptText">Have a 4-digit code from your opponent? Click below to join their game.</p>
+                            <h3>Join Room</h3>
+                            <p id="joinPromptText">Have a 4-digit code from your opponent? Click below to join their room.</p>
                             
                             <!-- Code Input (Hidden Initially) -->
                             <div id="joinCodeContainer" style="display: none;">
@@ -116,7 +116,7 @@
                                 <small id="joinCodeError" class="error-text"></small>
                                 <div class="join-button-group">
                                     <button id="joinGameBtn" class="btn btn-primary btn-large" style="flex: 1;">
-                                        Join Game
+                                        Join Room
                                     </button>
                                     <button id="cancelJoinBtn" class="btn btn-secondary" style="flex: 1;">
                                         Cancel
@@ -126,13 +126,13 @@
                             
                             <!-- Initial Join Button -->
                             <button id="joinPromptBtn" class="btn btn-secondary btn-large btn-prominent">
-                                Join Game
+                                Join Room
                             </button>
                             
                             <div class="option-features">
                                 <span>✓ Enter code</span>
-                                <span>✓ Join instantly</span>
-                                <span>✓ Start playing</span>
+                                <span>✓ Join room</span>
+                                <span>✓ Configure settings</span>
                             </div>
                         </div>
                     </div>
@@ -140,20 +140,56 @@
             </div>
         </div>
 
-        <!-- SCREEN 2: Room Lobby (Waiting for Peers) -->
-        <div id="lobbyScreen" class="screen">
+        <!-- SCREEN 1b: Room Code Waiting (Display code for 60 seconds) -->
+        <div id="roomCodeWaitingScreen" class="screen">
             <div class="screen-content">
-                <div class="lobby-card">
-                    <div class="lobby-header">
-                        <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
-                        <div class="header-buttons">
-                            <button id="editSettingsBtn" class="btn btn-sm btn-secondary" style="display: none;" title="Adjust camera settings">
-                                ⚙️ Configure
-                            </button>
-                            <button id="copyRoomCodeBtn" class="btn btn-sm btn-secondary">
+                <div class="setup-card welcome-card">
+                    <div class="welcome-header">
+                        <h1>Room Created!</h1>
+                        <p class="subtitle">Share this code with your opponent</p>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="background: #f5f5f5; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
+                            <p style="color: #666; margin: 0 0 0.5rem 0; font-size: 0.9rem;">Your Room Code:</p>
+                            <div id="generatedRoomCode" style="font-size: 3rem; font-weight: bold; color: #FF6B35; font-family: monospace; letter-spacing: 8px; margin-bottom: 1rem;">
+                                0000
+                            </div>
+                            <button id="copyGeneratedCodeBtn" class="btn btn-secondary" style="width: 100%;">
                                 📋 Copy Code
                             </button>
                         </div>
+                        
+                        <div style="background: #e8f4f8; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid #3498db;">
+                            <p style="margin: 0; color: #333; font-size: 0.95rem;">
+                                ⏱️ Code expires in <span id="countdownTimer" style="font-weight: bold; color: #e74c3c;">60</span> seconds
+                            </p>
+                        </div>
+                        
+                        <p style="color: #999; font-size: 0.9rem; margin: 0;">
+                            Waiting for opponent to join using this code...
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button id="backFromCodeBtn" class="btn btn-secondary" style="flex: 1;">
+                            ← Back
+                        </button>
+                        <button id="copyAndShareBtn" class="btn btn-primary" style="flex: 1;">
+                            📤 Share Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Device Configuration (After joining room) -->
+        <div id="deviceConfigScreen" class="screen">
+            <div class="screen-content">
+                <div class="lobby-card">
+                    <div class="lobby-header">
+                        <h2>Configure Your Devices</h2>
+                        <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Room: <span id="roomCodeDisplayConfig" class="room-code"></span></p>
                     </div>
                     
                     <div class="lobby-content">

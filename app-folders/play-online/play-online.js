@@ -81,20 +81,24 @@ const PlayOnlineUI = {
      */
     attachEventListeners() {
         // Host or Join Screen
-        document.getElementById('hostGameBtn')?.addEventListener('click', () => this.handleHostGame());
+        document.getElementById('createRoomBtn')?.addEventListener('click', () => this.handleCreateRoom());
         document.getElementById('joinPromptBtn')?.addEventListener('click', () => this.showJoinCodeInput());
         document.getElementById('cancelJoinBtn')?.addEventListener('click', () => this.hideJoinCodeInput());
         document.getElementById('joinGameBtn')?.addEventListener('click', () => this.handleJoinGame());
+        
+        // Room Code Waiting Screen
+        document.getElementById('copyGeneratedCodeBtn')?.addEventListener('click', () => this.copyGeneratedCodeToClipboard());
+        document.getElementById('copyAndShareBtn')?.addEventListener('click', () => this.shareRoomCode());
+        document.getElementById('backFromCodeBtn')?.addEventListener('click', () => this.handleBackFromCode());
         
         // Join code input - auto-format to 4 digits
         document.getElementById('joinRoomCodeInput')?.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
         });
         
-        // Lobby Screen
-        document.getElementById('copyRoomCodeBtn')?.addEventListener('click', () => this.copyRoomCodeToClipboard());
-        document.getElementById('editSettingsBtn')?.addEventListener('click', () => this.openCameraSettings());
+        // Device Config Screen
         document.getElementById('confirmDevicesBtn')?.addEventListener('click', () => this.handleConfirmDevices());
+        document.getElementById('editSettingsBtn')?.addEventListener('click', () => this.openCameraSettings());
         document.getElementById('closeSettingsBtn')?.addEventListener('click', () => this.closeCameraSettings());
         document.getElementById('resetSettingsBtn')?.addEventListener('click', () => this.resetCameraSettings());
         document.getElementById('applySettingsBtn')?.addEventListener('click', () => this.applyCameraSettings());
@@ -117,19 +121,19 @@ const PlayOnlineUI = {
             // Primary: click event
             startVideoBtn.addEventListener('click', () => {
                 console.log('🎬 START VIDEO BUTTON CLICKED! (via click event)');
-                this.handleStartVideo();
+                PlayOnlineUI.handleStartVideo();
             });
             
             // Fallback 1: mousedown event
             startVideoBtn.addEventListener('mousedown', () => {
                 console.log('🎬 START VIDEO BUTTON MOUSEDOWN! (fallback 1)');
-                this.handleStartVideo();
+                PlayOnlineUI.handleStartVideo();
             });
             
             // Fallback 2: pointerdown event  
             startVideoBtn.addEventListener('pointerdown', () => {
                 console.log('🎬 START VIDEO BUTTON POINTERDOWN! (fallback 2)');
-                this.handleStartVideo();
+                PlayOnlineUI.handleStartVideo();
             });
             
             console.log('✅ All click handlers attached to Start Video button');
@@ -412,47 +416,104 @@ const PlayOnlineUI = {
         }
     },
     
-    async handleHostGame() {
+    async handleCreateRoom() {
         try {
-            // Stop preview stream to avoid device conflict
-            if (this.previewStream) {
-                this.previewStream.getTracks().forEach(track => track.stop());
-                this.previewStream = null;
-                console.log('🛑 Preview stream stopped');
-            }
-            
-            // Generate unique player ID (UUID v4)
-            this.currentPlayerId = generateUUID();
-            console.log('✅ Host mode - Player ID:', this.currentPlayerId);
-            
             this.showLoading('Creating room...');
             
-            // Initialize app with host
-            await PlayOnlineApp.initialize(
-                this.supabaseClient,
-                this.currentPlayerId,
-                'Host'
-            );
-            
-            // Create room first
-            const roomData = await PlayOnlineApp.createAndStartRoom();
-            this.hideLoading();
-            
-            // Store and display room code
-            this.currentRoomCode = roomData.roomCode;
-            const roomCodeDisplay = document.getElementById('roomCodeDisplay');
-            if (roomCodeDisplay) {
-                roomCodeDisplay.textContent = this.currentRoomCode;
-                console.log('🏠 Room code displayed:', this.currentRoomCode);
+            // Just create the room in the database - DON'T initialize app yet
+            const roomManager = PlayOnlineApp.roomManager || window.RoomManager;
+            if (!roomManager) {
+                throw new Error('Room manager not available');
             }
             
-            // Skip test screen, go directly to lobby
-            this.showScreen('lobbyScreen');
+            // Initialize room manager if needed
+            if (!roomManager.supabaseClient) {
+                roomManager.supabaseClient = this.supabaseClient;
+            }
+            
+            // Create room (just get the code, don't join it)
+            const roomData = await roomManager.createRoom();
+            
+            this.hideLoading();
+            
+            // Store room code
+            this.currentRoomCode = roomData.roomCode;
+            console.log('🆕 Room created with code:', this.currentRoomCode);
+            
+            // Show the room code for 60 seconds
+            document.getElementById('generatedRoomCode').textContent = this.currentRoomCode;
+            this.showScreen('roomCodeWaitingScreen');
+            
+            // Start 60-second countdown
+            this.startRoomCodeCountdown();
             
         } catch (error) {
-            console.error('❌ Host game error:', error);
+            console.error('❌ Create room error:', error);
             this.hideLoading();
-            this.showError(error.message || 'Error hosting game');
+            this.showError('Failed to create room: ' + error.message);
+        }
+    },
+    
+    startRoomCodeCountdown() {
+        let timeRemaining = 60;
+        const timerEl = document.getElementById('countdownTimer');
+        
+        const countdown = setInterval(() => {
+            timeRemaining--;
+            timerEl.textContent = timeRemaining;
+            
+            if (timeRemaining <= 0) {
+                clearInterval(countdown);
+                this.handleRoomCodeExpired();
+            }
+        }, 1000);
+        
+        // Store interval ID so we can cancel it if user goes back
+        this.roomCodeCountdownInterval = countdown;
+    },
+    
+    handleRoomCodeExpired() {
+        console.log('⏰ Room code expired');
+        this.showError('Room code expired. Please create a new room.');
+        this.currentRoomCode = null;
+        this.showScreen('hostOrJoinScreen');
+    },
+    
+    handleBackFromCode() {
+        // Cancel countdown
+        if (this.roomCodeCountdownInterval) {
+            clearInterval(this.roomCodeCountdownInterval);
+        }
+        this.currentRoomCode = null;
+        this.showScreen('hostOrJoinScreen');
+    },
+    
+    copyGeneratedCodeToClipboard() {
+        const code = document.getElementById('generatedRoomCode').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            // Show confirmation
+            const btn = document.getElementById('copyGeneratedCodeBtn');
+            const original = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = original;
+            }, 2000);
+        });
+    },
+    
+    shareRoomCode() {
+        const code = this.currentRoomCode;
+        const text = `Join my DartStream game! Room code: ${code}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'DartStream Play Online',
+                text: text
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(code);
+            alert(`Code copied! Share this code with your opponent: ${code}`);
         }
     },
     
@@ -465,88 +526,39 @@ const PlayOnlineUI = {
                 return;
             }
             
-            // Stop preview stream to avoid device conflict
-            if (this.previewStream) {
-                this.previewStream.getTracks().forEach(track => track.stop());
-                this.previewStream = null;
-                console.log('🛑 Preview stream stopped');
-            }
-            
-            // Generate unique player ID (UUID v4)
-            this.currentPlayerId = generateUUID();
-            console.log('✅ Join mode - Player ID:', this.currentPlayerId);
-            
-            this.showLoading('Joining game...');
+            // Hide the input and show loading
+            this.hideJoinCodeInput();
+            this.showLoading('Joining room...');
             document.getElementById('joinCodeError').textContent = '';
             
-            // Initialize app with guest
-            await PlayOnlineApp.initialize(
-                this.supabaseClient,
-                this.currentPlayerId,
-                'Guest'
-            );
+            // Generate unique player ID
+            this.currentPlayerId = generateUUID();
+            console.log('🔗 Joining room - Player ID:', this.currentPlayerId);
+            
+            // Initialize app without joining yet
+            await PlayOnlineApp.initialize(this.supabaseClient);
             
             // Join room
             const roomData = await PlayOnlineApp.joinRoom(roomCode);
+            
             this.hideLoading();
             
             // Store and display room code
             this.currentRoomCode = roomCode;
-            const roomCodeDisplay = document.getElementById('roomCodeDisplay');
-            if (roomCodeDisplay) {
-                roomCodeDisplay.textContent = this.currentRoomCode;
-                console.log('📍 Room code displayed:', this.currentRoomCode);
-            }
+            document.getElementById('roomCodeDisplayConfig').textContent = this.currentRoomCode;
             
-            // Skip test screen, go directly to lobby
-            this.showScreen('lobbyScreen');
+            console.log('✅ Joined room:', this.currentRoomCode);
+            
+            // Show device configuration screen
+            this.showScreen('deviceConfigScreen');
+            
+            // Load available devices
+            await this.loadDeviceList();
             
         } catch (error) {
             console.error('❌ Join game error:', error);
             this.hideLoading();
             document.getElementById('joinCodeError').textContent = error.message || 'Failed to join room';
-        }
-    },
-    
-    /**
-     * CREATE ROOM FLOW
-     */
-    
-    async handleCreateRoom() {
-        try {
-            this.showLoading('Creating room...');
-            
-            // Initialize app
-            await PlayOnlineApp.initialize(
-                this.supabaseClient,
-                this.currentPlayerId,
-                this.currentPlayerName
-            );
-            
-            // Create room
-            const roomData = await PlayOnlineApp.createAndStartRoom();
-            
-            // IMPORTANT: Host must also JOIN their own room for proper Realtime sync
-            // This ensures both host and guest are in the same channel
-            console.log('👨‍💻 HOST: Created room with code:', roomData.roomCode);
-            console.log('👨‍💻 HOST: Now joining own room for Realtime sync...');
-            
-            // Host joins as if they were a guest joining their own room
-            await PlayOnlineApp.joinRoom(roomData.roomCode);
-            console.log('✅ HOST: Successfully joined own room');
-            
-            // Store room code for display
-            this.currentRoomCode = roomData.roomCode;
-            
-            this.hideLoading();
-            
-            // Show lobby
-            this.showScreen('lobbyScreen');
-            
-        } catch (error) {
-            console.error('❌ Create room error:', error);
-            this.hideLoading();
-            this.showError('Failed to create room: ' + error.message);
         }
     },
     
@@ -584,6 +596,50 @@ const PlayOnlineUI = {
             console.error('❌ Join room error:', error);
             this.hideLoading();
             document.getElementById('roomCodeError').textContent = error.message;
+        }
+    },
+    
+    /**
+     * DEVICE CONFIGURATION (after joining room)
+     */
+    
+    async handleConfirmDevices() {
+        try {
+            this.showLoading('Initializing video room...');
+            
+            // Now initialize the video room with selected devices
+            const selectedCameraId = document.getElementById('cameraSelect')?.value;
+            const selectedMicId = document.getElementById('microphoneSelect')?.value;
+            
+            console.log('⚙️ Confirming devices - Camera:', selectedCameraId, 'Mic:', selectedMicId);
+            
+            // Initialize the video room (this creates the local stream and starts WebRTC)
+            const constraints = this.getMediaConstraints();
+            await PlayOnlineApp.videoRoom.initialize(
+                this.currentRoomCode,
+                this.currentPlayerId,
+                'Player',
+                document.getElementById('localVideoContainer'),
+                null,
+                constraints
+            );
+            
+            console.log('✅ Video room initialized with selected devices');
+            
+            // Set up event callbacks if not already done
+            if (!PlayOnlineApp.videoRoom.onPeerVideoReady) {
+                PlayOnlineApp.setupVideoRoomCallbacks();
+            }
+            
+            this.hideLoading();
+            
+            // Show lobby/waiting screen with start button
+            this.showScreen('lobbyScreen');
+            
+        } catch (error) {
+            console.error('❌ Error confirming devices:', error);
+            this.hideLoading();
+            this.showError('Failed to initialize video: ' + error.message);
         }
     },
     
