@@ -371,28 +371,23 @@ class PlayOnlineV7 {
                     audio: { deviceId: { exact: this.selectedDevices.microphone } },
                 };
 
-                // Get new stream with updated devices
-                const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-                this.mediaStream = newStream;
-                this.video.local.srcObject = newStream;
-
                 // Disconnect from current video room
                 if (this.videoRoom) {
                     await this.videoRoom.leaveRoom();
                 }
 
-                // Reconnect to same room with new stream
-                this.videoRoom = window.VideoRoom;
-                await this.videoRoom.initialize(
+                // Reconnect with new settings - use the VideoRoom object directly
+                await window.VideoRoom.initialize(
                     this.roomCode,
                     this.playerId,
                     this.playerName,
                     this.video.local,
-                    null,
+                    null,  // Don't reuse stream, get fresh one with new constraints
                     constraints
                 );
 
-                this.mediaStream = this.videoRoom.localStream;
+                this.mediaStream = window.VideoRoom.localStream;
+                this.videoRoom = window.VideoRoom;
 
                 // Set up callbacks again
                 this.videoRoom.onPeerJoined = (peerId, peerName) => {
@@ -419,9 +414,7 @@ class PlayOnlineV7 {
                 this.micEnabled = true;
                 this.cameraEnabled = true;
                 this.buttons.toggleMic.textContent = '🎤';
-                this.buttons.toggleMic.style.backgroundColor = '';
                 this.buttons.toggleCamera.textContent = '📷';
-                this.buttons.toggleCamera.style.backgroundColor = '';
 
                 this.isSettingsMode = false;
                 this.showScreen('videoCall');
@@ -431,8 +424,6 @@ class PlayOnlineV7 {
             }
 
             // Normal flow: Initialize video room with selected devices
-            this.videoRoom = window.VideoRoom;
-
             const constraints = {
                 video: { deviceId: { exact: this.selectedDevices.camera } },
                 audio: { deviceId: { exact: this.selectedDevices.microphone } },
@@ -443,8 +434,8 @@ class PlayOnlineV7 {
                 this.mediaStream.getTracks().forEach(track => track.stop());
             }
 
-            // Initialize video room - VideoRoom.initialize(roomCode, playerId, playerName, localVideoEl, existingStream, mediaConstraints)
-            await this.videoRoom.initialize(
+            // Initialize video room using the VideoRoom object
+            await window.VideoRoom.initialize(
                 this.roomCode,
                 this.playerId,
                 this.playerName,
@@ -454,7 +445,8 @@ class PlayOnlineV7 {
             );
 
             // Store the stream for later use
-            this.mediaStream = this.videoRoom.localStream;
+            this.mediaStream = window.VideoRoom.localStream;
+            this.videoRoom = window.VideoRoom;
 
             // Set up callbacks
             this.videoRoom.onPeerJoined = (peerId, peerName) => {
@@ -546,24 +538,29 @@ class PlayOnlineV7 {
             // Disconnect from current call
             await this.videoRoom.leaveRoom();
 
-            // Reconnect to same room with same opponent
-            this.videoRoom = new window.VideoRoom(
-                window.supabaseClient,
+            // Clear peers for fresh connection
+            this.videoRoom.peers = {};
+
+            // Reconnect to same room
+            await this.videoRoom.initialize(
                 this.roomCode,
                 this.playerId,
-                this.playerName
+                this.playerName,
+                this.video.local,
+                null,  // Get fresh stream
+                {
+                    video: { deviceId: { exact: this.selectedDevices.camera } },
+                    audio: { deviceId: { exact: this.selectedDevices.microphone } },
+                }
             );
 
-            await this.videoRoom.joinRoom(this.mediaStream);
-            this.video.local.srcObject = this.mediaStream;
+            this.mediaStream = this.videoRoom.localStream;
 
             // Reset media states
             this.micEnabled = true;
             this.cameraEnabled = true;
             this.buttons.toggleMic.textContent = '🎤';
-            this.buttons.toggleMic.style.backgroundColor = '';
             this.buttons.toggleCamera.textContent = '📷';
-            this.buttons.toggleCamera.style.backgroundColor = '';
 
             this.showError('Video call refreshed successfully!');
             console.log('✅ Video call refreshed');
