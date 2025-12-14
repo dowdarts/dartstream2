@@ -16,6 +16,7 @@ class PlayOnlineV7 {
         this.mediaStream = null;
         this.micEnabled = true;
         this.cameraEnabled = true;
+        this.isSettingsMode = false;
 
         this.initializeElements();
         this.setupEventListeners();
@@ -45,6 +46,8 @@ class PlayOnlineV7 {
             cancelDevices: document.getElementById('cancelDevicesBtn'),
             toggleMic: document.getElementById('toggleMicBtn'),
             toggleCamera: document.getElementById('toggleCameraBtn'),
+            settings: document.getElementById('settingsBtn'),
+            refreshCall: document.getElementById('refreshCallBtn'),
             endCall: document.getElementById('endCallBtn'),
         };
 
@@ -100,6 +103,8 @@ class PlayOnlineV7 {
         // Video call controls
         this.buttons.toggleMic.addEventListener('click', () => this.toggleMicrophone());
         this.buttons.toggleCamera.addEventListener('click', () => this.toggleCamera());
+        this.buttons.settings.addEventListener('click', () => this.showDeviceSettings());
+        this.buttons.refreshCall.addEventListener('click', () => this.refreshCall());
         this.buttons.endCall.addEventListener('click', () => this.endCall());
     }
 
@@ -354,7 +359,34 @@ class PlayOnlineV7 {
         }
 
         try {
-            // Initialize video room with selected devices
+            // If we're in settings mode, just update devices and return to call
+            if (this.isSettingsMode) {
+                // Apply new device constraints to existing stream
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                }
+
+                const constraints = {
+                    video: { deviceId: { exact: this.selectedDevices.camera } },
+                    audio: { deviceId: { exact: this.selectedDevices.microphone } },
+                };
+
+                const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+                this.mediaStream = newStream;
+                this.video.local.srcObject = newStream;
+
+                // Update video room with new stream
+                if (this.videoRoom) {
+                    await this.videoRoom.updateStream(newStream);
+                }
+
+                this.isSettingsMode = false;
+                this.showScreen('videoCall');
+                this.showError('Device settings updated!');
+                return;
+            }
+
+            // Normal flow: Initialize video room with selected devices
             this.videoRoom = window.VideoRoom;
 
             const constraints = {
@@ -376,6 +408,9 @@ class PlayOnlineV7 {
                 null,  // existingStream - let it create new one
                 constraints
             );
+
+            // Store the stream for later use
+            this.mediaStream = this.videoRoom.localStream;
 
             // Set up callbacks
             this.videoRoom.onPeerJoined = (peerId, peerName) => {
@@ -419,8 +454,7 @@ class PlayOnlineV7 {
             track.enabled = this.micEnabled;
         });
 
-        btn.textContent = this.micEnabled ? '🎤' : '🔇';
-        btn.classList.toggle('off');
+        btn.style.backgroundColor = this.micEnabled ? '' : '#ff4444';
     }
 
     toggleCamera() {
@@ -435,6 +469,64 @@ class PlayOnlineV7 {
 
         btn.textContent = this.cameraEnabled ? '📷' : '🚫';
         btn.classList.toggle('off');
+        btn.style.backgroundColor = this.cameraEnabled ? '' : '#ff4444';
+    }
+
+    showDeviceSettings() {
+        // Store current video room and media stream
+        const currentVideoRoom = this.videoRoom;
+        const currentStream = this.mediaStream;
+
+        // Show device config screen but mark it as settings mode
+        this.isSettingsMode = true;
+        this.showScreen('deviceConfig');
+
+        // Pre-populate with current selections
+        if (this.selectedDevices.camera) {
+            this.inputs.camera.value = this.selectedDevices.camera;
+        }
+        if (this.selectedDevices.microphone) {
+            this.inputs.microphone.value = this.selectedDevices.microphone;
+        }
+
+        // Preview the camera
+        this.previewCamera();
+    }
+
+    async refreshCall() {
+        if (!this.videoRoom) return;
+
+        this.showError('Refreshing video call...');
+
+        try {
+            // Disconnect from current call
+            await this.videoRoom.leaveRoom();
+
+            // Reconnect to same room with same opponent
+            this.videoRoom = new window.VideoRoom(
+                window.supabaseClient,
+                this.roomCode,
+                this.playerId,
+                this.playerName
+            );
+
+            await this.videoRoom.joinRoom(this.mediaStream);
+            this.video.local.srcObject = this.mediaStream;
+
+            // Reset media states
+            this.micEnabled = true;
+            this.cameraEnabled = true;
+            this.buttons.toggleMic.textContent = '🎤';
+            this.buttons.toggleMic.style.backgroundColor = '';
+            this.buttons.toggleCamera.textContent = '📷';
+            this.buttons.toggleCamera.style.backgroundColor = '';
+
+            this.showError('Video call refreshed successfully!');
+            console.log('✅ Video call refreshed');
+        } catch (err) {
+            console.error('❌ Refresh failed:', err);
+            this.showError('Failed to refresh call: ' + err.message);
+        }
     }
 
     async endCall() {
@@ -442,8 +534,16 @@ class PlayOnlineV7 {
             await this.videoRoom.leaveRoom();
         }
 
+        // Stop all media tracks
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+        }
+
         // Reset
         this.roomCode = null;
+        this.playerId = this.generatePlayerId();
+        this.inputs.roomCode.value = '';
+        this.isSettingsMode = false
         this.playerId = this.generatePlayerId();
         this.inputs.roomCode.value = '';
 
