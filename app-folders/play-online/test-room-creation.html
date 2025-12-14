@@ -254,7 +254,12 @@
 
         // Helper function to log to UI
         function log(stepNum, message, type = 'info') {
-            const output = document.getElementById(`step${stepNum}Output`);
+            const elementId = stepNum === 'summary' ? 'summaryOutput' : `step${stepNum}Output`;
+            const output = document.getElementById(elementId);
+            if (!output) {
+                console.log(`Step ${stepNum}:`, message);
+                return;
+            }
             const timestamp = new Date().toLocaleTimeString();
             const line = `[${timestamp}] ${message}\n`;
             output.textContent += line;
