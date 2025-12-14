@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Room Creation Test - Step by Step</title>
     <style>
         * {
@@ -366,7 +369,7 @@
                     // Load supabase-config as a script tag (not module) - MUST LOAD FIRST
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
-                        script.src = '../../supabase-config.js';
+                        script.src = `../../supabase-config.js?t=${Date.now()}`;
                         script.onload = () => {
                             log(1, '✅ supabase-config.js loaded');
                             resolve();
@@ -390,7 +393,7 @@
                     // Load guest-auth as a script tag (not module) - MUST LOAD AFTER supabase-config
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
-                        script.src = './guest-auth.js';
+                        script.src = `./guest-auth.js?t=${Date.now()}`;
                         script.onload = () => {
                             log(1, '✅ guest-auth.js loaded');
                             resolve();
@@ -410,7 +413,7 @@
                 
                 log(1, '📦 Loading room-manager.js...');
                 try {
-                    await import('./room-manager.js');
+                    await import(`./room-manager.js?t=${Date.now()}`);
                     log(1, '✅ room-manager.js loaded');
                 } catch (e) {
                     log(1, `⚠️ room-manager.js error: ${e.message}`);
@@ -631,12 +634,18 @@
                 setVariable(7, 'Insert Payload', insertData);
                 
                 log(7, '⏳ Sending insert request...');
+                log(7, `📡 Target table: game_rooms`);
+                log(7, `🔑 Auth user: ${window.supabaseClient?.auth?.user?.id || 'ANON'}`);
+                
                 const { data, error } = await window.supabaseClient
                     .from('game_rooms')
                     .insert([insertData]);
                 
+                log(7, `📡 Response received. Error: ${error ? 'YES' : 'NO'}, Data: ${data ? 'YES' : 'NO'}`);
                 
                 if (error) {
+                    log(7, `🔍 Full error object:`, 'error');
+                    log(7, JSON.stringify(error, null, 2), 'error');
                     throw error;
                 }
                 
