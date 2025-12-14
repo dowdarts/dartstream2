@@ -520,9 +520,19 @@ const PlayOnlineUI = {
     async handleLeaveLobby() {
         try {
             this.showLoading('Leaving room...');
+            
+            // Stop camera preview stream
+            if (this.previewStream) {
+                this.previewStream.getTracks().forEach(track => track.stop());
+                this.previewStream = null;
+            }
+            
+            // Leave room
             await PlayOnlineApp.leaveRoom();
             this.hideLoading();
-            this.showScreen('roomSelectScreen');
+            
+            // Return to main host/join screen
+            this.showScreen('hostOrJoinScreen');
         } catch (error) {
             console.error('❌ Leave error:', error);
             this.hideLoading();
