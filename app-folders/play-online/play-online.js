@@ -575,6 +575,17 @@ const PlayOnlineUI = {
             if (localVideoEl && PlayOnlineApp?.videoRoom?.localStream) {
                 localVideoEl.srcObject = PlayOnlineApp.videoRoom.localStream;
                 console.log('✅ Local video stream transferred to #localVideo element');
+                
+                // Ensure video element is playing
+                localVideoEl.play().then(() => {
+                    console.log('▶️ Local video playback started');
+                }).catch(err => {
+                    console.warn('⚠️ Could not auto-play local video:', err.message);
+                    // Try again after a short delay
+                    setTimeout(() => {
+                        localVideoEl.play().catch(e => console.error('❌ Auto-play failed:', e));
+                    }, 100);
+                });
             } else {
                 console.warn('⚠️ Could not transfer local stream');
                 console.log('   - localVideoEl exists?', !!localVideoEl);
