@@ -101,15 +101,18 @@ class PlayOnlineV7 {
     }
 
     async initializeModules() {
-        // Wait for Supabase to load
+        // Wait for Supabase to load (CDN is async, may take a moment)
         let attempts = 0;
-        while (!window.PlayerDB && attempts < 50) {
+        const maxAttempts = 100; // 10 seconds (100 * 100ms)
+        
+        while (!window.PlayerDB && attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
 
         if (!window.PlayerDB) {
-            this.showError('Failed to connect to database');
+            this.showError('Failed to connect to database - Supabase not loaded');
+            console.error('❌ PlayerDB never initialized after', maxAttempts * 100, 'ms');
             return;
         }
 

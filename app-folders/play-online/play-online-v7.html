@@ -529,6 +529,10 @@
     <div id="errorMessage" class="hidden"></div>
 
     <!-- SCRIPTS -->
+    <!-- Supabase library MUST load first -->
+    <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Then our config that depends on Supabase -->
     <script src="../../supabase-config.js"></script>
     <script src="video-room.js?v=13"></script>
     <script src="room-manager.js?v=13"></script>
