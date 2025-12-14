@@ -19,6 +19,14 @@ const PlayOnlineUI = {
     supabaseClient: null,
     mediaStream: null, // Store and reuse media stream
     
+    // Camera settings
+    cameraSettings: {
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+        hue: 0
+    },
+    
     /**
      * Initialize the UI system
      */
@@ -72,8 +80,17 @@ const PlayOnlineUI = {
         
         // Lobby Screen
         document.getElementById('copyRoomCodeBtn')?.addEventListener('click', () => this.copyRoomCodeToClipboard());
-        document.getElementById('editSettingsBtn')?.addEventListener('click', () => this.handleEditSettings());
+        document.getElementById('editSettingsBtn')?.addEventListener('click', () => this.openCameraSettings());
         document.getElementById('confirmDevicesBtn')?.addEventListener('click', () => this.handleConfirmDevices());
+        document.getElementById('closeSettingsBtn')?.addEventListener('click', () => this.closeCameraSettings());
+        document.getElementById('resetSettingsBtn')?.addEventListener('click', () => this.resetCameraSettings());
+        document.getElementById('applySettingsBtn')?.addEventListener('click', () => this.applyCameraSettings());
+        
+        // Camera settings sliders
+        document.getElementById('brightnessSlider')?.addEventListener('input', (e) => this.updateBrightness(e.target.value));
+        document.getElementById('contrastSlider')?.addEventListener('input', (e) => this.updateContrast(e.target.value));
+        document.getElementById('saturationSlider')?.addEventListener('input', (e) => this.updateSaturation(e.target.value));
+        document.getElementById('hueSlider')?.addEventListener('input', (e) => this.updateHue(e.target.value));
         document.getElementById('startVideoBtn')?.addEventListener('click', () => this.handleStartVideo());
         document.getElementById('leaveLobbyBtn')?.addEventListener('click', () => this.handleLeaveLobby());
         
@@ -398,21 +415,91 @@ const PlayOnlineUI = {
         }
     },
     
-    async handleEditSettings() {
+    openCameraSettings() {
         try {
-            console.log('✓ Re-opening device settings');
-            // Show the device selection
-            const deviceSelection = document.querySelector('.device-selection');
-            if (deviceSelection) {
-                deviceSelection.style.display = 'block';
-            }
-            // Hide the waiting for peers message
-            document.getElementById('lobbyStatusMessage').style.display = 'none';
-            // Hide the edit settings button
-            document.getElementById('editSettingsBtn').style.display = 'none';
+            console.log('✓ Opening camera settings');
+            document.getElementById('cameraSettingsModal').style.display = 'flex';
         } catch (error) {
-            console.error('❌ Edit settings error:', error);
-            this.showError('Error opening device settings');
+            console.error('❌ Open camera settings error:', error);
+            this.showError('Error opening camera settings');
+        }
+    },
+    
+    closeCameraSettings() {
+        try {
+            document.getElementById('cameraSettingsModal').style.display = 'none';
+        } catch (error) {
+            console.error('❌ Close camera settings error:', error);
+        }
+    },
+    
+    updateBrightness(value) {
+        this.cameraSettings.brightness = parseInt(value);
+        document.getElementById('brightnessValue').textContent = value + '%';
+        this.applyCameraFilters();
+    },
+    
+    updateContrast(value) {
+        this.cameraSettings.contrast = parseInt(value);
+        document.getElementById('contrastValue').textContent = value + '%';
+        this.applyCameraFilters();
+    },
+    
+    updateSaturation(value) {
+        this.cameraSettings.saturation = parseInt(value);
+        document.getElementById('saturationValue').textContent = value + '%';
+        this.applyCameraFilters();
+    },
+    
+    updateHue(value) {
+        this.cameraSettings.hue = parseInt(value);
+        document.getElementById('hueValue').textContent = value + '°';
+        this.applyCameraFilters();
+    },
+    
+    applyCameraFilters() {
+        const localVideo = document.getElementById('localVideo');
+        if (localVideo) {
+            const { brightness, contrast, saturation, hue } = this.cameraSettings;
+            localVideo.style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hue}deg)`;
+        }
+    },
+    
+    resetCameraSettings() {
+        try {
+            this.cameraSettings = {
+                brightness: 100,
+                contrast: 100,
+                saturation: 100,
+                hue: 0
+            };
+            
+            // Reset sliders
+            document.getElementById('brightnessSlider').value = 100;
+            document.getElementById('contrastSlider').value = 100;
+            document.getElementById('saturationSlider').value = 100;
+            document.getElementById('hueSlider').value = 0;
+            
+            // Reset labels
+            document.getElementById('brightnessValue').textContent = '100%';
+            document.getElementById('contrastValue').textContent = '100%';
+            document.getElementById('saturationValue').textContent = '100%';
+            document.getElementById('hueValue').textContent = '0°';
+            
+            this.applyCameraFilters();
+            console.log('✓ Camera settings reset');
+        } catch (error) {
+            console.error('❌ Reset settings error:', error);
+        }
+    },
+    
+    applyCameraSettings() {
+        try {
+            console.log('✓ Camera settings applied:', this.cameraSettings);
+            this.closeCameraSettings();
+        } catch (error) {
+            console.error('❌ Apply settings error:', error);
+            this.showError('Error applying camera settings');
         }
     },
     

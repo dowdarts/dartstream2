@@ -40,7 +40,7 @@
         <div class="navbar-brand">
             <img src="dartstream-logo.png" alt="DartStream" class="logo">
             <h1>DartStream Play Online</h1>
-            <span class="version-badge">v2.4</span>
+            <span class="version-badge">v2.5</span>
         </div>
         <div class="navbar-status">
             <span id="statusIndicator" class="status-dot offline"></span>
@@ -144,8 +144,8 @@
                     <div class="lobby-header">
                         <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
                         <div class="header-buttons">
-                            <button id="editSettingsBtn" class="btn btn-sm btn-secondary" style="display: none;">
-                                ⚙️ Edit Settings
+                            <button id="editSettingsBtn" class="btn btn-sm btn-secondary" style="display: none;" title="Adjust camera settings">
+                                ⚙️ Configure
                             </button>
                             <button id="copyRoomCodeBtn" class="btn btn-sm btn-secondary">
                                 📋 Copy Code
@@ -184,6 +184,79 @@
                                 <button id="confirmDevicesBtn" class="btn btn-primary btn-block" style="margin-top: 1rem;">
                                     ✓ Confirm Settings
                                 </button>
+                            </div>
+                            
+                            <!-- Camera Settings Modal -->
+                            <div id="cameraSettingsModal" class="modal" style="display: none;">
+                                <div class="modal-content camera-settings-panel">
+                                    <div class="modal-header">
+                                        <h3>⚙️ Camera Settings</h3>
+                                        <button class="modal-close" id="closeSettingsBtn">✕</button>
+                                    </div>
+                                    
+                                    <div class="settings-controls">
+                                        <div class="setting-item">
+                                            <label for="brightnessSlider">🔆 Brightness</label>
+                                            <input 
+                                                type="range" 
+                                                id="brightnessSlider" 
+                                                min="50" 
+                                                max="150" 
+                                                value="100" 
+                                                class="settings-slider"
+                                            >
+                                            <span id="brightnessValue">100%</span>
+                                        </div>
+                                        
+                                        <div class="setting-item">
+                                            <label for="contrastSlider">⚫ Contrast</label>
+                                            <input 
+                                                type="range" 
+                                                id="contrastSlider" 
+                                                min="50" 
+                                                max="150" 
+                                                value="100" 
+                                                class="settings-slider"
+                                            >
+                                            <span id="contrastValue">100%</span>
+                                        </div>
+                                        
+                                        <div class="setting-item">
+                                            <label for="saturationSlider">🎨 Saturation</label>
+                                            <input 
+                                                type="range" 
+                                                id="saturationSlider" 
+                                                min="0" 
+                                                max="200" 
+                                                value="100" 
+                                                class="settings-slider"
+                                            >
+                                            <span id="saturationValue">100%</span>
+                                        </div>
+                                        
+                                        <div class="setting-item">
+                                            <label for="hueSlider">🌈 Hue</label>
+                                            <input 
+                                                type="range" 
+                                                id="hueSlider" 
+                                                min="0" 
+                                                max="360" 
+                                                value="0" 
+                                                class="settings-slider"
+                                            >
+                                            <span id="hueValue">0°</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="settings-actions">
+                                        <button id="resetSettingsBtn" class="btn btn-secondary">
+                                            ↺ Reset
+                                        </button>
+                                        <button id="applySettingsBtn" class="btn btn-primary">
+                                            ✓ Apply
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
