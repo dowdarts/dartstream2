@@ -174,12 +174,12 @@ async function handleRegister() {
             .maybeSingle();
         
         if (accountData && accountData.account_linked_player_id) {
-            // Account is set up and linked - redirect to index
+            // Account is set up and linked - redirect to home
             const userName = `${accountData.first_name} ${accountData.last_name}`;
             showMessage('message-container', 'Account created successfully!', 'success');
             setTimeout(() => {
                 alert(`Welcome, ${userName}!`);
-                window.location.href = 'index.html';
+                window.location.href = 'https://dowdarts.github.io/dartstream2/';
             }, 1000);
             return;
         }
@@ -232,10 +232,10 @@ async function handleLogin() {
             .maybeSingle();
         
         if (accountData && accountData.account_linked_player_id) {
-            // Account is already set up and linked - redirect to index
+            // Account is already set up and linked - redirect to home
             const userName = `${accountData.first_name} ${accountData.last_name}`;
             alert(`Welcome back, ${userName}!`);
-            window.location.href = 'index.html';
+            window.location.href = 'https://dowdarts.github.io/dartstream2/';
             return;
         }
 
@@ -603,11 +603,11 @@ async function handleLinkToLibrary() {
 
             showLinkingMessage('✅ Your player card has been created and linked to your account!', 'success');
             
-            // Redirect to index after successful linking
+            // Redirect to home after successful linking
             setTimeout(() => {
                 const userName = `${firstName} ${lastName}`;
                 alert(`Welcome, ${userName}! Your account is now set up.`);
-                window.location.href = 'index.html';
+                window.location.href = 'https://dowdarts.github.io/dartstream2/';
             }, 2000);
             return;
         }
