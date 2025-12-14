@@ -1110,3 +1110,107 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 console.log('📦 play-online.js loaded');
+
+// ============ DEBUG FUNCTIONS ============
+
+function addDebugLog(message, type = 'info') {
+    const debugOutput = document.getElementById('debugOutput');
+    if (!debugOutput) return;
+    
+    const entry = document.createElement('div');
+    entry.className = `debug-log ${type}`;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    debugOutput.appendChild(entry);
+    debugOutput.scrollTop = debugOutput.scrollHeight;
+}
+
+function clearDebugLogs() {
+    const debugOutput = document.getElementById('debugOutput');
+    if (debugOutput) {
+        debugOutput.innerHTML = '';
+        addDebugLog('🧹 Logs cleared', 'info');
+    }
+}
+
+function testScreenTransition() {
+    addDebugLog('========== SCREEN TRANSITION TEST ==========', 'debug');
+    
+    const allScreens = document.querySelectorAll('.screen');
+    addDebugLog(`Found ${allScreens.length} screen elements`, 'info');
+    
+    allScreens.forEach((screen, idx) => {
+        addDebugLog(`  Screen ${idx}: ${screen.id}`, 'debug');
+    });
+    
+    const videoCallScreen = document.getElementById('videoCallScreen');
+    if (!videoCallScreen) {
+        addDebugLog('❌ videoCallScreen not found!', 'error');
+        return;
+    }
+    
+    addDebugLog('✓ videoCallScreen found', 'info');
+    
+    // Test transition
+    allScreens.forEach(s => s.classList.remove('active'));
+    videoCallScreen.classList.add('active');
+    
+    const hasActive = videoCallScreen.classList.contains('active');
+    const style = window.getComputedStyle(videoCallScreen);
+    
+    addDebugLog(`✓ Active class: ${hasActive}`, hasActive ? 'info' : 'error');
+    addDebugLog(`Display: ${style.display}`, 'debug');
+    addDebugLog(`Opacity: ${style.opacity}`, 'debug');
+    
+    setTimeout(() => {
+        // Reset screens
+        allScreens.forEach(s => s.classList.remove('active'));
+        document.getElementById('hostOrJoinScreen')?.classList.add('active');
+        addDebugLog('✓ Screens reset', 'info');
+        addDebugLog('========== END TEST ==========', 'debug');
+    }, 1000);
+}
+
+function testStartVideo() {
+    addDebugLog('========== START VIDEO TEST ==========', 'debug');
+    addDebugLog('🎬 Testing handleStartVideo()', 'info');
+    PlayOnlineUI.handleStartVideo().catch(err => {
+        addDebugLog(`Error: ${err.message}`, 'error');
+    });
+    addDebugLog('========== END TEST ==========', 'debug');
+}
+
+// Toggle debug panel with 'D' key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'd' || e.key === 'D') {
+        const debugPanel = document.getElementById('debugPanel');
+        if (debugPanel) {
+            debugPanel.style.display = debugPanel.style.display === 'none' ? 'flex' : 'none';
+        }
+    }
+});
+
+// Intercept console logs
+const originalLog = console.log;
+const originalError = console.error;
+const originalWarn = console.warn;
+
+console.log = function(msg) {
+    originalLog(msg);
+    if (typeof msg === 'string') {
+        addDebugLog(msg, 'info');
+    }
+};
+
+console.error = function(msg) {
+    originalError(msg);
+    if (typeof msg === 'string') {
+        addDebugLog(msg, 'error');
+    }
+};
+
+console.warn = function(msg) {
+    originalWarn(msg);
+    if (typeof msg === 'string') {
+        addDebugLog(msg, 'warn');
+    }
+};

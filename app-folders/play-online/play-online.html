@@ -15,6 +15,20 @@
     <script src="guest-auth.js"></script>
 </head>
 <body>
+    <!-- DEBUG PANEL (Press D to toggle) -->
+    <div id="debugPanel" class="debug-panel" style="display: none;">
+        <div class="debug-header">
+            <h3>🐛 Debug Console</h3>
+            <button onclick="document.getElementById('debugPanel').style.display='none'">✕</button>
+        </div>
+        <div id="debugOutput" class="debug-output"></div>
+        <div class="debug-controls">
+            <button onclick="clearDebugLogs()">Clear</button>
+            <button onclick="testScreenTransition()">Test Transition</button>
+            <button onclick="testStartVideo()">Test Start Video</button>
+        </div>
+    </div>
+    
     <!-- Auth Wall (shown if not logged in) -->
     <div id="authWall" class="auth-wall" style="display: none;">
         <div class="auth-wall-content">
@@ -40,7 +54,7 @@
         <div class="navbar-brand">
             <img src="dartstream-logo.png" alt="DartStream" class="logo">
             <h1>DartStream Play Online</h1>
-            <span class="version-badge">v3.7</span>
+            <span class="version-badge">v3.8</span>
         </div>
         <div class="navbar-status">
             <span id="statusIndicator" class="status-dot offline"></span>
