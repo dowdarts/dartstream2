@@ -116,8 +116,35 @@ const PlayOnlineUI = {
     },
     
     /**
-     * SCREEN MANAGEMENT
+     * Peer event handlers
      */
+    onPeerJoined(detail) {
+        console.log('🎨 UI: Peer joined event received', detail);
+        // Will wait for peerVideoReady to enable button
+    },
+    
+    onPeerVideoReady(detail) {
+        console.log('🎨 UI: Peer video ready, enabling Start Video Call button', detail);
+        const startBtn = document.getElementById('startVideoBtn');
+        if (startBtn) {
+            startBtn.disabled = false;
+            console.log('✅ Start Video Call button enabled');
+        }
+    },
+    
+    onPeerLeft(detail) {
+        console.log('🎨 UI: Peer left, disabling Start Video Call button', detail);
+        const startBtn = document.getElementById('startVideoBtn');
+        if (startBtn) {
+            startBtn.disabled = true;
+            console.log('⛔ Start Video Call button disabled');
+        }
+    },
+    
+    onVideoRoomError(detail) {
+        console.error('🎨 UI: Video room error:', detail.error);
+        this.showError('Video call error: ' + detail.error?.message || 'Unknown error');
+    },
     
     /**
      * SCREEN MANAGEMENT
