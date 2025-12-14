@@ -72,6 +72,7 @@ const PlayOnlineUI = {
         
         // Lobby Screen
         document.getElementById('copyRoomCodeBtn')?.addEventListener('click', () => this.copyRoomCodeToClipboard());
+        document.getElementById('confirmDevicesBtn')?.addEventListener('click', () => this.handleConfirmDevices());
         document.getElementById('startVideoBtn')?.addEventListener('click', () => this.handleStartVideo());
         document.getElementById('leaveLobbyBtn')?.addEventListener('click', () => this.handleLeaveLobby());
         
@@ -376,6 +377,21 @@ const PlayOnlineUI = {
             console.error('❌ Start video error:', error);
             this.hideLoading();
             this.showError('Failed to start video call');
+        }
+    },
+    
+    async handleConfirmDevices() {
+        try {
+            console.log('✓ Device settings confirmed');
+            // Hide the device selection, show the waiting for peers message
+            const deviceSelection = document.querySelector('.device-selection');
+            if (deviceSelection) {
+                deviceSelection.style.display = 'none';
+            }
+            document.getElementById('lobbyStatusMessage').style.display = 'block';
+        } catch (error) {
+            console.error('❌ Confirm devices error:', error);
+            this.showError('Error confirming device settings');
         }
     },
     
