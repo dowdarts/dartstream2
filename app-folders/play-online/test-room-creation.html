@@ -361,29 +361,9 @@
                     log(1, `⚠️ Supabase library error: ${e.message}`);
                 }
                 
-                log(1, '📦 Loading guest-auth.js...');
-                try {
-                    // Load guest-auth as a script tag (not module)
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = './guest-auth.js';
-                        script.onload = () => {
-                            log(1, '✅ guest-auth.js loaded');
-                            resolve();
-                        };
-                        script.onerror = (e) => {
-                            log(1, `⚠️ Failed to load guest-auth.js: ${e}`);
-                            reject(e);
-                        };
-                        document.head.appendChild(script);
-                    });
-                } catch (e) {
-                    log(1, `⚠️ guest-auth.js error: ${e.message}`);
-                }
-                
                 log(1, '📦 Loading supabase-config.js...');
                 try {
-                    // Load supabase-config as a script tag (not module)
+                    // Load supabase-config as a script tag (not module) - MUST LOAD FIRST
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
                         script.src = '../../supabase-config.js';
@@ -403,6 +383,29 @@
                     log(1, `📊 window.PlayerDB = ${window.PlayerDB ? 'SET' : 'NOT SET'}`);
                 } catch (e) {
                     log(1, `⚠️ supabase-config.js error: ${e.message}`);
+                }
+                
+                log(1, '📦 Loading guest-auth.js...');
+                try {
+                    // Load guest-auth as a script tag (not module) - MUST LOAD AFTER supabase-config
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = './guest-auth.js';
+                        script.onload = () => {
+                            log(1, '✅ guest-auth.js loaded');
+                            resolve();
+                        };
+                        script.onerror = (e) => {
+                            log(1, `⚠️ Failed to load guest-auth.js: ${e}`);
+                            reject(e);
+                        };
+                        document.head.appendChild(script);
+                    });
+                    // Wait for guest auth initialization
+                    await new Promise(r => setTimeout(r, 2000));
+                    log(1, `📊 window.GuestAuth = ${window.GuestAuth ? 'SET' : 'NOT SET'}`);
+                } catch (e) {
+                    log(1, `⚠️ guest-auth.js error: ${e.message}`);
                 }
                 
                 log(1, '📦 Loading room-manager.js...');
