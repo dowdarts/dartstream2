@@ -37,14 +37,18 @@ CREATE POLICY "Anon users can manage rooms" ON game_rooms
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- Function to clean up inactive rooms (not updated for 1 minute)
-CREATE OR REPLACE FUNCTION cleanup_inactive_rooms()
-RETURNS void AS $$
+-- WITH SECURE search_path to prevent privilege escalation
+CREATE OR REPLACE FUNCTION public.cleanup_inactive_rooms()
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
-    DELETE FROM game_rooms
+    DELETE FROM public.game_rooms
     WHERE status != 'active'
-    AND updated_at < NOW() - INTERVAL '1 minute';
+    AND updated_at < pg_catalog.NOW() - INTERVAL '1 minute';
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Schedule cleanup to run every 30 seconds
 SELECT cron.schedule('cleanup-inactive-rooms', '30 seconds', 'SELECT cleanup_inactive_rooms()');
