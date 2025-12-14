@@ -63,7 +63,13 @@ const RoomManager = {
                 });
             
             if (error) {
-                console.error('❌ Error creating room:', error);
+                console.error('❌ Error creating room:', {
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint,
+                    fullError: error
+                });
                 throw error;
             }
             
@@ -80,7 +86,13 @@ const RoomManager = {
             };
             
         } catch (error) {
-            console.error('❌ Error creating room:', error);
+            console.error('❌ Error creating room:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+                fullError: error
+            });
             throw error;
         }
     },
