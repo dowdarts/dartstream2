@@ -354,7 +354,7 @@
                     // Load supabase-config as a script tag (not module)
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
-                        script.src = '../../../supabase-config.js';
+                        script.src = '../../supabase-config.js';
                         script.onload = () => {
                             log(1, '✅ supabase-config.js loaded');
                             resolve();
