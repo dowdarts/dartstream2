@@ -46,7 +46,22 @@ const PlayOnlineUI = {
             // Attach event listeners
             this.attachEventListeners();
             
-            console.log('✅ PlayOnlineUI initialized');
+            // Add global click capture as safety net
+            document.addEventListener('click', (e) => {
+                if (e.target?.id === 'startVideoBtn') {
+                    console.log('🎬 GLOBAL CLICK CAPTURE: Start Video Button clicked');
+                    if (!this.handleStartVideo.__running) {
+                        this.handleStartVideo.__running = true;
+                        this.handleStartVideo().finally(() => {
+                            this.handleStartVideo.__running = false;
+                        });
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true); // useCapture = true to catch in capture phase
+            
+            console.log('✅ PlayOnlineUI initialized (with global click safety net)');
             
         } catch (error) {
             console.error('❌ Error initializing UI:', error);
@@ -94,14 +109,30 @@ const PlayOnlineUI = {
         document.getElementById('settingsCameraSelect')?.addEventListener('change', (e) => this.onSettingsCameraChanged(e.target.value));
         document.getElementById('settingsMicrophoneSelect')?.addEventListener('change', (e) => this.onSettingsMicrophoneChanged(e.target.value));
         
-        // Start Video Button - add with detailed logging
+        // Start Video Button - add with detailed logging and multiple fallbacks
         const startVideoBtn = document.getElementById('startVideoBtn');
         if (startVideoBtn) {
             console.log('✅ Start Video button found - attaching click handler');
+            
+            // Primary: click event
             startVideoBtn.addEventListener('click', () => {
-                console.log('🎬 START VIDEO BUTTON CLICKED!');
+                console.log('🎬 START VIDEO BUTTON CLICKED! (via click event)');
                 this.handleStartVideo();
             });
+            
+            // Fallback 1: mousedown event
+            startVideoBtn.addEventListener('mousedown', () => {
+                console.log('🎬 START VIDEO BUTTON MOUSEDOWN! (fallback 1)');
+                this.handleStartVideo();
+            });
+            
+            // Fallback 2: pointerdown event  
+            startVideoBtn.addEventListener('pointerdown', () => {
+                console.log('🎬 START VIDEO BUTTON POINTERDOWN! (fallback 2)');
+                this.handleStartVideo();
+            });
+            
+            console.log('✅ All click handlers attached to Start Video button');
         } else {
             console.warn('⚠️ Start Video button NOT found in DOM');
         }
