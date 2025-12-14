@@ -40,7 +40,7 @@
         <div class="navbar-brand">
             <img src="dartstream-logo.png" alt="DartStream" class="logo">
             <h1>DartStream Play Online</h1>
-            <span class="version-badge">v2.3</span>
+            <span class="version-badge">v2.4</span>
         </div>
         <div class="navbar-status">
             <span id="statusIndicator" class="status-dot offline"></span>
@@ -143,9 +143,14 @@
                 <div class="lobby-card">
                     <div class="lobby-header">
                         <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
-                        <button id="copyRoomCodeBtn" class="btn btn-sm btn-secondary">
-                            📋 Copy Code
-                        </button>
+                        <div class="header-buttons">
+                            <button id="editSettingsBtn" class="btn btn-sm btn-secondary" style="display: none;">
+                                ⚙️ Edit Settings
+                            </button>
+                            <button id="copyRoomCodeBtn" class="btn btn-sm btn-secondary">
+                                📋 Copy Code
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="lobby-content">

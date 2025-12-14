@@ -506,6 +506,12 @@ body {
     border-bottom: 2px solid var(--border-color);
 }
 
+.header-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
 .room-code {
     font-size: 2rem;
     color: var(--primary-color);

@@ -72,6 +72,7 @@ const PlayOnlineUI = {
         
         // Lobby Screen
         document.getElementById('copyRoomCodeBtn')?.addEventListener('click', () => this.copyRoomCodeToClipboard());
+        document.getElementById('editSettingsBtn')?.addEventListener('click', () => this.handleEditSettings());
         document.getElementById('confirmDevicesBtn')?.addEventListener('click', () => this.handleConfirmDevices());
         document.getElementById('startVideoBtn')?.addEventListener('click', () => this.handleStartVideo());
         document.getElementById('leaveLobbyBtn')?.addEventListener('click', () => this.handleLeaveLobby());
@@ -388,10 +389,30 @@ const PlayOnlineUI = {
             if (deviceSelection) {
                 deviceSelection.style.display = 'none';
             }
+            // Show the edit settings button
+            document.getElementById('editSettingsBtn').style.display = 'inline-block';
             document.getElementById('lobbyStatusMessage').style.display = 'block';
         } catch (error) {
             console.error('❌ Confirm devices error:', error);
             this.showError('Error confirming device settings');
+        }
+    },
+    
+    async handleEditSettings() {
+        try {
+            console.log('✓ Re-opening device settings');
+            // Show the device selection
+            const deviceSelection = document.querySelector('.device-selection');
+            if (deviceSelection) {
+                deviceSelection.style.display = 'block';
+            }
+            // Hide the waiting for peers message
+            document.getElementById('lobbyStatusMessage').style.display = 'none';
+            // Hide the edit settings button
+            document.getElementById('editSettingsBtn').style.display = 'none';
+        } catch (error) {
+            console.error('❌ Edit settings error:', error);
+            this.showError('Error opening device settings');
         }
     },
     
