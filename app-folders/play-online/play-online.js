@@ -16,12 +16,11 @@ const PlayOnlineUI = {
         console.log('🎨 PlayOnlineUI initializing...');
         
         try {
-            // Wait for Supabase
-            if (!window.PlayerDB?.supabaseClient) {
-                throw new Error('Supabase not initialized');
+            // Supabase should be ready now (PlayerDB exists)
+            // We don't strictly need supabaseClient for basic video functionality
+            if (window.PlayerDB) {
+                this.supabaseClient = window.PlayerDB.supabaseClient || window.supabaseClient;
             }
-            
-            this.supabaseClient = window.PlayerDB.supabaseClient;
             
             // Load country flags
             await this.loadCountryFlags();
@@ -489,19 +488,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('📄 Play Online page loaded');
     
     // Wait for PlayerDB to be available
-    const maxWaitTime = 10000; // 10 seconds
+    const maxWaitTime = 15000; // 15 seconds
     const startTime = Date.now();
     
-    while (!window.PlayerDB?.supabaseClient && (Date.now() - startTime) < maxWaitTime) {
+    while (!window.PlayerDB && (Date.now() - startTime) < maxWaitTime) {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    if (!window.PlayerDB?.supabaseClient) {
-        console.error('❌ Supabase failed to initialize within timeout');
+    if (!window.PlayerDB) {
+        console.error('❌ PlayerDB failed to initialize within timeout');
         PlayOnlineUI.showError('Failed to connect to database. Please refresh the page.');
         return;
     }
     
+    // PlayerDB exists, now initialize the UI
     PlayOnlineUI.initialize();
 });
 
