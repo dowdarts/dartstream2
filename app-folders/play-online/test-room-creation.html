@@ -141,6 +141,9 @@
 <body>
     <div class="container">
         <h1>🧪 Room Creation Test Suite</h1>
+        <div style="background: #e3f2fd; padding: 8px; border-radius: 4px; margin-bottom: 15px; font-size: 12px; color: #1565c0;">
+            <strong>Version 2.1</strong> - Last Updated: Dec 14, 2025 - Cache-busting enabled
+        </div>
         
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
@@ -461,6 +464,16 @@
                 setVariable(2, 'Supabase URL', window.supabaseClient.supabaseUrl);
                 setVariable(2, 'Has Auth', !!window.supabaseClient.auth);
                 setVariable(2, 'Has Realtime', !!window.supabaseClient.realtime);
+                
+                // Log the auth state
+                const authSession = await window.supabaseClient.auth.getSession();
+                log(2, `🔐 Auth session: ${authSession.data.session ? 'AUTHENTICATED' : 'ANON'}`);
+                if (authSession.data.session) {
+                    log(2, `   User ID: ${authSession.data.session.user.id}`);
+                    log(2, `   Email: ${authSession.data.session.user.email}`);
+                } else {
+                    log(2, `   Using anon key - no authenticated user`);
+                }
                 
                 setStatus(2, 'success');
                 return true;
