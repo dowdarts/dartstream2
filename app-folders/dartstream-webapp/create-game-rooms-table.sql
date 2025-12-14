@@ -2,8 +2,8 @@
 CREATE TABLE IF NOT EXISTS game_rooms (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     room_code VARCHAR(4) UNIQUE NOT NULL,
-    host_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    guest_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    host_id UUID, -- Can be auth user or locally-generated guest ID
+    guest_id UUID, -- Can be auth user or locally-generated guest ID
     status VARCHAR(20) DEFAULT 'waiting', -- 'waiting', 'active', 'finished'
     current_turn VARCHAR(10) DEFAULT 'host', -- 'host' or 'guest'
     game_state JSONB DEFAULT '{}',
@@ -36,15 +36,22 @@ CREATE POLICY "Users can delete their rooms" ON game_rooms
     FOR DELETE TO authenticated
     USING (auth.uid() = host_id);
 
--- Function to clean up old waiting rooms (older than 1 hour)
-CREATE OR REPLACE FUNCTION cleanup_old_rooms()
-RETURNS void AS $$
+-- Enable pg_cron extension for scheduled cleanup jobs
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Function to clean up inactive rooms (not updated for 1 minute)
+-- WITH SECURE search_path to prevent privilege escalation
+CREATE OR REPLACE FUNCTION public.cleanup_old_rooms()
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
-    DELETE FROM game_rooms
+    DELETE FROM public.game_rooms
     WHERE status = 'waiting'
-    AND created_at < NOW() - INTERVAL '1 hour';
+    AND created_at < pg_catalog.NOW() - INTERVAL '1 hour';
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Enable Realtime for game_rooms table
 ALTER PUBLICATION supabase_realtime ADD TABLE game_rooms;
