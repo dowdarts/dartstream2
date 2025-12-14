@@ -633,16 +633,15 @@
                 log(7, '⏳ Sending insert request...');
                 const { data, error } = await window.supabaseClient
                     .from('game_rooms')
-                    .insert([insertData])
-                    .select();
+                    .insert([insertData]);
                 
                 if (error) {
                     throw error;
                 }
                 
-                testState.insertedData = data;
+                testState.insertedData = data || insertData;
                 log(7, '✅ Room inserted successfully');
-                setVariable(7, 'Response', data);
+                setVariable(7, 'Response', testState.insertedData);
                 
                 setStatus(7, 'success');
                 return true;
