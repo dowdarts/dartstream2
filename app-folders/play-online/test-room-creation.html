@@ -341,6 +341,26 @@
                 log(1, '📦 Starting module load...');
                 updateProgress(12);
                 
+                // FIRST: Load Supabase library from CDN
+                log(1, '📦 Loading Supabase library from CDN...');
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+                        script.onload = () => {
+                            log(1, '✅ Supabase library loaded from CDN');
+                            resolve();
+                        };
+                        script.onerror = (e) => {
+                            log(1, `⚠️ Failed to load Supabase library: ${e}`);
+                            reject(e);
+                        };
+                        document.head.appendChild(script);
+                    });
+                } catch (e) {
+                    log(1, `⚠️ Supabase library error: ${e.message}`);
+                }
+                
                 log(1, '📦 Loading guest-auth.js...');
                 try {
                     await import('./guest-auth.js');
