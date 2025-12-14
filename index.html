@@ -3,27 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="application-name" content="DartStream - Live Stream Broadcasting Tools">
-    <meta name="apple-mobile-web-app-title" content="DartStream - Live Stream Broadcasting Tools">
     <link rel="icon" type="image/png" href="app-folders/index/dartstream-logo.png">
-    <link rel="apple-touch-icon" href="app-folders/index/dartstream-logo.png">
-    <link rel="manifest" href="app-folders/index/manifest.json">
     <title>DartStream - Live Stream Broadcasting Tools</title>
-    
-    <script>
-        // Browser detection and auto-redirect for Silk browser
-        (function() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const isSilk = /\bSilk\b/i.test(userAgent);
-            const isFireOS = /\bAFT[A-Z]/i.test(userAgent) || /\bKF[A-Z]/i.test(userAgent);
-            
-            // If Silk browser or Fire device detected, redirect to webapp version
-            if (isSilk || isFireOS) {
-                window.location.href = '/dartstream2/app-folders/dartstream-webapp/index.html';
-            }
-        })();
-    </script>
-    
     <style>
         * {
             margin: 0;
@@ -78,185 +59,401 @@
             margin-bottom: clamp(1rem, 2vh, 1.5rem);
         }
 
-        .header .tagline {
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #94a3b8;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto clamp(1.5rem, 3vh, 2rem);
+        }
+
+        .features-section {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: clamp(1.5rem, 3vh, 2.5rem);
+            margin-bottom: clamp(2rem, 4vh, 3rem);
+        }
+
+        .features-section h2 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            color: #facc15;
+            text-align: center;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1.5rem, 3vh, 2rem);
+            margin-top: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .feature-item {
+            background: rgba(0,0,0,0.3);
+            padding: clamp(1rem, 2vh, 1.5rem);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .feature-item h3 {
+            color: #facc15;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
+        }
+
+        .feature-item p {
+            color: #94a3b8;
+            line-height: 1.5;
             font-size: clamp(0.9rem, 2vw, 1.1rem);
-            color: #a1a1a1;
-            margin-bottom: clamp(1.5rem, 2vh, 2rem);
+        }
+
+        .section-divider {
+            text-align: center;
+            margin: clamp(2rem, 4vh, 3rem) 0;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #facc15;
         }
 
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: clamp(1rem, 2vw, 1.5rem);
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1rem, 2vh, 1.5rem);
             margin-bottom: clamp(1rem, 2vh, 2rem);
         }
 
         .app-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid #facc15;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #334155;
             border-radius: 12px;
-            padding: clamp(1rem, 2vh, 1.5rem);
-            cursor: pointer;
+            padding: clamp(1rem, 3vh, 2rem);
+            text-align: center;
             transition: all 0.3s ease;
+            cursor: pointer;
             text-decoration: none;
             color: white;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
+            display: block;
         }
 
         .app-card:hover {
-            background: rgba(250, 204, 21, 0.1);
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(250, 204, 21, 0.3);
+            border-color: #facc15;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(250, 204, 21, 0.2);
         }
 
-        .app-card .icon {
-            font-size: clamp(2rem, 5vw, 3rem);
-            margin-bottom: 1rem;
+        .app-icon {
+            font-size: clamp(2rem, 6vw, 3rem);
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
         }
 
-        .app-card h3 {
+        .app-card h2 {
             font-size: clamp(1.2rem, 3vw, 1.5rem);
-            margin-bottom: 0.5rem;
+            margin-bottom: clamp(0.3rem, 0.5vh, 0.5rem);
             color: #facc15;
         }
 
         .app-card p {
-            font-size: clamp(0.9rem, 1.8vw, 1rem);
-            color: #d0d0d0;
-            flex-grow: 1;
-            margin-bottom: 1rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
+            font-size: clamp(0.85rem, 2vw, 1rem);
         }
 
-        .app-card .btn {
-            background: #facc15;
-            color: #1a1a2e;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: clamp(0.9rem, 1.5vw, 1rem);
-            transition: all 0.3s ease;
-            align-self: flex-start;
-        }
-
-        .app-card .btn:hover {
-            background: white;
-            transform: scale(1.05);
+        .app-card .device-type {
+            display: inline-block;
+            background: #334155;
+            padding: clamp(0.2rem, 0.5vh, 0.3rem) clamp(0.5rem, 1vw, 0.8rem);
+            border-radius: 5px;
+            font-size: clamp(0.75rem, 1.8vw, 0.9rem);
+            margin-top: clamp(0.3rem, 0.5vh, 0.5rem);
         }
 
         .footer {
             text-align: center;
+            margin-top: clamp(1.5rem, 3vh, 3rem);
             padding-top: clamp(1rem, 2vh, 2rem);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: #a1a1a1;
-            font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+        }
+
+        .footer p {
+            margin-bottom: clamp(0.3rem, 0.5vh, 0.5rem);
         }
 
         .footer a {
             color: #facc15;
             text-decoration: none;
-            transition: color 0.3s ease;
         }
 
         .footer a:hover {
-            color: white;
+            text-decoration: underline;
         }
 
-        @media (max-width: 768px) {
+        .partner-logos {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(1.5rem, 3vw, 3rem);
+            margin-top: clamp(1.5rem, 3vh, 2.5rem);
+            padding: clamp(1.5rem, 3vh, 2.5rem) 0;
+        }
+
+        .partner-logos img {
+            height: clamp(180px, 25vw, 280px);
+            width: auto;
+            object-fit: contain;
+            opacity: 0.9;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .partner-logos img:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* Auth buttons */
+        .auth-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+            flex-wrap: wrap;
+        }
+        
+        .auth-btn {
+            padding: clamp(0.6rem, 1.5vh, 0.8rem) clamp(1.5rem, 3vw, 2rem);
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .auth-btn.sign-in {
+            background: rgba(250, 204, 21, 0.2);
+            border: 2px solid #facc15;
+            color: #facc15;
+        }
+        
+        .auth-btn.sign-in:hover {
+            background: rgba(250, 204, 21, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .auth-btn.create {
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #1a1a2e;
+        }
+        
+        .auth-btn.create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(250, 204, 21, 0.4);
+        }
+        
+        .auth-btn.sign-out {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        .auth-btn.sign-out:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .user-greeting {
+            color: #facc15;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Tablet optimizations */
+        @media (max-width: 1024px) {
             .apps-grid {
                 grid-template-columns: 1fr;
             }
+        }
 
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
             body {
-                padding: 1rem;
+                padding: clamp(0.5rem, 2vh, 1rem);
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Hero Section -->
         <div class="header">
             <div class="logo-container">
                 <img src="app-folders/index/dartstream-logo.png" alt="DartStream Logo">
             </div>
-            <h1>🎯 DartStream</h1>
-            <p class="slogan">Professional Darts Streaming Platform</p>
-            <p class="tagline">Real-time scoring, streaming, and statistics for live broadcasts and competitive play</p>
+            
+            <!-- Auth Buttons -->
+            <div id="auth-section">
+                <div id="logged-out-buttons" class="auth-buttons" style="display: none;">
+                    <a href="app-folders/player-account/player-account.html?action=login" class="auth-btn sign-in">Sign In</a>
+                    <a href="app-folders/player-account/player-account.html?action=register" class="auth-btn create">Create Account</a>
+                </div>
+                <div id="logged-in-section" style="display: none; text-align: center;">
+                    <p class="user-greeting">Welcome, <span id="user-name"></span>!</p>
+                    <div class="auth-buttons">
+                        <button class="auth-btn sign-out" id="sign-out-btn">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h1>The Complete Production System for Live Darts</h1>
+            <p class="slogan">Every Stat, Every Score, Every Stream. From Oche to Screen.</p>
+            <p>DartStream is the all-in-one software solution that brings professional-grade broadcast quality to any darts event. Go beyond simple scoring with integrated event management, real-time player statistics, and customizable TV graphics—all controlled from one central hub.</p>
         </div>
 
+        <!-- Key Features Section -->
+        <div class="features-section">
+            <h2>🌟 Unify Your Darts Event Production</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>📊 Total Score Control</h3>
+                    <p>Live scoreboard integration and in-app scoring, including automatic calculation for all popular formats.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📺 Broadcast Ready Graphics</h3>
+                    <p>Generate professional TV Score Bugs, Player Standing displays, and overlays instantly, designed to look great on any stream.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📈 Data & Stats Engine</h3>
+                    <p>Real-time player stats tracking and event tracking to feed your graphics and enrich the viewing experience.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🎮 Event Management Central</h3>
+                    <p>Use the integrated Live Match Central and Tournament Director tools to manage your entire event schedule, players, and match flow seamlessly.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider">💻 Choose Your DartStream App</div>
+
+        <!-- Apps Grid -->
         <div class="apps-grid">
-            <!-- Scoring App -->
             <a href="app-folders/scoring-app/scoring-app.html" class="app-card">
-                <div class="icon">📊</div>
-                <h3>Scoring App</h3>
-                <p>Live X01 dart scoring with real-time averages, achievements, and match statistics</p>
-                <button class="btn">Launch</button>
+                <div class="app-icon">📱</div>
+                <h2>Scoring App</h2>
+                <p>Keep score, track stats, and sync live to scoreboard displays</p>
+                <div class="device-type">💻 Tablet / Desktop</div>
             </a>
 
-            <!-- Controller -->
-            <a href="app-folders/controller/controller.html" class="app-card">
-                <div class="icon">🎮</div>
-                <h3>Controller</h3>
-                <p>Remote control interface for displays and scoreboards during live streams</p>
-                <button class="btn">Launch</button>
-            </a>
-
-            <!-- Scoreboard -->
-            <a href="app-folders/scoreboard/scoreboard.html" class="app-card">
-                <div class="icon">📺</div>
-                <h3>Scoreboard Display</h3>
-                <p>Professional-grade overlay display for OBS/Streamlabs integration</p>
-                <button class="btn">Launch</button>
-            </a>
-
-            <!-- Match Central -->
             <a href="app-folders/match-central/match-central.html" class="app-card">
-                <div class="icon">🏆</div>
-                <h3>Match Central</h3>
-                <p>Tournament management and match history tracking with detailed statistics</p>
-                <button class="btn">Launch</button>
+                <div class="app-icon">🎮</div>
+                <h2>Match Central</h2>
+                <p>View all active matches and select which game to display on your scoreboard</p>
+                <div class="device-type">💻 Desktop</div>
             </a>
 
-            <!-- Video Calling -->
+            <a href="app-folders/scoreboard/scoreboard.html" class="app-card">
+                <div class="app-icon">📺</div>
+                <h2>Scoreboard Display</h2>
+                <p>Professional broadcast overlay for OBS, TV displays, or streaming</p>
+                <div class="device-type">🖥️ OBS / TV</div>
+            </a>
+
+            <a href="app-folders/controller/controller.html" class="app-card">
+                <div class="app-icon">🎛️</div>
+                <h2>Scoreboard Controller</h2>
+                <p>Remote control for scoreboard settings, ads, and display options</p>
+                <div class="device-type">📱 Phone / Tablet</div>
+            </a>
+
             <a href="app-folders/play-online/play-online.html" class="app-card">
-                <div class="icon">📹</div>
-                <h3>Video Calling</h3>
+                <div class="app-icon">📹</div>
+                <h2>Video Calling</h2>
                 <p>Peer-to-peer video chat for remote matches and broadcasts</p>
-                <button class="btn">Launch</button>
+                <div class="device-type">📱 All Devices</div>
             </a>
 
-            <!-- Player Account -->
-            <a href="app-folders/player-account/player-account.html" class="app-card">
-                <div class="icon">👤</div>
-                <h3>Player Account</h3>
-                <p>Manage your profile, statistics, and tournament history</p>
-                <button class="btn">Launch</button>
-            </a>
-
-            <!-- Video Stream Scoring -->
-            <a href="app-folders/videostreamscoringapp/videostreamscoringapp.html" class="app-card">
-                <div class="icon">🎬</div>
-                <h3>Video Stream Scoring</h3>
-                <p>Real-time scoring integrated with video streaming capabilities</p>
-                <button class="btn">Launch</button>
-            </a>
-
-            <!-- DartStream WebApp -->
-            <a href="app-folders/dartstream-webapp/index.html" class="app-card">
-                <div class="icon">🚀</div>
-                <h3>DartStream WebApp</h3>
-                <p>Alternative interface optimized for Fire OS and mobile streaming</p>
-                <button class="btn">Launch</button>
+            <a href="app-folders/player-account/player-account.html" class="app-card" id="my-stats-card" style="display: none;">
+                <div class="app-icon">📊</div>
+                <h2>My Stats</h2>
+                <p>View your personal statistics, match history, and career performance</p>
+                <div class="device-type">📱 All Devices</div>
             </a>
         </div>
 
         <div class="footer">
-            <p>🎯 DartStream v1.0 - Built with Vanilla JavaScript & Supabase</p>
-            <p><a href="https://github.com/dowdarts/dartstream2" target="_blank">View on GitHub</a></p>
+            <p>Created By MDStudios For CGCDarts & Atlantic Amateur Darts Series.</p>
+            <p>© 2025 DartStream. All rights reserved.</p>
+            
+            <div class="partner-logos">
+                <img src="app-folders/index/logos/MDSTUDIOS - Copy.png" alt="MDStudios">
+                <img src="app-folders/index/logos/cgcdarts.com logo - Copy.png" alt="CGCDarts.com">
+                <img src="app-folders/index/logos/CGC-TV Logo - Copy.png" alt="CGC-TV">
+                <img src="app-folders/index/logos/LIVE STREAM CGC LOGO - Copy.png" alt="CGC Live Stream">
+                <img src="app-folders/index/logos/AADS OFFIAL LOGO - Copy.png" alt="Atlantic Amateur Darts Series">
+                <img src="app-folders/index/logos/AADSDarts.com Logo.png" alt="AADS Darts.com">
+            </div>
         </div>
     </div>
+    
+    <!-- Load Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-folders/index/supabase-config.js"></script>
+    <script>
+        // Check authentication state and update UI
+        async function checkAuthState() {
+            try {
+                const supabase = getSupabaseClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session) {
+                    // User is logged in
+                    const { data: accountData } = await supabase
+                        .from('player_accounts')
+                        .select('first_name, last_name')
+                        .eq('user_id', session.user.id)
+                        .maybeSingle();
+                    
+                    const userName = accountData 
+                        ? `${accountData.first_name} ${accountData.last_name}` 
+                        : session.user.email;
+                    
+                    // Show logged in UI
+                    document.getElementById('logged-out-buttons').style.display = 'none';
+                    document.getElementById('logged-in-section').style.display = 'block';
+                    document.getElementById('user-name').textContent = userName;
+                    document.getElementById('my-stats-card').style.display = 'block';
+                } else {
+                    // User is logged out
+                    document.getElementById('logged-out-buttons').style.display = 'flex';
+                    document.getElementById('logged-in-section').style.display = 'none';
+                    document.getElementById('my-stats-card').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking auth state:', error);
+                // Default to logged out state
+                document.getElementById('logged-out-buttons').style.display = 'flex';
+                document.getElementById('logged-in-section').style.display = 'none';
+                document.getElementById('my-stats-card').style.display = 'none';
+            }
+        }
+        
+        // Sign out handler
+        document.getElementById('sign-out-btn')?.addEventListener('click', async () => {
+            try {
+                const supabase = getSupabaseClient();
+                await supabase.auth.signOut();
+                window.location.reload();
+            } catch (error) {
+                console.error('Error signing out:', error);
+                alert('Error signing out. Please try again.');
+            }
+        });
+        
+        // Check auth state on page load
+        checkAuthState();
+    </script>
 </body>
 </html>
