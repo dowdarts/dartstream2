@@ -16,11 +16,20 @@ CREATE INDEX IF NOT EXISTS idx_game_rooms_code ON game_rooms(room_code);
 CREATE INDEX IF NOT EXISTS idx_game_rooms_status ON game_rooms(status);
 CREATE INDEX IF NOT EXISTS idx_game_rooms_host ON game_rooms(host_id);
 
--- Enable RLS with permissive policy to allow all users (authenticated and guest)
+-- Enable RLS with role-specific policies
 ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all operations" ON game_rooms
+-- Allow authenticated users full access
+CREATE POLICY "Authenticated users can manage rooms" ON game_rooms
     FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
+
+-- Allow anonymous/unauthenticated users full access (for guest mode)
+CREATE POLICY "Anon users can manage rooms" ON game_rooms
+    FOR ALL
+    TO anon
     USING (true)
     WITH CHECK (true);
 
