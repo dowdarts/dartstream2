@@ -93,7 +93,19 @@ const PlayOnlineUI = {
         // Device selection in settings modal
         document.getElementById('settingsCameraSelect')?.addEventListener('change', (e) => this.onSettingsCameraChanged(e.target.value));
         document.getElementById('settingsMicrophoneSelect')?.addEventListener('change', (e) => this.onSettingsMicrophoneChanged(e.target.value));
-        document.getElementById('startVideoBtn')?.addEventListener('click', () => this.handleStartVideo());
+        
+        // Start Video Button - add with detailed logging
+        const startVideoBtn = document.getElementById('startVideoBtn');
+        if (startVideoBtn) {
+            console.log('✅ Start Video button found - attaching click handler');
+            startVideoBtn.addEventListener('click', () => {
+                console.log('🎬 START VIDEO BUTTON CLICKED!');
+                this.handleStartVideo();
+            });
+        } else {
+            console.warn('⚠️ Start Video button NOT found in DOM');
+        }
+        
         document.getElementById('leaveLobbyBtn')?.addEventListener('click', () => this.handleLeaveLobby());
         
         // Video Call Screen
@@ -130,9 +142,16 @@ const PlayOnlineUI = {
         this.updateParticipantsList(detail.peerId, null, 'connected');
         
         const startBtn = document.getElementById('startVideoBtn');
+        console.log('🔍 Start button element:', !!startBtn);
+        console.log('🔍 Start button disabled before:', startBtn?.disabled);
+        
         if (startBtn) {
             startBtn.disabled = false;
             console.log('✅ Start Video Call button enabled');
+            console.log('🔍 Start button disabled after:', startBtn?.disabled);
+            console.log('🔍 Button is clickable now');
+        } else {
+            console.error('❌ Start button element not found!');
         }
     },
     
@@ -479,17 +498,18 @@ const PlayOnlineUI = {
     async handleStartVideo() {
         try {
             console.log('========== START VIDEO CALL DEBUG ==========');
-            console.log('🎬 handleStartVideo() called');
+            console.log('🎬 handleStartVideo() CALLED!');
             
             // Check button state
             const startBtn = document.getElementById('startVideoBtn');
-            console.log('Start button disabled?', startBtn?.disabled);
-            console.log('Start button exists?', !!startBtn);
+            console.log('🔘 Start button exists?', !!startBtn);
+            console.log('🔘 Start button disabled?', startBtn?.disabled);
+            console.log('🔘 Start button visible?', startBtn?.style.display !== 'none');
             
             // Check if app is initialized
             console.log('PlayOnlineApp state:', PlayOnlineApp?.getState?.());
-            console.log('PlayOnlineApp videoRoom:', !!PlayOnlineApp?.videoRoom);
-            console.log('PlayOnlineApp roomManager:', !!PlayOnlineApp?.roomManager);
+            console.log('PlayOnlineApp videoRoom exists?', !!PlayOnlineApp?.videoRoom);
+            console.log('PlayOnlineApp roomManager exists?', !!PlayOnlineApp?.roomManager);
             
             // Check local conditions
             console.log('Current player ID:', this.currentPlayerId);
@@ -512,8 +532,19 @@ const PlayOnlineUI = {
             console.log('✅ Loading indicator hidden');
             
             console.log('📱 About to show videoCallScreen');
+            const videoScreen = document.getElementById('videoCallScreen');
+            console.log('📱 videoCallScreen exists?', !!videoScreen);
+            
             this.showScreen('videoCallScreen');
-            console.log('✅ videoCallScreen shown');
+            console.log('✅ videoCallScreen should now be visible');
+            
+            // Verify transition worked
+            setTimeout(() => {
+                const isActive = videoScreen?.classList.contains('active');
+                console.log('📱 videoCallScreen has active class?', isActive);
+                const style = window.getComputedStyle(videoScreen || document.body);
+                console.log('📱 videoCallScreen display:', style.display);
+            }, 100);
             
             console.log('========== END VIDEO CALL DEBUG ==========');
             
