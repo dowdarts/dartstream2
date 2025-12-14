@@ -305,16 +305,19 @@
 
         function setStatus(stepNum, status) {
             const icon = document.getElementById(`step${stepNum}Icon`);
-            const section = document.querySelector(`#step${stepNum}Output`).parentElement.parentElement;
-            
-            icon.textContent = status === 'success' ? '✅' : 
-                              status === 'error' ? '❌' : 
-                              status === 'skip' ? '⊘' : '⏳';
-            icon.className = `status-icon ${status}`;
-
             const output = document.getElementById(`step${stepNum}Output`);
-            if (status === 'error') output.classList.add('error');
-            if (status === 'success') output.classList.add('success');
+            
+            if (icon) {
+                icon.textContent = status === 'success' ? '✅' : 
+                                  status === 'error' ? '❌' : 
+                                  status === 'skip' ? '⊘' : '⏳';
+                icon.className = `status-icon ${status}`;
+            }
+            
+            if (output) {
+                if (status === 'error') output.classList.add('error');
+                if (status === 'success') output.classList.add('success');
+            }
         }
 
         function setVariable(stepNum, key, value) {
@@ -335,16 +338,37 @@
                 updateProgress(12);
                 
                 log(1, '📦 Loading guest-auth.js...');
-                await import('./guest-auth.js');
-                log(1, '✅ guest-auth.js loaded');
+                try {
+                    await import('./guest-auth.js');
+                    log(1, '✅ guest-auth.js loaded');
+                } catch (e) {
+                    log(1, `⚠️ guest-auth.js not found or error: ${e.message}`);
+                }
                 
                 log(1, '📦 Loading supabase-config.js...');
-                await import('../../../supabase-config.js');
-                log(1, '✅ supabase-config.js loaded');
+                try {
+                    // Try loading from root (GitHub Pages)
+                    const response = await fetch('../../../supabase-config.js');
+                    if (response.ok) {
+                        const script = document.createElement('script');
+                        script.src = '../../../supabase-config.js';
+                        document.head.appendChild(script);
+                        log(1, '✅ supabase-config.js loaded');
+                    }
+                } catch (e) {
+                    log(1, `⚠️ supabase-config.js error: ${e.message}`);
+                }
                 
                 log(1, '📦 Loading room-manager.js...');
-                await import('./room-manager.js');
-                log(1, '✅ room-manager.js loaded');
+                try {
+                    await import('./room-manager.js');
+                    log(1, '✅ room-manager.js loaded');
+                } catch (e) {
+                    log(1, `⚠️ room-manager.js not found or error: ${e.message}`);
+                }
+                
+                // Wait a moment for scripts to initialize
+                await new Promise(r => setTimeout(r, 1000));
                 
                 setStatus(1, 'success');
                 return true;
