@@ -129,6 +129,11 @@ const PlayOnlineUI = {
         });
         document.getElementById(screenId)?.classList.add('active');
         console.log('📱 Showing screen:', screenId);
+        
+        // Load devices when showing lobby screen
+        if (screenId === 'lobbyScreen') {
+            this.loadDeviceList();
+        }
     },
     
     showLoading(text = 'Loading...') {
