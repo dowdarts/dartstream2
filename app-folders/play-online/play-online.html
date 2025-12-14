@@ -40,7 +40,7 @@
         <div class="navbar-brand">
             <img src="dartstream-logo.png" alt="DartStream" class="logo">
             <h1>DartStream Play Online</h1>
-            <span class="version-badge">v2.5</span>
+            <span class="version-badge">v2.6</span>
         </div>
         <div class="navbar-status">
             <span id="statusIndicator" class="status-dot offline"></span>
@@ -195,39 +195,56 @@
                                     </div>
                                     
                                     <div class="settings-controls">
+                                        <!-- Device Selection in Settings -->
                                         <div class="setting-item">
-                                            <label for="brightnessSlider">🔆 Brightness</label>
-                                            <input 
-                                                type="range" 
-                                                id="brightnessSlider" 
-                                                min="50" 
-                                                max="150" 
-                                                value="100" 
-                                                class="settings-slider"
-                                            >
-                                            <span id="brightnessValue">100%</span>
+                                            <label for="settingsCameraSelect">📹 Camera</label>
+                                            <select id="settingsCameraSelect" class="device-select">
+                                                <option value="">Loading cameras...</option>
+                                            </select>
                                         </div>
                                         
                                         <div class="setting-item">
-                                            <label for="contrastSlider">⚫ Contrast</label>
-                                            <input 
-                                                type="range" 
-                                                id="contrastSlider" 
-                                                min="50" 
-                                                max="150" 
-                                                value="100" 
-                                                class="settings-slider"
-                                            >
-                                            <span id="contrastValue">100%</span>
+                                            <label for="settingsMicrophoneSelect">🎙️ Microphone</label>
+                                            <select id="settingsMicrophoneSelect" class="device-select">
+                                                <option value="">Loading microphones...</option>
+                                            </select>
                                         </div>
                                         
-                                        <div class="setting-item">
-                                            <label for="saturationSlider">🎨 Saturation</label>
-                                            <input 
-                                                type="range" 
-                                                id="saturationSlider" 
-                                                min="0" 
-                                                max="200" 
+                                        <!-- Image Adjustments -->
+                                        <div style="border-top: 1px solid #eee; padding-top: 1rem; margin-top: 1rem;">
+                                            <div class="setting-item">
+                                                <label for="brightnessSlider">🔆 Brightness</label>
+                                                <input 
+                                                    type="range" 
+                                                    id="brightnessSlider" 
+                                                    min="50" 
+                                                    max="150" 
+                                                    value="100" 
+                                                    class="settings-slider"
+                                                >
+                                                <span id="brightnessValue">100%</span>
+                                            </div>
+                                            
+                                            <div class="setting-item">
+                                                <label for="contrastSlider">⚫ Contrast</label>
+                                                <input 
+                                                    type="range" 
+                                                    id="contrastSlider" 
+                                                    min="50" 
+                                                    max="150" 
+                                                    value="100" 
+                                                    class="settings-slider"
+                                                >
+                                                <span id="contrastValue">100%</span>
+                                            </div>
+                                            
+                                            <div class="setting-item">
+                                                <label for="saturationSlider">🎨 Saturation</label>
+                                                <input 
+                                                    type="range" 
+                                                    id="saturationSlider" 
+                                                    min="0" 
+                                                    max="200" 
                                                 value="100" 
                                                 class="settings-slider"
                                             >
@@ -245,6 +262,7 @@
                                                 class="settings-slider"
                                             >
                                             <span id="hueValue">0°</span>
+                                        </div>
                                         </div>
                                     </div>
                                     

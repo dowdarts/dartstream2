@@ -91,6 +91,10 @@ const PlayOnlineUI = {
         document.getElementById('contrastSlider')?.addEventListener('input', (e) => this.updateContrast(e.target.value));
         document.getElementById('saturationSlider')?.addEventListener('input', (e) => this.updateSaturation(e.target.value));
         document.getElementById('hueSlider')?.addEventListener('input', (e) => this.updateHue(e.target.value));
+        
+        // Device selection in settings modal
+        document.getElementById('settingsCameraSelect')?.addEventListener('change', (e) => this.onSettingsCameraChanged(e.target.value));
+        document.getElementById('settingsMicrophoneSelect')?.addEventListener('change', (e) => this.onSettingsMicrophoneChanged(e.target.value));
         document.getElementById('startVideoBtn')?.addEventListener('click', () => this.handleStartVideo());
         document.getElementById('leaveLobbyBtn')?.addEventListener('click', () => this.handleLeaveLobby());
         
@@ -418,10 +422,78 @@ const PlayOnlineUI = {
     openCameraSettings() {
         try {
             console.log('✓ Opening camera settings');
+            // Populate device dropdowns in settings modal
+            this.populateSettingsDevices();
             document.getElementById('cameraSettingsModal').style.display = 'flex';
         } catch (error) {
             console.error('❌ Open camera settings error:', error);
             this.showError('Error opening camera settings');
+        }
+    },
+    
+    async populateSettingsDevices() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cameras = devices.filter(d => d.kind === 'videoinput');
+            const microphones = devices.filter(d => d.kind === 'audioinput');
+            
+            // Populate camera dropdown
+            const cameraSelect = document.getElementById('settingsCameraSelect');
+            cameraSelect.innerHTML = '';
+            cameras.forEach(camera => {
+                const option = document.createElement('option');
+                option.value = camera.deviceId;
+                option.textContent = camera.label || `Camera ${cameras.indexOf(camera) + 1}`;
+                cameraSelect.appendChild(option);
+            });
+            
+            // Populate microphone dropdown
+            const micSelect = document.getElementById('settingsMicrophoneSelect');
+            micSelect.innerHTML = '';
+            microphones.forEach(mic => {
+                const option = document.createElement('option');
+                option.value = mic.deviceId;
+                option.textContent = mic.label || `Microphone ${microphones.indexOf(mic) + 1}`;
+                micSelect.appendChild(option);
+            });
+            
+            // Set current selections
+            const cameraSelect2 = document.getElementById('cameraSelect');
+            if (cameraSelect2.value) {
+                cameraSelect.value = cameraSelect2.value;
+            }
+            const micSelect2 = document.getElementById('microphoneSelect');
+            if (micSelect2.value) {
+                micSelect.value = micSelect2.value;
+            }
+        } catch (error) {
+            console.error('❌ Error populating settings devices:', error);
+        }
+    },
+    
+    onSettingsCameraChanged(deviceId) {
+        try {
+            // Also update the main camera select
+            const mainCameraSelect = document.getElementById('cameraSelect');
+            mainCameraSelect.value = deviceId;
+            // Trigger the main camera change handler
+            this.onCameraChanged(deviceId);
+            console.log('✓ Camera changed in settings:', deviceId);
+        } catch (error) {
+            console.error('❌ Settings camera change error:', error);
+        }
+    },
+    
+    onSettingsMicrophoneChanged(deviceId) {
+        try {
+            // Also update the main microphone select
+            const mainMicSelect = document.getElementById('microphoneSelect');
+            mainMicSelect.value = deviceId;
+            // Trigger the main microphone change handler
+            this.onMicrophoneChanged(deviceId);
+            console.log('✓ Microphone changed in settings:', deviceId);
+        } catch (error) {
+            console.error('❌ Settings microphone change error:', error);
         }
     },
     
