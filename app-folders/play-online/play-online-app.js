@@ -15,15 +15,40 @@ const PlayOnlineApp = {
     },
     
     /**
-     * Initialize the app
+     * Initialize the app with authenticated user
      */
-    async initialize(supabaseClient, playerId, playerName) {
-        console.log('🎮 PlayOnlineApp initializing:', { playerId, playerName });
+    async initialize(supabaseClient) {
+        console.log('🎮 PlayOnlineApp initializing');
         
         try {
             this.supabaseClient = supabaseClient;
-            this.state.playerId = playerId;
-            this.state.playerName = playerName;
+            
+            // Get authenticated user info
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session?.user?.id) {
+                throw new Error('No authenticated user');
+            }
+            
+            this.state.playerId = session.user.id;
+            
+            // Try to get player name from player_accounts table
+            try {
+                const { data: account } = await supabaseClient
+                    .from('player_accounts')
+                    .select('first_name, last_name')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+                
+                if (account) {
+                    this.state.playerName = `${account.first_name} ${account.last_name}`;
+                } else {
+                    this.state.playerName = session.user.email?.split('@')[0] || 'Player';
+                }
+            } catch (e) {
+                this.state.playerName = session.user.email?.split('@')[0] || 'Player';
+            }
+            
+            console.log('✅ User info loaded:', { playerId: this.state.playerId, playerName: this.state.playerName });
             
             // Initialize modules (assuming they're loaded globally)
             if (typeof VideoRoom !== 'undefined') {
@@ -35,7 +60,7 @@ const PlayOnlineApp = {
             
             if (typeof RoomManager !== 'undefined') {
                 this.roomManager = RoomManager;
-                await this.roomManager.initialize(supabaseClient, playerId);
+                await this.roomManager.initialize(supabaseClient);
                 console.log('✅ RoomManager module loaded');
             } else {
                 throw new Error('RoomManager module not loaded');

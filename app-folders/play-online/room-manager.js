@@ -18,13 +18,26 @@ const RoomManager = {
     isHost: false,
     
     /**
-     * Initialize room manager
+     * Initialize room manager with authenticated user
      */
-    async initialize(supabaseClient, playerId) {
-        console.log('🏠 RoomManager initializing:', playerId);
+    async initialize(supabaseClient) {
+        console.log('🏠 RoomManager initializing');
         
         this.supabaseClient = supabaseClient;
-        this.playerId = playerId;
+        
+        // Get authenticated user ID
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user?.id) {
+                this.playerId = session.user.id;
+                console.log('✅ Using authenticated user ID:', this.playerId);
+            } else {
+                throw new Error('No authenticated user found');
+            }
+        } catch (error) {
+            console.error('❌ Error getting authenticated user:', error);
+            throw error;
+        }
     },
     
     /**

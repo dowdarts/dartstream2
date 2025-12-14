@@ -15,6 +15,26 @@
     <script src="guest-auth.js"></script>
 </head>
 <body>
+    <!-- Auth Wall (shown if not logged in) -->
+    <div id="authWall" class="auth-wall" style="display: none;">
+        <div class="auth-wall-content">
+            <div class="auth-wall-card">
+                <h2>🔐 Sign In Required</h2>
+                <p>You need to be signed in to use DartStream Play Online.</p>
+                <p>This allows us to track your stats and connect you with other players.</p>
+                
+                <div class="auth-buttons-container">
+                    <a href="../player-account/player-account.html?action=login&return=play-online" class="auth-btn sign-in">
+                        ✓ Sign In
+                    </a>
+                    <a href="../player-account/player-account.html?action=register&return=play-online" class="auth-btn create">
+                        + Create Account
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation Bar -->
     <nav class="navbar play-online">
         <div class="navbar-brand">
@@ -239,7 +259,66 @@
 
     <!-- Supabase & App Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
+    <script src="../../supabase-config.js"></script>
+    <script>
+        // Check authentication before loading the app
+        async function checkAuth() {
+            try {
+                // Wait for Supabase client to be ready
+                let retries = 0;
+                while (!window.supabaseClient && retries < 10) {
+                    await new Promise(r => setTimeout(r, 100));
+                    retries++;
+                }
+                
+                if (!window.supabaseClient) {
+                    console.error('Supabase client not initialized');
+                    showAuthWall();
+                    return;
+                }
+                
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                
+                if (!session) {
+                    // Not logged in - show auth wall
+                    showAuthWall();
+                } else {
+                    // Logged in - hide auth wall and continue loading app
+                    hideAuthWall();
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                showAuthWall();
+            }
+        }
+        
+        function showAuthWall() {
+            const authWall = document.getElementById('authWall');
+            if (authWall) {
+                authWall.style.display = 'flex';
+            }
+            // Hide the main app
+            const container = document.querySelector('.play-online-container');
+            if (container) {
+                container.style.display = 'none';
+            }
+        }
+        
+        function hideAuthWall() {
+            const authWall = document.getElementById('authWall');
+            if (authWall) {
+                authWall.style.display = 'none';
+            }
+            // Show the main app
+            const container = document.querySelector('.play-online-container');
+            if (container) {
+                container.style.display = 'block';
+            }
+        }
+        
+        // Check auth when page loads
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
     <script src="browser-detect.js"></script>
     <script src="video-room.js?v=3"></script>
     <script src="room-manager.js?v=3"></script>
