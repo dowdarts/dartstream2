@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DartStream Play Online - Peer-to-peer video calling room">
+    <meta name="theme-color" content="#FF6B35">
+    <title>DartStream Play Online</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="dartstream-logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="guest-auth.js"></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar play-online">
+        <div class="navbar-brand">
+            <img src="dartstream-logo.png" alt="DartStream" class="logo">
+            <h1>DartStream Play Online</h1>
+        </div>
+        <div class="navbar-status">
+            <span id="statusIndicator" class="status-dot offline"></span>
+            <span id="statusText">Ready</span>
+        </div>
+    </nav>
+
+    <!-- Main App Container -->
+    <div class="play-online-container">
+        
+        <!-- SCREEN 1: Login / Player Setup -->
+        <div id="setupScreen" class="screen active">
+            <div class="screen-content">
+                <div class="setup-card">
+                    <h2>Welcome to DartStream Play Online</h2>
+                    <p>Connect with your teammates via video call</p>
+                    
+                    <form id="setupForm">
+                        <div class="form-group">
+                            <label for="playerName">Your Name:</label>
+                            <input 
+                                type="text" 
+                                id="playerName" 
+                                placeholder="Enter your name" 
+                                required
+                                maxlength="30"
+                            >
+                            <small id="nameError" class="error-text"></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="countryFlag">Country:</label>
+                            <select id="countryFlag">
+                                <option value="">Select a country...</option>
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-large">
+                            Continue
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Room Selection (Create or Join) -->
+        <div id="roomSelectScreen" class="screen">
+            <div class="screen-content">
+                <div class="room-select-card">
+                    <h2>Create or Join a Room</h2>
+                    <p class="player-info">Playing as: <strong id="displayPlayerName"></strong></p>
+                    
+                    <div class="room-options">
+                        <div class="room-option create-room">
+                            <h3>🆕 Create New Room</h3>
+                            <p>Start a new video call session</p>
+                            <button id="createRoomBtn" class="btn btn-primary">
+                                Create Room
+                            </button>
+                        </div>
+                        
+                        <div class="divider">OR</div>
+                        
+                        <div class="room-option join-room">
+                            <h3>🔗 Join Existing Room</h3>
+                            <p>Join a room using a 4-digit code</p>
+                            <input 
+                                type="text" 
+                                id="roomCodeInput" 
+                                placeholder="Enter room code" 
+                                maxlength="4"
+                                pattern="[0-9]{4}"
+                            >
+                            <small id="roomCodeError" class="error-text"></small>
+                            <button id="joinRoomBtn" class="btn btn-secondary">
+                                Join Room
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button id="backToSetupBtn" class="btn btn-link">
+                        Back
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: Camera/Mic Test -->
+        <div id="testScreen" class="screen">
+            <div class="screen-content">
+                <div class="test-card">
+                    <h2>Camera & Microphone Test</h2>
+                    <p>Make sure your camera and microphone are working</p>
+                    
+                    <div class="video-test-container">
+                        <div id="testVideoElement" class="test-video">
+                            <video id="testVideo" autoplay playsinline muted></video>
+                            <div class="video-label">Your Camera</div>
+                        </div>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="testAudioCheck" checked>
+                                Microphone Working
+                            </label>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="testVideoCheck" checked>
+                                Camera Working
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="testError" class="error-box" style="display: none;"></div>
+                    
+                    <div class="test-actions">
+                        <button id="testRetryBtn" class="btn btn-secondary">
+                            Retry
+                        </button>
+                        <button id="testContinueBtn" class="btn btn-primary">
+                            Continue to Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Room Lobby (Waiting for Peers) -->
+        <div id="lobbyScreen" class="screen">
+            <div class="screen-content">
+                <div class="lobby-card">
+                    <div class="lobby-header">
+                        <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
+                        <button id="copyRoomCodeBtn" class="btn btn-sm btn-secondary">
+                            📋 Copy Code
+                        </button>
+                    </div>
+                    
+                    <div class="lobby-content">
+                        <div class="local-video-section">
+                            <h3>You</h3>
+                            <div id="localVideoContainer" class="video-container"></div>
+                            <div class="player-label" id="localPlayerLabel"></div>
+                        </div>
+                        
+                        <div class="peers-section">
+                            <h3>Participants (<span id="participantCount">1</span>)</h3>
+                            <div id="participantsList" class="participants-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="lobby-status">
+                        <p id="lobbyStatusMessage">Waiting for peers to join...</p>
+                    </div>
+                    
+                    <div class="lobby-actions">
+                        <button id="startVideoBtn" class="btn btn-primary btn-large" disabled>
+                            ▶️ Start Video Call
+                        </button>
+                        <button id="leaveLobbyBtn" class="btn btn-secondary">
+                            Leave Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: Active Video Call -->
+        <div id="videoCallScreen" class="screen">
+            <div class="video-call-grid">
+                <!-- Local Video -->
+                <div class="video-grid-item local">
+                    <video id="localVideo" autoplay playsinline muted></video>
+                    <div class="video-label local-label" id="localVideoLabel"></div>
+                </div>
+                
+                <!-- Remote Videos Container -->
+                <div id="remoteVideosContainer" class="remote-videos">
+                    <!-- Remote peer videos populated by JS -->
+                </div>
+            </div>
+            
+            <!-- Video Call Controls -->
+            <div class="video-controls">
+                <button id="micToggleBtn" class="btn btn-control btn-mic" title="Toggle Microphone">
+                    🎙️
+                </button>
+                <button id="cameraToggleBtn" class="btn btn-control btn-camera" title="Toggle Camera">
+                    📹
+                </button>
+                <button id="screenShareBtn" class="btn btn-control btn-share" title="Share Screen" disabled>
+                    🖥️
+                </button>
+                <button id="hangupBtn" class="btn btn-control btn-hang-up" title="End Call">
+                    📞
+                </button>
+            </div>
+            
+            <!-- Call Info Bar -->
+            <div class="call-info">
+                <span id="callDuration">00:00</span>
+                <span id="connectionStatus" class="connection-status">Connected</span>
+            </div>
+        </div>
+
+        <!-- SCREEN 6: Call Ended -->
+        <div id="endedScreen" class="screen">
+            <div class="screen-content">
+                <div class="ended-card">
+                    <h2>Call Ended</h2>
+                    <div class="ended-stats">
+                        <div class="stat">
+                            <span class="stat-label">Duration:</span>
+                            <span id="finalDuration" class="stat-value">00:00</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Participants:</span>
+                            <span id="finalParticipantCount" class="stat-value">2</span>
+                        </div>
+                    </div>
+                    
+                    <div class="ended-actions">
+                        <button id="newCallBtn" class="btn btn-primary">
+                            Start New Call
+                        </button>
+                        <button id="exitAppBtn" class="btn btn-secondary">
+                            Exit to Home
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p id="loadingText">Loading...</p>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Error</h3>
+            <p id="errorMessage"></p>
+            <button id="errorCloseBtn" class="btn btn-primary">OK</button>
+        </div>
+    </div>
+
+    <!-- Supabase & App Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="browser-detect.js"></script>
+    <script src="video-room.js"></script>
+    <script src="room-manager.js"></script>
+    <script src="play-online-app.js"></script>
+    <script src="play-online.js"></script>
+</body>
+</html>

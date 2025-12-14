@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="icon" type="image/png" href="dartstream-logo.png">
+    <title>DartStream Stats - Player Account</title>
+    <script src="browser-detect.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="guest-auth.js"></script>
+    <style>
+        .account-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #2d3e50;
+            overflow-y: auto;
+        }
+
+        .account-header {
+            background: linear-gradient(to bottom, #4a5f7a 0%, #2d3e50 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #1a1a1a;
+        }
+
+        .account-logo {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+
+        .account-header h1 {
+            color: #ffd700;
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .account-header p {
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .account-content {
+            flex: 1;
+            padding: 30px 20px 60px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .account-form {
+            background: #3a3a3a;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .form-title {
+            color: #ffd700;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            background: #2a2a2a;
+            color: #fff;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        .form-input.readonly {
+            background: #1a1a1a;
+            cursor: not-allowed;
+        }
+
+        /* Guest Mode Banner Styles */
+        .guest-mode-banner {
+            background: linear-gradient(to right, #ff9800, #ff6b6b);
+            padding: 12px 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .guest-banner-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1000px;
+            margin: 0 auto;
+            color: white;
+            font-size: 14px;
+        }
+
+        .guest-icon {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .guest-text {
+            flex: 1;
+        }
+
+        .guest-text a {
+            color: white;
+            text-decoration: underline;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .guest-text a:hover {
+            opacity: 0.9;
+        }
+
+        .close-banner {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 5px;
+            margin-left: 10px;
+        }
+
+        .close-banner:hover {
+            opacity: 0.7;
+        }
+
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .submit-btn.primary {
+            background: linear-gradient(to bottom, #5cb85c 0%, #449d44 100%);
+            color: white;
+        }
+
+        .submit-btn.primary:hover {
+            background: linear-gradient(to bottom, #449d44 0%, #398439 100%);
+        }
+
+        .submit-btn.secondary {
+            background: linear-gradient(to bottom, #5bc0de 0%, #31b0d5 100%);
+            color: white;
+        }
+
+        .submit-btn.secondary:hover {
+            background: linear-gradient(to bottom, #31b0d5 0%, #269abc 100%);
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #5bc0de;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .toggle-link:hover {
+            text-decoration: underline;
+        }
+
+        .success-message {
+            background: #5cb85c;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .error-message {
+            background: #d9534f;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-id-display {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 4px;
+            border: 2px solid #ffd700;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .player-id-display .label {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .player-id-display .id {
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .info-text {
+            color: #aaa;
+            font-size: 13px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #5bc0de;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.4);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #facc15;
+        }
+
+        .match-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #facc15;
+        }
+
+        .match-item.win {
+            border-left-color: #10b981;
+        }
+
+        .match-item.loss {
+            border-left-color: #ef4444;
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .match-opponent {
+            font-weight: bold;
+            color: white;
+        }
+
+        .match-result {
+            font-size: 14px;
+        }
+
+        .match-result.win {
+            color: #10b981;
+        }
+
+        .match-result.loss {
+            color: #ef4444;
+        }
+
+        .match-details {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body style="overflow: auto; position: static; height: auto;">
+    <div id="app" style="height: auto; min-height: 100vh; max-height: none; overflow: visible;">
+        <div class="account-container">
+            <!-- Guest Mode Banner -->
+            <div id="guestModeBanner" class="guest-mode-banner" style="display: none;">
+                <div class="guest-banner-content">
+                    <span class="guest-icon">👤</span>
+                    <span class="guest-text">You're in guest mode. <a href="#" onclick="showLoginForm()">Sign in to save your stats</a></span>
+                    <button class="close-banner" onclick="document.getElementById('guestModeBanner').style.display='none'">×</button>
+                </div>
+            </div>
+
+            <div class="account-header">
+                <img src="dartstream-logo.png" alt="DartStream Logo" class="account-logo">
+                <h1>DartStream Stats</h1>
+                <p>Track Your Darts Performance</p>
+            </div>
+
+            <div class="account-content">
+                <!-- Registration Form -->
+                <div id="register-form" class="account-form" style="display: none;">
+                    <h2 class="form-title">Create Your Account</h2>
+                    
+                    <div id="message-container"></div>
+
+                    <form id="registration-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" id="register-firstname" class="form-input" placeholder="Enter your first name" autocomplete="given-name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" id="register-lastname" class="form-input" placeholder="Enter your last name" autocomplete="family-name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="register-email" class="form-input" placeholder="Enter your email" autocomplete="email">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="register-password" class="form-input" placeholder="Create a password (min 6 characters)" autocomplete="new-password">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" id="register-confirm-password" class="form-input" placeholder="Re-enter your password" autocomplete="new-password">
+                        </div>
+
+                        <button type="button" class="submit-btn primary" id="register-btn">Create Account</button>
+                    </form>
+
+                    <div class="toggle-link" id="show-login">
+                        Already have an account? Login here
+                    </div>
+
+                    <div class="back-link">
+                        <a href="index.html">← Back to Menu</a>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-form" class="account-form">
+                    <h2 class="form-title">Login to Your Account</h2>
+                    
+                    <div id="login-message-container"></div>
+
+                    <form id="login-account-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="login-email" class="form-input" placeholder="Enter your email" autocomplete="email">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="login-password" class="form-input" placeholder="Enter your password" autocomplete="current-password">
+                        </div>
+
+                        <button type="button" class="submit-btn primary" id="login-btn">Login</button>
+                    </form>
+
+                    <div class="forgot-password-link" id="forgot-password-link" style="text-align: center; margin-top: 15px; cursor: pointer; color: #facc15;">
+                        Forgot Password?
+                    </div>
+
+                    <div class="toggle-link" id="show-register">
+                        Don't have an account? Register here
+                    </div>
+
+                    <div class="back-link">
+                        <a href="index.html">← Back to Menu</a>
+                    </div>
+                </div>
+
+                <!-- Forgot Password Form -->
+                <div id="forgot-password-form" class="account-form" style="display: none;">
+                    <h2 class="form-title">Reset Your Password</h2>
+                    
+                    <div id="forgot-password-message-container"></div>
+
+                    <form id="forgot-password-account-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="forgot-password-email" class="form-input" placeholder="Enter your email" autocomplete="email">
+                        </div>
+
+                        <button type="button" class="submit-btn primary" id="forgot-password-btn">Send Reset Link</button>
+                    </form>
+
+                    <div class="toggle-link" id="back-to-login">
+                        Back to Login
+                    </div>
+
+                    <div class="back-link">
+                        <a href="index.html">← Back to Menu</a>
+                    </div>
+                </div>
+
+                <!-- Account Details (after successful login/registration) -->
+                <div id="account-details" class="account-form" style="display: none;">
+                    <h2 class="form-title">Your Account</h2>
+                    
+                    <div id="account-form-section">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" id="account-firstname" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" id="account-lastname" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="account-email" class="form-input">
+                        </div>
+
+                        <div class="player-id-display">
+                            <div class="label">Your Player ID</div>
+                            <div class="id" id="account-player-id">XXXX</div>
+                        </div>
+
+                        <div id="linking-status" class="info-text" style="margin: 15px 0; padding: 10px; border-radius: 5px;">
+                            <!-- Status will be displayed here -->
+                        </div>
+
+                        <button class="submit-btn" id="link-to-library-btn" style="margin-bottom: 10px;">
+                            Add Your Account to Scoring App
+                        </button>
+
+                        <p class="info-text">
+                            Click the button above to create your player card in the library and link it to your account. 
+                            This will allow you to track your personal stats across all matches.
+                        </p>
+                    </div>
+
+                    <!-- Lifetime Stats Section -->
+                    <div id="lifetime-stats-section" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;">
+                        <h3 style="color: #facc15; margin-bottom: 15px; text-align: center;">📊 My Stats</h3>
+                        
+                        <!-- Match Summary Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Match Summary</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">Matches</div>
+                                    <div class="stat-value" id="stat-total-matches">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Wins</div>
+                                    <div class="stat-value" id="stat-wins" style="color: #10b981;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Losses</div>
+                                    <div class="stat-value" id="stat-losses" style="color: #ef4444;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Win %</div>
+                                    <div class="stat-value" id="stat-win-rate">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Performance Stats</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">3-Dart Average</div>
+                                    <div class="stat-value" id="stat-average">0.00</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Highest Checkout</div>
+                                    <div class="stat-value" id="stat-highest-checkout">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Darts</div>
+                                    <div class="stat-value" id="stat-total-darts">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Score</div>
+                                    <div class="stat-value" id="stat-total-score">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legs Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Legs Performance</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">Legs Won</div>
+                                    <div class="stat-value" id="stat-legs-won" style="color: #10b981;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Legs Lost</div>
+                                    <div class="stat-value" id="stat-legs-lost" style="color: #ef4444;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Legs</div>
+                                    <div class="stat-value" id="stat-total-legs">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Leg Win %</div>
+                                    <div class="stat-value" id="stat-leg-win-rate">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Achievement Stats -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">Achievements</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                                <div class="stat-box">
+                                    <div class="stat-label">180s</div>
+                                    <div class="stat-value" id="stat-180s" style="color: #f59e0b;">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">171s</div>
+                                    <div class="stat-value" id="stat-171s">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">95s</div>
+                                    <div class="stat-value" id="stat-95s">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">100+</div>
+                                    <div class="stat-value" id="stat-100-plus">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">120+</div>
+                                    <div class="stat-value" id="stat-120-plus">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">140+</div>
+                                    <div class="stat-value" id="stat-140-plus">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">160+</div>
+                                    <div class="stat-value" id="stat-160-plus">0</div>
+                                </div>
+                            </div>
+                        </div>
+                                    <div class="stat-label">Total Legs</div>
+                                    <div class="stat-value" id="stat-total-legs">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Leg Win %</div>
+                                    <div class="stat-value" id="stat-leg-win-rate">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Match History -->
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #facc15; margin: 0 0 10px; font-size: 16px;">📅 Recent Match History</h4>
+                            <div id="recent-matches-list" style="max-height: 400px; overflow-y: auto;">
+                                <p style="color: #94a3b8; text-align: center; padding: 20px;">No matches recorded yet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="submit-btn secondary" id="logout-btn">Logout</button>
+
+                    <div class="back-link">
+                        <a href="scoring-app.html">← Back to Scoring App</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="player-account.js"></script>
+</body>
+</html>
