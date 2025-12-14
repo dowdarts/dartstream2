@@ -463,6 +463,14 @@
                 <div class="device-type">💻 Desktop / Laptop</div>
                 <p class="future-badge">🔐 Requires Account</p>
             </a>
+
+            <a href="play-online/test-room-creation.html" class="app-card" id="test-card" style="display: none;">
+                <div class="app-icon">🧪</div>
+                <h2>Room Test</h2>
+                <p>Diagnostic test for room creation system - verify RLS policies and authentication</p>
+                <div class="device-type">💻 Desktop / Laptop</div>
+                <p class="future-badge">🔍 Debug tool</p>
+            </a>
         </div>
 
         <div class="footer">
@@ -509,9 +517,11 @@
                     
                     const myStatsCard = document.getElementById('my-stats-card');
                     const videostreamCard = document.getElementById('videostream-card');
+                    const testCard = document.getElementById('test-card');
                     
                     console.log('My Stats card element:', myStatsCard);
                     console.log('VideoStream card element:', videostreamCard);
+                    console.log('Test card element:', testCard);
                     
                     if (myStatsCard) {
                         myStatsCard.style.display = 'block';
@@ -523,6 +533,10 @@
                     } else {
                         console.error('VideoStream card element NOT FOUND!');
                     }
+                    if (testCard) {
+                        testCard.style.display = 'block';
+                        console.log('Test card display set to block');
+                    }
                     
                     console.log('Logged in - showing VideoStream card');
                 } else {
@@ -532,9 +546,11 @@
                     
                     const myStatsCard = document.getElementById('my-stats-card');
                     const videostreamCard = document.getElementById('videostream-card');
+                    const testCard = document.getElementById('test-card');
                     
                     if (myStatsCard) myStatsCard.style.display = 'none';
                     if (videostreamCard) videostreamCard.style.display = 'none';
+                    if (testCard) testCard.style.display = 'none';
                     
                     console.log('Logged out - hiding VideoStream card');
                 }
@@ -546,9 +562,11 @@
                 
                 const myStatsCard = document.getElementById('my-stats-card');
                 const videostreamCard = document.getElementById('videostream-card');
+                const testCard = document.getElementById('test-card');
                 
                 if (myStatsCard) myStatsCard.style.display = 'none';
                 if (videostreamCard) videostreamCard.style.display = 'none';
+                if (testCard) testCard.style.display = 'none';
             }
         }
         
