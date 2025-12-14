@@ -304,8 +304,11 @@
         }
 
         function setStatus(stepNum, status) {
-            const icon = document.getElementById(`step${stepNum}Icon`);
-            const output = document.getElementById(`step${stepNum}Output`);
+            const iconId = `step${stepNum}Icon`;
+            const outputId = `step${stepNum}Output`;
+            
+            const icon = document.getElementById(iconId);
+            const output = document.getElementById(outputId);
             
             if (icon) {
                 icon.textContent = status === 'success' ? '✅' : 
@@ -328,7 +331,8 @@
         }
 
         function updateProgress(percent) {
-            document.getElementById('progressFill').style.width = percent + '%';
+            const progressFill = document.getElementById('progressFill');
+            if (progressFill) progressFill.style.width = percent + '%';
         }
 
         // Step 1: Load modules
@@ -704,10 +708,15 @@ ${errors.map((e, i) => `  Step ${e.step}: ${e.error.message}`).join('\n')}
                     icon.className = 'status-icon pending';
                 }
             }
-            document.getElementById('summaryOutput').textContent = '';
-            document.getElementById('summaryIcon').textContent = '⏳';
-            document.getElementById('summaryIcon').className = 'status-icon pending';
-            updateProgress(0);
+            const summaryOutput = document.getElementById('summaryOutput');
+            const summaryIcon = document.getElementById('summaryIcon');
+            if (summaryOutput) summaryOutput.textContent = '';
+            if (summaryIcon) {
+                summaryIcon.textContent = '⏳';
+                summaryIcon.className = 'status-icon pending';
+            }
+            const progressFill = document.getElementById('progressFill');
+            if (progressFill) progressFill.style.width = '0%';
             testState.errors = [];
             console.clear();
         };
