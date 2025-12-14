@@ -560,23 +560,31 @@ body {
     border: 1px solid #ddd;
 }
 
+.device-item {
+    margin-bottom: 1rem;
+}
+
+.device-item:last-child {
+    margin-bottom: 0;
+}
+
 .device-selection label {
     display: block;
-    margin-top: 0.75rem;
     margin-bottom: 0.5rem;
     font-weight: 600;
     color: var(--secondary-color);
     font-size: 0.95rem;
 }
 
-.device-selection label:first-child {
-    margin-top: 0;
+.device-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .device-select {
-    width: 100%;
+    flex: 1;
     padding: 0.65rem;
-    margin-bottom: 0.75rem;
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -593,6 +601,25 @@ body {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.1);
+}
+
+.device-status {
+    padding: 0.65rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.device-status.disconnected {
+    color: #666;
+    background: #e0e0e0;
+}
+
+.device-status.connected {
+    color: white;
+    background: #4caf50;
 }
 
 .participants-list {

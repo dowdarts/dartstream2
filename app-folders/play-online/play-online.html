@@ -156,15 +156,25 @@
                             
                             <!-- Device Selection -->
                             <div class="device-selection">
-                                <label for="cameraSelect">📹 Camera:</label>
-                                <select id="cameraSelect" class="device-select">
-                                    <option value="">Loading cameras...</option>
-                                </select>
+                                <div class="device-item">
+                                    <label for="cameraSelect">📹 Camera:</label>
+                                    <div class="device-row">
+                                        <select id="cameraSelect" class="device-select">
+                                            <option value="">Loading cameras...</option>
+                                        </select>
+                                        <span id="cameraStatus" class="device-status disconnected">⚪ Disconnected</span>
+                                    </div>
+                                </div>
                                 
-                                <label for="microphoneSelect">🎙️ Microphone:</label>
-                                <select id="microphoneSelect" class="device-select">
-                                    <option value="">Loading microphones...</option>
-                                </select>
+                                <div class="device-item">
+                                    <label for="microphoneSelect">🎙️ Microphone:</label>
+                                    <div class="device-row">
+                                        <select id="microphoneSelect" class="device-select">
+                                            <option value="">Loading microphones...</option>
+                                        </select>
+                                        <span id="microphoneStatus" class="device-status disconnected">⚪ Disconnected</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         

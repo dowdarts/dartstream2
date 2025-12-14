@@ -542,6 +542,12 @@ const PlayOnlineUI = {
                         cameraSelect.appendChild(option);
                     });
                     cameraSelect.addEventListener('change', (e) => this.onCameraChanged(e.target.value));
+                    
+                    // Test first camera by default
+                    if (cameras.length > 0) {
+                        cameraSelect.value = cameras[0].deviceId;
+                        await this.testDevice('video', cameras[0].deviceId);
+                    }
                 } else {
                     cameraSelect.innerHTML = '<option>No cameras found</option>';
                 }
@@ -559,6 +565,12 @@ const PlayOnlineUI = {
                         micSelect.appendChild(option);
                     });
                     micSelect.addEventListener('change', (e) => this.onMicrophoneChanged(e.target.value));
+                    
+                    // Test first microphone by default
+                    if (microphones.length > 0) {
+                        micSelect.value = microphones[0].deviceId;
+                        await this.testDevice('audio', microphones[0].deviceId);
+                    }
                 } else {
                     micSelect.innerHTML = '<option>No microphones found</option>';
                 }
@@ -572,14 +584,72 @@ const PlayOnlineUI = {
     
     async onCameraChanged(deviceId) {
         console.log('📹 Camera changed to:', deviceId);
-        // Store preference for later use when starting video
         this.selectedCameraId = deviceId;
+        
+        // Test the camera
+        await this.testDevice('video', deviceId);
     },
     
     async onMicrophoneChanged(deviceId) {
         console.log('🎙️ Microphone changed to:', deviceId);
-        // Store preference for later use when starting video
         this.selectedMicrophoneId = deviceId;
+        
+        // Test the microphone
+        await this.testDevice('audio', deviceId);
+    },
+    
+    async testDevice(kind, deviceId) {
+        try {
+            const constraints = kind === 'video' 
+                ? { video: { deviceId: { exact: deviceId } } }
+                : { audio: { deviceId: { exact: deviceId } } };
+            
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            // Update status indicator
+            if (kind === 'video') {
+                const statusEl = document.getElementById('cameraStatus');
+                if (statusEl) {
+                    statusEl.className = 'device-status connected';
+                    statusEl.textContent = '✅ Connected';
+                }
+                
+                // Display the camera feed
+                const videoEl = document.getElementById('localVideo');
+                if (videoEl) {
+                    videoEl.srcObject = stream;
+                    console.log('📺 Camera feed displaying');
+                }
+            } else {
+                const statusEl = document.getElementById('microphoneStatus');
+                if (statusEl) {
+                    statusEl.className = 'device-status connected';
+                    statusEl.textContent = '✅ Connected';
+                }
+            }
+            
+            // Keep the stream for later use
+            if (!this.mediaStream) {
+                this.mediaStream = stream;
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error testing ${kind}:`, error);
+            
+            if (kind === 'video') {
+                const statusEl = document.getElementById('cameraStatus');
+                if (statusEl) {
+                    statusEl.className = 'device-status disconnected';
+                    statusEl.textContent = '⚪ Disconnected';
+                }
+            } else {
+                const statusEl = document.getElementById('microphoneStatus');
+                if (statusEl) {
+                    statusEl.className = 'device-status disconnected';
+                    statusEl.textContent = '⚪ Disconnected';
+                }
+            }
+        }
     },
     
     getMediaConstraints() {
