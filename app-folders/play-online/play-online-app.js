@@ -105,7 +105,8 @@ const PlayOnlineApp = {
                 this.state.playerId,
                 this.state.playerName,
                 localVideo,
-                window.PlayOnlineUI?.mediaStream  // Pass existing media stream if available
+                window.PlayOnlineUI?.mediaStream,  // Pass existing media stream if available
+                window.PlayOnlineUI?.getMediaConstraints?.()  // Pass media constraints from UI
             );
             
             console.log('✅ Video room initialized');
@@ -161,7 +162,8 @@ const PlayOnlineApp = {
                 this.state.playerId,
                 this.state.playerName,
                 localVideo,
-                window.PlayOnlineUI?.mediaStream  // Pass existing media stream if available
+                window.PlayOnlineUI?.mediaStream,  // Pass existing media stream if available
+                window.PlayOnlineUI?.getMediaConstraints?.()  // Pass media constraints from UI
             );
             
             console.log('✅ Video room initialized');

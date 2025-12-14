@@ -36,8 +36,9 @@ const VideoRoom = {
      * @param {string} playerName - Local player nickname
      * @param {HTMLElement} localVideoEl - Element for local video
      * @param {MediaStream} existingStream - (Optional) Existing media stream to reuse
+     * @param {Object} mediaConstraints - (Optional) Media device constraints
      */
-    async initialize(roomCode, playerId, playerName, localVideoEl, existingStream) {
+    async initialize(roomCode, playerId, playerName, localVideoEl, existingStream, mediaConstraints) {
         console.log('🎥 VideoRoom initializing:', { roomCode, playerId, playerName });
         
         this.roomCode = roomCode;
@@ -58,17 +59,23 @@ const VideoRoom = {
                 this.localStream = existingStream;
                 console.log('✅ Reusing existing local media stream');
             } else {
-                // Request new media stream
-                this.localStream = await navigator.mediaDevices.getUserMedia({
+                // Use provided constraints or default
+                const constraints = mediaConstraints || {
                     video: { width: { ideal: 1280 }, height: { ideal: 720 } },
                     audio: true
-                });
+                };
+                
+                console.log('📋 Media constraints:', constraints);
+                
+                // Request new media stream
+                this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 console.log('✅ New local media stream obtained');
             }
             
             // Display local video
             if (this.localVideoElement) {
                 this.localVideoElement.srcObject = this.localStream;
+                console.log('📺 Local video displayed');
             }
             
             // Setup realtime channel for signaling

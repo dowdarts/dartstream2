@@ -340,6 +340,9 @@ const PlayOnlineUI = {
                 <video id="localVideo" autoplay playsinline muted></video>
             `;
             
+            // Populate device selections
+            await this.loadDeviceList();
+            
             this.showScreen('lobbyScreen');
             
         } catch (error) {
@@ -534,8 +537,90 @@ document.addEventListener('DOMContentLoaded', async () => {
         PlayOnlineUI.showError('Failed to connect to database. Please refresh the page.');
         return;
     }
+    /**
+     * DEVICE SELECTION
+     */
     
-    // Supabase is ready - now initialize the app with authenticated user
+    async loadDeviceList() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            
+            const cameras = devices.filter(device => device.kind === 'videoinput');
+            const microphones = devices.filter(device => device.kind === 'audioinput');
+            
+            // Populate camera select
+            const cameraSelect = document.getElementById('cameraSelect');
+            if (cameraSelect) {
+                cameraSelect.innerHTML = '';
+                if (cameras.length > 0) {
+                    cameras.forEach(camera => {
+                        const option = document.createElement('option');
+                        option.value = camera.deviceId;
+                        option.textContent = camera.label || `Camera ${cameras.indexOf(camera) + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+                    cameraSelect.addEventListener('change', (e) => this.onCameraChanged(e.target.value));
+                } else {
+                    cameraSelect.innerHTML = '<option>No cameras found</option>';
+                }
+            }
+            
+            // Populate microphone select
+            const micSelect = document.getElementById('microphoneSelect');
+            if (micSelect) {
+                micSelect.innerHTML = '';
+                if (microphones.length > 0) {
+                    microphones.forEach(mic => {
+                        const option = document.createElement('option');
+                        option.value = mic.deviceId;
+                        option.textContent = mic.label || `Microphone ${microphones.indexOf(mic) + 1}`;
+                        micSelect.appendChild(option);
+                    });
+                    micSelect.addEventListener('change', (e) => this.onMicrophoneChanged(e.target.value));
+                } else {
+                    micSelect.innerHTML = '<option>No microphones found</option>';
+                }
+            }
+            
+            console.log(`✅ Loaded ${cameras.length} cameras and ${microphones.length} microphones`);
+        } catch (error) {
+            console.error('❌ Error loading devices:', error);
+        }
+    },
+    
+    async onCameraChanged(deviceId) {
+        console.log('📹 Camera changed to:', deviceId);
+        // Store preference for later use when starting video
+        this.selectedCameraId = deviceId;
+    },
+    
+    async onMicrophoneChanged(deviceId) {
+        console.log('🎙️ Microphone changed to:', deviceId);
+        // Store preference for later use when starting video
+        this.selectedMicrophoneId = deviceId;
+    },
+    
+    getMediaConstraints() {
+        const constraints = {
+            audio: true,
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+        
+        // Apply selected devices if available
+        if (this.selectedCameraId) {
+            constraints.video.deviceId = { exact: this.selectedCameraId };
+        }
+        if (this.selectedMicrophoneId) {
+            constraints.audio = {
+                deviceId: { exact: this.selectedMicrophoneId }
+            };
+        }
+        
+        return constraints;
+    },
     try {
         await PlayOnlineApp.initialize(window.supabaseClient);
         console.log('✅ PlayOnlineApp ready');
