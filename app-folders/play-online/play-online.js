@@ -627,7 +627,7 @@ const PlayOnlineUI = {
                 const statusEl = document.getElementById('cameraStatus');
                 if (statusEl) {
                     statusEl.className = 'device-status connected';
-                    statusEl.textContent = '✅ Connected';
+                    statusEl.textContent = '🟢 Connected';
                 }
                 
                 // Display the camera feed
@@ -640,7 +640,7 @@ const PlayOnlineUI = {
                 const statusEl = document.getElementById('microphoneStatus');
                 if (statusEl) {
                     statusEl.className = 'device-status connected';
-                    statusEl.textContent = '✅ Connected';
+                    statusEl.textContent = '🟢 Connected';
                 }
             }
             
@@ -656,13 +656,13 @@ const PlayOnlineUI = {
                 const statusEl = document.getElementById('cameraStatus');
                 if (statusEl) {
                     statusEl.className = 'device-status disconnected';
-                    statusEl.textContent = '⚪ Disconnected';
+                    statusEl.textContent = '🔴 Disconnected';
                 }
             } else {
                 const statusEl = document.getElementById('microphoneStatus');
                 if (statusEl) {
                     statusEl.className = 'device-status disconnected';
-                    statusEl.textContent = '⚪ Disconnected';
+                    statusEl.textContent = '🔴 Disconnected';
                 }
             }
         }
