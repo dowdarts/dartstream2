@@ -714,9 +714,10 @@ const PlayOnlineUI = {
                     });
                     micSelect.addEventListener('change', (e) => this.onMicrophoneChanged(e.target.value));
                     
-                    // Set first microphone as default
+                    // Test first microphone by default
                     if (microphones.length > 0) {
                         micSelect.value = microphones[0].deviceId;
+                        await this.testDevice('audio', microphones[0].deviceId);
                     }
                 } else {
                     micSelect.innerHTML = '<option>No microphones found</option>';
@@ -790,16 +791,22 @@ const PlayOnlineUI = {
         this.selectedMicrophoneId = deviceId;
         
         // Test the microphone
+        console.log('⏳ Testing microphone...', deviceId);
         await this.testDevice('audio', deviceId);
+        console.log('✓ Microphone test completed');
     },
     
     async testDevice(kind, deviceId) {
         try {
+            console.log(`🔧 Testing ${kind} device: ${deviceId}`);
+            
             const constraints = kind === 'video' 
                 ? { video: { deviceId: { exact: deviceId } } }
                 : { audio: { deviceId: { exact: deviceId } } };
             
+            console.log(`📡 Requesting ${kind} permissions with constraints:`, constraints);
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log(`✅ ${kind} stream acquired successfully:`, stream);
             
             // Update status indicator
             if (kind === 'video') {
@@ -816,20 +823,33 @@ const PlayOnlineUI = {
                     console.log('📺 Camera feed displaying');
                 }
             } else {
+                console.log('🎙️ Updating microphone status indicator...');
                 const statusEl = document.getElementById('microphoneStatus');
+                console.log('Status element found:', statusEl ? 'YES' : 'NO');
                 if (statusEl) {
                     statusEl.className = 'device-status connected';
                     statusEl.textContent = '🟢 Connected';
+                    console.log('✅ Microphone status updated to CONNECTED');
                 }
+                
+                // Store the audio stream for later use and stop it briefly
+                if (!this.audioTestStream) {
+                    this.audioTestStream = stream;
+                } else {
+                    // Stop old audio stream
+                    this.audioTestStream.getTracks().forEach(track => track.stop());
+                    this.audioTestStream = stream;
+                }
+                console.log('✅ Microphone connected and ready');
             }
             
-            // Keep the stream for later use
-            if (!this.mediaStream) {
+            // Store media stream for later use if needed
+            if (!this.mediaStream && kind === 'video') {
                 this.mediaStream = stream;
             }
             
         } catch (error) {
-            console.error(`❌ Error testing ${kind}:`, error);
+            console.error(`❌ Error testing ${kind}:`, error.name, error.message);
             
             if (kind === 'video') {
                 const statusEl = document.getElementById('cameraStatus');
@@ -839,9 +859,11 @@ const PlayOnlineUI = {
                 }
             } else {
                 const statusEl = document.getElementById('microphoneStatus');
+                console.log('Setting microphone status to disconnected, element:', statusEl ? 'found' : 'not found');
                 if (statusEl) {
                     statusEl.className = 'device-status disconnected';
                     statusEl.textContent = '🔴 Disconnected';
+                    console.log('Microphone status updated to DISCONNECTED due to error');
                 }
             }
         }
