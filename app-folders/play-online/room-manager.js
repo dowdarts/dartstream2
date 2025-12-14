@@ -62,7 +62,7 @@ const RoomManager = {
             // Generate a UUID for the room ID
             const roomId = this.generateUUID();
             
-            // Prepare room data
+            // Prepare room data - host_id MUST be the authenticated user
             const roomData = {
                 id: roomId,
                 room_code: roomCode,
@@ -74,32 +74,25 @@ const RoomManager = {
                 }
             };
             
-            console.log('📤 Sending room creation request to Edge Function');
+            console.log('📤 Creating room via PostgREST (authenticated user)');
             
-            // Use Edge Function for room creation (bypasses PostgREST RLS issues)
-            const supabaseUrl = this.supabaseClient?.supabaseUrl || 'https://kswwbqumgsdissnwuiab.supabase.co';
-            const response = await fetch(`${supabaseUrl}/functions/v1/create_game_room`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await this.getAuthToken()}`
-                },
-                body: JSON.stringify(roomData)
-            });
+            // Use PostgREST directly with authenticated client
+            // RLS policy will verify auth.uid() = host_id
+            const { data, error } = await this.supabaseClient
+                .from('game_rooms')
+                .insert([roomData])
+                .select();
             
-            const result = await response.json();
-            
-            if (!response.ok) {
-                console.error('❌ Edge Function error - Status:', response.status);
-                console.error('❌ Edge Function error - Response:', result);
-                throw new Error(result.error || `HTTP ${response.status}`);
+            if (error) {
+                console.error('❌ Room creation error:', error);
+                throw error;
             }
             
             this.currentRoomCode = roomCode;
             this.currentRoomId = roomId;
             this.isHost = true;
             
-            console.log('✅ Room created via Edge Function:', { roomCode, roomId });
+            console.log('✅ Room created successfully:', { roomCode, roomId });
             return {
                 roomCode: roomCode,
                 roomId: roomId,

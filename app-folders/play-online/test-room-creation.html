@@ -622,7 +622,7 @@
             }
         };
 
-        // Step 7: Insert Room into Database (via Edge Function)
+        // Step 7: Insert Room into Database (via PostgREST with RLS)
         window.step7 = async function() {
             try {
                 log(7, '💾 Inserting room into database...');
@@ -646,31 +646,24 @@
                 log(7, '📋 Insert data:', 'info');
                 setVariable(7, 'Insert Payload', insertData);
                 
-                log(7, '⏳ Sending insert via Edge Function...');
-                log(7, `📡 Target endpoint: create_game_room`);
-                log(7, `🔑 Method: Secure Edge Function (service role)`);
+                log(7, '⏳ Sending insert via PostgREST...');
+                log(7, `📡 RLS policy: auth.uid() = host_id`);
+                log(7, `🔑 Auth user: ${window.supabaseClient?.auth?.user?.id || 'ANON'}`);
                 
-                const supabaseUrl = window.supabaseClient.supabaseUrl;
-                const response = await fetch(`${supabaseUrl}/functions/v1/create_game_room`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${window.supabaseClient.auth.session?.access_token || 'anon'}`
-                    },
-                    body: JSON.stringify(insertData)
-                });
+                const { data, error } = await window.supabaseClient
+                    .from('game_rooms')
+                    .insert([insertData])
+                    .select();
                 
-                const result = await response.json();
+                log(7, `📡 Response received. Error: ${error ? 'YES' : 'NO'}, Data: ${data ? 'YES' : 'NO'}`);
                 
-                log(7, `📡 Response received. Status: ${response.status}, Has data: ${result.data ? 'YES' : 'NO'}`);
-                
-                if (!response.ok) {
-                    log(7, `🔍 Error response:`, 'error');
-                    log(7, JSON.stringify(result, null, 2), 'error');
-                    throw new Error(result.error || `HTTP ${response.status}`);
+                if (error) {
+                    log(7, `🔍 Full error object:`, 'error');
+                    log(7, JSON.stringify(error, null, 2), 'error');
+                    throw error;
                 }
                 
-                testState.insertedData = result.data;
+                testState.insertedData = data;
                 log(7, '✅ Room inserted successfully');
                 setVariable(7, 'Response', testState.insertedData);
                 
