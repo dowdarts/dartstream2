@@ -1,6 +1,15 @@
 // play-online.js - UI Controller for Play Online App
 // Handles screen navigation, form interactions, and UI updates
 
+// UUID v4 Generator
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 const PlayOnlineUI = {
     currentPlayerId: null,
     currentPlayerName: null,
@@ -157,8 +166,8 @@ const PlayOnlineUI = {
             this.currentPlayerName = playerName;
             this.currentCountry = country;
             
-            // Generate unique player ID (timestamp + random)
-            this.currentPlayerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            // Generate unique player ID (UUID v4)
+            this.currentPlayerId = generateUUID();
             
             console.log('✅ Setup complete:', { playerId: this.currentPlayerId, playerName });
             
