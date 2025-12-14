@@ -289,23 +289,37 @@
         .video-container {
             width: 100%;
             height: 100%;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
-            padding: 12px;
+            display: flex;
+            gap: 0;
+            padding: 0;
             background: #0f172a;
+            position: relative;
         }
 
         #remoteVideo {
-            width: 100%;
-            height: 100%;
+            flex: 1;
             background: #000;
-            border-radius: 12px;
+            border-radius: 0;
             object-fit: cover;
         }
 
+        .video-side-panel {
+            width: 120px;
+            height: 100%;
+            background: #1a1a2e;
+            border-left: 2px solid #3b82f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 16px 12px;
+            align-items: center;
+        }
+
         .local-video-container {
-            position: relative;
+            position: absolute;
+            top: 20px;
+            right: 150px;
             width: 220px;
             height: 170px;
             background: #1e293b;
@@ -316,6 +330,7 @@
             flex-direction: column;
             justify-content: flex-end;
             box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
+            z-index: 10;
         }
 
         #localVideo {
@@ -338,43 +353,37 @@
         }
 
         .video-controls {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-            z-index: 10;
+            display: none;
         }
 
-        .control-btn {
-            width: 45px;
-            height: 45px;
+        .side-control-btn {
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            border: none;
+            border: 2px solid #3b82f6;
             background: rgba(59, 130, 246, 0.3);
             color: #3b82f6;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.3rem;
+            font-size: 2rem;
             transition: all 0.3s;
-            border: 2px solid #3b82f6;
+            flex-shrink: 0;
         }
 
-        .control-btn:hover {
+        .side-control-btn:hover {
             background: rgba(59, 130, 246, 0.6);
-            transform: scale(1.1);
+            transform: scale(1.08);
         }
 
-        .control-btn.off {
+        .side-control-btn.off {
             background: rgba(239, 68, 68, 0.3);
             color: #ef4444;
             border-color: #ef4444;
         }
 
-        .control-btn.off:hover {
+        .side-control-btn.off:hover {
             background: rgba(239, 68, 68, 0.6);
         }
 
@@ -545,13 +554,13 @@
                 <div class="local-video-container">
                     <video id="localVideo" autoplay playsinline muted></video>
                     <div class="video-info">You</div>
-                    <div class="video-controls">
-                        <button class="control-btn" id="toggleMicBtn" title="Mute/Unmute microphone">🎤</button>
-                        <button class="control-btn" id="toggleCameraBtn" title="Turn camera on/off">📷</button>
-                        <button class="control-btn" id="settingsBtn" title="Camera and microphone settings">⚙️</button>
-                        <button class="control-btn" id="refreshCallBtn" title="Refresh video call">🔄</button>
-                        <button class="control-btn" id="endCallBtn" title="End call and return to start">❌</button>
-                    </div>
+                </div>
+                <div class="video-side-panel">
+                    <button class="side-control-btn" id="toggleMicBtn" title="Mute/Unmute microphone">🎤</button>
+                    <button class="side-control-btn" id="toggleCameraBtn" title="Turn camera on/off">📷</button>
+                    <button class="side-control-btn" id="settingsBtn" title="Camera and microphone settings">⚙️</button>
+                    <button class="side-control-btn" id="refreshCallBtn" title="Refresh video call">🔄</button>
+                    <button class="side-control-btn" id="endCallBtn" title="End call and return to start">❌</button>
                 </div>
             </div>
             <div class="participants">
@@ -580,6 +589,6 @@
     <script src="room-manager.js?v=13"></script>
     <script src="play-online.js?v=3"></script>
     
-    <div style="position: fixed; top: 10px; right: 10px; font-size: 18px; font-weight: bold; color: #FF6B35; z-index: 9999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; border: 2px solid #FF6B35;">v1.0.2</div>
+    <div style="position: fixed; top: 10px; right: 10px; font-size: 18px; font-weight: bold; color: #FF6B35; z-index: 9999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; border: 2px solid #FF6B35;">v1.0.3</div>
 </body>
 </html>

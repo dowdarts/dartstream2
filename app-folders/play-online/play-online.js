@@ -359,9 +359,9 @@ class PlayOnlineV7 {
         }
 
         try {
-            // If we're in settings mode, just update devices and return to call
+            // If we're in settings mode, update devices and reconnect to video call
             if (this.isSettingsMode) {
-                // Apply new device constraints to existing stream
+                // Stop old stream
                 if (this.mediaStream) {
                     this.mediaStream.getTracks().forEach(track => track.stop());
                 }
@@ -371,18 +371,62 @@ class PlayOnlineV7 {
                     audio: { deviceId: { exact: this.selectedDevices.microphone } },
                 };
 
+                // Get new stream with updated devices
                 const newStream = await navigator.mediaDevices.getUserMedia(constraints);
                 this.mediaStream = newStream;
                 this.video.local.srcObject = newStream;
 
-                // Update video room with new stream
+                // Disconnect from current video room
                 if (this.videoRoom) {
-                    await this.videoRoom.updateStream(newStream);
+                    await this.videoRoom.leaveRoom();
                 }
+
+                // Reconnect to same room with new stream
+                this.videoRoom = window.VideoRoom;
+                await this.videoRoom.initialize(
+                    this.roomCode,
+                    this.playerId,
+                    this.playerName,
+                    this.video.local,
+                    null,
+                    constraints
+                );
+
+                this.mediaStream = this.videoRoom.localStream;
+
+                // Set up callbacks again
+                this.videoRoom.onPeerJoined = (peerId, peerName) => {
+                    console.log('✅ Peer joined:', peerId, peerName);
+                    this.display.opponentName.textContent = peerName || 'Opponent';
+                };
+
+                this.videoRoom.onPeerVideoReady = (peerId, stream) => {
+                    console.log('📹 Peer video ready:', peerId);
+                    if (this.video.remote) {
+                        this.video.remote.srcObject = stream;
+                    }
+                };
+
+                this.videoRoom.onPeerLeft = (peerId) => {
+                    console.log('👋 Peer left:', peerId);
+                    this.display.opponentName.textContent = 'Opponent (disconnected)';
+                    if (this.video.remote) {
+                        this.video.remote.srcObject = null;
+                    }
+                };
+
+                // Reset media states
+                this.micEnabled = true;
+                this.cameraEnabled = true;
+                this.buttons.toggleMic.textContent = '🎤';
+                this.buttons.toggleMic.style.backgroundColor = '';
+                this.buttons.toggleCamera.textContent = '📷';
+                this.buttons.toggleCamera.style.backgroundColor = '';
 
                 this.isSettingsMode = false;
                 this.showScreen('videoCall');
-                this.showError('Device settings updated!');
+                this.showError('Settings updated and reconnected!');
+                console.log('✅ Settings updated and video call reconnected');
                 return;
             }
 
@@ -454,7 +498,8 @@ class PlayOnlineV7 {
             track.enabled = this.micEnabled;
         });
 
-        btn.style.backgroundColor = this.micEnabled ? '' : '#ff4444';
+        btn.textContent = this.micEnabled ? '🎤' : '🔇';
+        btn.classList.toggle('off');
     }
 
     toggleCamera() {
@@ -469,7 +514,6 @@ class PlayOnlineV7 {
 
         btn.textContent = this.cameraEnabled ? '📷' : '🚫';
         btn.classList.toggle('off');
-        btn.style.backgroundColor = this.cameraEnabled ? '' : '#ff4444';
     }
 
     showDeviceSettings() {
