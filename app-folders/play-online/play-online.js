@@ -154,7 +154,10 @@ const PlayOnlineUI = {
         // Listen for app events
         window.addEventListener('peerJoined', (e) => this.onPeerJoined(e.detail));
         window.addEventListener('peerLeft', (e) => this.onPeerLeft(e.detail));
-        window.addEventListener('peerVideoReady', (e) => this.onPeerVideoReady(e.detail));
+        window.addEventListener('peerVideoReady', (e) => {
+            console.log('🎨 [UI] peerVideoReady event received! Detail:', e.detail);
+            this.onPeerVideoReady(e.detail);
+        });
         window.addEventListener('videoRoomError', (e) => this.onVideoRoomError(e.detail));
     },
     

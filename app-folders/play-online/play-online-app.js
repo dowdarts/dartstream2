@@ -214,7 +214,8 @@ const PlayOnlineApp = {
         
         // Peer's video ready
         this.videoRoom.onPeerVideoReady = (peerId, stream) => {
-            console.log('📹 Peer video ready:', peerId);
+            console.log('📹 [APP] Peer video ready callback triggered:', peerId);
+            console.log('📹 [APP] Stream exists?', !!stream);
             
             const videoElement = document.getElementById(`video-${peerId}`);
             if (videoElement) {
@@ -228,7 +229,18 @@ const PlayOnlineApp = {
             }
             
             this.state.isPeerConnected = true;
-            window.dispatchEvent(new CustomEvent('peerVideoReady', { detail: { peerId } }));
+            
+            // Dispatch event with full peer data
+            console.log('📡 [APP] Dispatching peerVideoReady event with peerId:', peerId);
+            const event = new CustomEvent('peerVideoReady', { 
+                detail: { 
+                    peerId: peerId,
+                    stream: stream,
+                    peerName: this.videoRoom.peers[peerId]?.name || 'Unknown'
+                } 
+            });
+            window.dispatchEvent(event);
+            console.log('✅ [APP] peerVideoReady event dispatched');
         };
         
         // Peer left
