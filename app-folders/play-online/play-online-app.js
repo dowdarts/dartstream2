@@ -217,20 +217,10 @@ const PlayOnlineApp = {
             console.log('📹 [APP] Peer video ready callback triggered:', peerId);
             console.log('📹 [APP] Stream exists?', !!stream);
             
-            const videoElement = document.getElementById(`video-${peerId}`);
-            if (videoElement) {
-                videoElement.srcObject = stream;
-                
-                // Update status
-                const statusEl = document.querySelector(`#peer-${peerId} .peer-status`);
-                if (statusEl) {
-                    statusEl.textContent = 'Connected';
-                }
-            }
-            
             this.state.isPeerConnected = true;
             
             // Dispatch event with full peer data
+            // Let the UI handler create the element and set the stream
             console.log('📡 [APP] Dispatching peerVideoReady event with peerId:', peerId);
             const event = new CustomEvent('peerVideoReady', { 
                 detail: { 
