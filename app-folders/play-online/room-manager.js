@@ -96,8 +96,6 @@ const RoomManager = {
             console.error('❌ Error creating room - Catch Details:', error.details);
             console.error('❌ Error creating room - Catch Hint:', error.hint);
             console.error('❌ Error creating room - Catch Full:', JSON.stringify(error, null, 2));
-                fullError: error
-            });
             throw error;
         }
     },
