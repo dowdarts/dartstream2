@@ -105,21 +105,29 @@ class PlayOnlineV7 {
         let attempts = 0;
         const maxAttempts = 100; // 10 seconds (100 * 100ms)
         
-        while (!window.PlayerDB && attempts < maxAttempts) {
+        while (!window.supabaseClient && attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
 
-        if (!window.PlayerDB) {
-            this.showError('Failed to connect to database - Supabase not loaded');
-            console.error('❌ PlayerDB never initialized after', maxAttempts * 100, 'ms');
+        if (!window.supabaseClient) {
+            this.showError('Failed to connect to Supabase');
+            console.error('❌ Supabase client never initialized after', maxAttempts * 100, 'ms');
             return;
         }
 
-        // Initialize room manager
+        // Initialize room manager with Supabase client
         this.roomManager = window.RoomManager;
         if (!this.roomManager) {
             this.showError('Room manager not loaded');
+            return;
+        }
+
+        try {
+            await this.roomManager.initialize(window.supabaseClient);
+        } catch (err) {
+            console.error('❌ Failed to initialize room manager:', err);
+            this.showError('Failed to initialize room manager: ' + err.message);
             return;
         }
 
@@ -201,15 +209,15 @@ class PlayOnlineV7 {
 
     async handleCreateRoom() {
         try {
-            const code = await this.roomManager.createRoom(this.playerId);
-            this.roomCode = code;
-            this.display.roomCode.textContent = code;
+            const result = await this.roomManager.createRoom();
+            this.roomCode = result.roomCode;
+            this.display.roomCode.textContent = result.roomCode;
 
             this.showScreen('roomCode');
             this.startRoomCountdown();
         } catch (err) {
             console.error('❌ Create room failed:', err);
-            this.showError('Failed to create room');
+            this.showError('Failed to create room: ' + err.message);
         }
     }
 
@@ -255,7 +263,7 @@ class PlayOnlineV7 {
             this.roomCode = code;
 
             // Join the room
-            const room = await this.roomManager.joinRoom(code, this.playerId, name);
+            const room = await this.roomManager.joinRoom(code, name);
 
             if (!room) {
                 this.showError('Room not found or expired');
