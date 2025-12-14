@@ -437,6 +437,8 @@ function initializeSupabase() {
     if (client) {
         console.log('Supabase client initialized successfully');
         console.log('window.supabaseClient:', window.supabaseClient);
+        // Make sure PlayerDB has the supabaseClient
+        window.PlayerDB.supabaseClient = client;
     } else {
         console.log('Waiting for Supabase library to load...');
         setTimeout(initializeSupabase, 100);
