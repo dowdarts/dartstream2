@@ -813,21 +813,22 @@
             
             updateProgress(100);
             
-            const summaryText = `
-TEST SUMMARY
-============
-Total Errors: ${errors.length}
-Room Code: ${testState.roomCode || 'N/A'}
-Room ID: ${testState.roomId || 'N/A'}
-Player ID: ${testState.playerId || 'N/A'}
-
-${errors.length === 0 ? '✅ ALL TESTS PASSED!' : '❌ TESTS FAILED'}
-
-${errors.length > 0 ? `
-ERRORS:
-${errors.map((e, i) => `  Step ${e.step}: ${e.error.message}`).join('\n')}
-` : ''}
-            `;
+            let summaryText = 'TEST SUMMARY\n';
+            summaryText += '============\n';
+            summaryText += 'Total Errors: ' + errors.length + '\n';
+            summaryText += 'Room Code: ' + (testState.roomCode || 'N/A') + '\n';
+            summaryText += 'Room ID: ' + (testState.roomId || 'N/A') + '\n';
+            summaryText += 'Player ID: ' + (testState.playerId || 'N/A') + '\n\n';
+            
+            if (errors.length === 0) {
+                summaryText += '✅ ALL TESTS PASSED!\n';
+            } else {
+                summaryText += '❌ TESTS FAILED\n\n';
+                summaryText += 'ERRORS:\n';
+                errors.forEach((e, i) => {
+                    summaryText += '  Step ' + e.step + ': ' + e.error.message + '\n';
+                });
+            }
             
             summaryOutput.textContent = summaryText;
             setStatus('summary', errors.length === 0 ? 'success' : 'error');
