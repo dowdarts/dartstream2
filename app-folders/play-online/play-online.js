@@ -152,13 +152,13 @@ const PlayOnlineUI = {
         document.getElementById('errorCloseBtn')?.addEventListener('click', () => this.hideError());
         
         // Listen for app events
-        window.addEventListener('peerJoined', (e) => this.onPeerJoined(e.detail));
-        window.addEventListener('peerLeft', (e) => this.onPeerLeft(e.detail));
+        window.addEventListener('peerJoined', (e) => PlayOnlineUI.onPeerJoined(e.detail));
+        window.addEventListener('peerLeft', (e) => PlayOnlineUI.onPeerLeft(e.detail));
         window.addEventListener('peerVideoReady', (e) => {
             console.log('🎨 [UI] peerVideoReady event received! Detail:', e.detail);
-            this.onPeerVideoReady(e.detail);
+            PlayOnlineUI.onPeerVideoReady(e.detail);
         });
-        window.addEventListener('videoRoomError', (e) => this.onVideoRoomError(e.detail));
+        window.addEventListener('videoRoomError', (e) => PlayOnlineUI.onVideoRoomError(e.detail));
     },
     
     /**
