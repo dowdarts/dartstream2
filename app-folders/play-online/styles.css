@@ -138,6 +138,17 @@ body {
     margin: 0;
 }
 
+.version-badge {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
 .navbar-status {
     display: flex;
     align-items: center;
