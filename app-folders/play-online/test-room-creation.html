@@ -890,24 +890,28 @@
         // Check auth on page load
         async function checkAuth() {
             try {
-                // Wait for Supabase client
+                // Wait for Supabase client to be ready (with longer timeout)
                 let retries = 0;
-                while (!window.supabaseClient && retries < 10) {
+                while (!window.supabaseClient && retries < 30) {
                     await new Promise(r => setTimeout(r, 100));
                     retries++;
                 }
                 
                 if (!window.supabaseClient) {
+                    console.warn('Supabase client not initialized after 3 seconds');
                     showAuthWall();
                     return;
                 }
                 
+                console.log('✅ Supabase client ready, checking auth session...');
                 const { data: { session } } = await window.supabaseClient.auth.getSession();
                 
-                if (!session) {
-                    showAuthWall();
-                } else {
+                if (session) {
+                    console.log('✅ User already authenticated:', session.user.email);
                     hideAuthWall();
+                } else {
+                    console.log('⚠️ No active session, showing auth wall');
+                    showAuthWall();
                 }
             } catch (error) {
                 console.error('Auth check error:', error);
@@ -929,7 +933,10 @@
             if (testContainer) testContainer.style.display = 'block';
         }
         
-        document.addEventListener('DOMContentLoaded', checkAuth);
+        // Run auth check after a brief delay to ensure Supabase loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkAuth, 500);
+        });
     </script>
 </body>
 </html>
