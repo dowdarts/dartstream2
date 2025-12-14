@@ -517,26 +517,8 @@ const PlayOnlineUI = {
     onVideoRoomError(data) {
         console.error('⚠️ Video room error:', data.error);
         this.showError('Video connection error: ' + data.error.message);
-    }
-};
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('📄 Play Online page loaded');
+    },
     
-    // Wait for Supabase client to be ready
-    let maxWaitTime = 15000; // 15 seconds
-    let startTime = Date.now();
-    
-    while (!window.supabaseClient && (Date.now() - startTime) < maxWaitTime) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    if (!window.supabaseClient) {
-        console.error('❌ Supabase client failed to initialize within timeout');
-        PlayOnlineUI.showError('Failed to connect to database. Please refresh the page.');
-        return;
-    }
     /**
      * DEVICE SELECTION
      */
@@ -620,7 +602,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         return constraints;
-    },
+    }
+};
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('📄 Play Online page loaded');
+    
+    // Wait for Supabase client to be ready
+    let maxWaitTime = 15000; // 15 seconds
+    let startTime = Date.now();
+    
+    while (!window.supabaseClient && (Date.now() - startTime) < maxWaitTime) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (!window.supabaseClient) {
+        console.error('❌ Supabase client failed to initialize within timeout');
+        PlayOnlineUI.showError('Failed to connect to database. Please refresh the page.');
+        return;
+    }
+    
+    // Supabase is ready - now initialize the app with authenticated user
     try {
         await PlayOnlineApp.initialize(window.supabaseClient);
         console.log('✅ PlayOnlineApp ready');
