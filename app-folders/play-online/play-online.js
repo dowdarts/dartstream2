@@ -67,6 +67,8 @@ const PlayOnlineUI = {
     attachEventListeners() {
         // Host or Join Screen
         document.getElementById('hostGameBtn')?.addEventListener('click', () => this.handleHostGame());
+        document.getElementById('joinPromptBtn')?.addEventListener('click', () => this.showJoinCodeInput());
+        document.getElementById('cancelJoinBtn')?.addEventListener('click', () => this.hideJoinCodeInput());
         document.getElementById('joinGameBtn')?.addEventListener('click', () => this.handleJoinGame());
         
         // Join code input - auto-format to 4 digits
@@ -154,6 +156,29 @@ const PlayOnlineUI = {
     /**
      * HOST OR JOIN FLOW
      */
+    
+    showJoinCodeInput() {
+        try {
+            document.getElementById('joinPromptBtn').style.display = 'none';
+            document.getElementById('joinPromptText').style.display = 'none';
+            document.getElementById('joinCodeContainer').style.display = 'block';
+            document.getElementById('joinRoomCodeInput').focus();
+        } catch (error) {
+            console.error('❌ Error showing join input:', error);
+        }
+    },
+    
+    hideJoinCodeInput() {
+        try {
+            document.getElementById('joinPromptBtn').style.display = 'block';
+            document.getElementById('joinPromptText').style.display = 'block';
+            document.getElementById('joinCodeContainer').style.display = 'none';
+            document.getElementById('joinRoomCodeInput').value = '';
+            document.getElementById('joinCodeError').textContent = '';
+        } catch (error) {
+            console.error('❌ Error hiding join input:', error);
+        }
+    },
     
     async handleHostGame() {
         try {

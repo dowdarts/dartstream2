@@ -40,7 +40,7 @@
         <div class="navbar-brand">
             <img src="dartstream-logo.png" alt="DartStream" class="logo">
             <h1>DartStream Play Online</h1>
-            <span class="version-badge">v2.6</span>
+            <span class="version-badge">v2.7</span>
         </div>
         <div class="navbar-status">
             <span id="statusIndicator" class="status-dot offline"></span>
@@ -57,36 +57,71 @@
         <!-- SCREEN 1: Host or Join -->
         <div id="hostOrJoinScreen" class="screen active">
             <div class="screen-content">
-                <div class="setup-card">
-                    <h2>DartStream Play Online</h2>
-                    <p>Play darts with your opponent via video call</p>
+                <div class="setup-card welcome-card">
+                    <div class="welcome-header">
+                        <h1>DartStream Play Online</h1>
+                        <p class="subtitle">Challenge your opponent to a live darts match via video call</p>
+                    </div>
                     
-                    <div class="room-options" style="margin-top: 30px;">
-                        <div class="room-option create-room">
-                            <h3>🆕 Host Game</h3>
-                            <p>Start a new video game session and invite an opponent</p>
-                            <button id="hostGameBtn" class="btn btn-primary btn-large">
-                                Host
+                    <div class="room-options-grid">
+                        <!-- Host Game Option -->
+                        <div class="room-option-card host-card">
+                            <div class="option-icon">🆕</div>
+                            <h3>Host Game</h3>
+                            <p>Start a new video game session. You'll get a unique 4-digit code to share with your opponent.</p>
+                            <button id="hostGameBtn" class="btn btn-primary btn-large btn-prominent">
+                                Host Game
                             </button>
+                            <div class="option-features">
+                                <span>✓ Get unique code</span>
+                                <span>✓ Invite opponent</span>
+                                <span>✓ Start video call</span>
+                            </div>
                         </div>
                         
-                        <div class="divider">OR</div>
+                        <!-- Divider -->
+                        <div class="divider-card">
+                            <span class="divider-text">or</span>
+                        </div>
                         
-                        <div class="room-option join-room">
-                            <h3>🔗 Join Game</h3>
-                            <p>Join a game using a 4-digit code</p>
-                            <input 
-                                type="text" 
-                                id="joinRoomCodeInput" 
-                                placeholder="Enter 4-digit code" 
-                                maxlength="4"
-                                pattern="[0-9]{4}"
-                                class="room-code-input"
-                            >
-                            <small id="joinCodeError" class="error-text"></small>
-                            <button id="joinGameBtn" class="btn btn-secondary btn-large">
-                                Join
+                        <!-- Join Game Option -->
+                        <div class="room-option-card join-card">
+                            <div class="option-icon">🔗</div>
+                            <h3>Join Game</h3>
+                            <p id="joinPromptText">Have a 4-digit code from your opponent? Click below to join their game.</p>
+                            
+                            <!-- Code Input (Hidden Initially) -->
+                            <div id="joinCodeContainer" style="display: none;">
+                                <input 
+                                    type="text" 
+                                    id="joinRoomCodeInput" 
+                                    placeholder="Enter 4-digit code" 
+                                    maxlength="4"
+                                    pattern="[0-9]{4}"
+                                    class="room-code-input join-code-input"
+                                    autocomplete="off"
+                                >
+                                <small id="joinCodeError" class="error-text"></small>
+                                <div class="join-button-group">
+                                    <button id="joinGameBtn" class="btn btn-primary btn-large" style="flex: 1;">
+                                        Join Game
+                                    </button>
+                                    <button id="cancelJoinBtn" class="btn btn-secondary" style="flex: 1;">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Initial Join Button -->
+                            <button id="joinPromptBtn" class="btn btn-secondary btn-large btn-prominent">
+                                Join Game
                             </button>
+                            
+                            <div class="option-features">
+                                <span>✓ Enter code</span>
+                                <span>✓ Join instantly</span>
+                                <span>✓ Start playing</span>
+                            </div>
                         </div>
                     </div>
                 </div>
