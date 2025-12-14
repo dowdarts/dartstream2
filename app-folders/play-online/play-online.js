@@ -210,6 +210,13 @@ const PlayOnlineUI = {
     
     async handleHostGame() {
         try {
+            // Stop preview stream to avoid device conflict
+            if (this.previewStream) {
+                this.previewStream.getTracks().forEach(track => track.stop());
+                this.previewStream = null;
+                console.log('🛑 Preview stream stopped');
+            }
+            
             // Generate unique player ID (UUID v4)
             this.currentPlayerId = generateUUID();
             console.log('✅ Host mode - Player ID:', this.currentPlayerId);
@@ -252,6 +259,13 @@ const PlayOnlineUI = {
             if (!roomCode || roomCode.length !== 4) {
                 document.getElementById('joinCodeError').textContent = 'Please enter a valid 4-digit code';
                 return;
+            }
+            
+            // Stop preview stream to avoid device conflict
+            if (this.previewStream) {
+                this.previewStream.getTracks().forEach(track => track.stop());
+                this.previewStream = null;
+                console.log('🛑 Preview stream stopped');
             }
             
             // Generate unique player ID (UUID v4)
