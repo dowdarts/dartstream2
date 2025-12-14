@@ -70,13 +70,11 @@ const RoomManager = {
                 });
             
             if (error) {
-                console.error('❌ Error creating room:', {
-                    message: error.message,
-                    code: error.code,
-                    details: error.details,
-                    hint: error.hint,
-                    fullError: error
-                });
+                console.error('❌ Error creating room - Message:', error.message);
+                console.error('❌ Error creating room - Code:', error.code);
+                console.error('❌ Error creating room - Details:', error.details);
+                console.error('❌ Error creating room - Hint:', error.hint);
+                console.error('❌ Error creating room - Full:', JSON.stringify(error, null, 2));
                 throw error;
             }
             
@@ -93,11 +91,11 @@ const RoomManager = {
             };
             
         } catch (error) {
-            console.error('❌ Error creating room:', {
-                message: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint,
+            console.error('❌ Error creating room - Catch Message:', error.message);
+            console.error('❌ Error creating room - Catch Code:', error.code);
+            console.error('❌ Error creating room - Catch Details:', error.details);
+            console.error('❌ Error creating room - Catch Hint:', error.hint);
+            console.error('❌ Error creating room - Catch Full:', JSON.stringify(error, null, 2));
                 fullError: error
             });
             throw error;
