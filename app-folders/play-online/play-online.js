@@ -173,9 +173,14 @@ const PlayOnlineUI = {
         this.updateParticipantsList(detail.peerId, null, 'connected');
         
         // Create remote video element if it doesn't exist
+        console.log('🔍 Looking for remoteVideosContainer...');
         const remoteVideosContainer = document.getElementById('remoteVideosContainer');
+        console.log('✓ remoteVideosContainer found?', !!remoteVideosContainer);
+        
         if (remoteVideosContainer) {
+            console.log('🔍 Looking for existing video element: video-' + detail.peerId);
             let videoElement = document.getElementById(`video-${detail.peerId}`);
+            console.log('✓ Video element already exists?', !!videoElement);
             
             if (!videoElement) {
                 console.log('📹 Creating remote video element for peer:', detail.peerId);
@@ -202,16 +207,29 @@ const PlayOnlineUI = {
                 remoteVideosContainer.appendChild(videoWrapper);
                 
                 console.log('✅ Remote video element created for:', detail.peerId);
+                console.log('📊 Container now has', remoteVideosContainer.children.length, 'children');
+            } else {
+                console.log('ℹ️ Reusing existing video element for:', detail.peerId);
             }
             
             // Set the stream if available from videoRoom
-            if (PlayOnlineApp?.videoRoom?.peers[detail.peerId]?.stream) {
+            console.log('🔍 Checking for stream in videoRoom.peers...');
+            const peerData = PlayOnlineApp?.videoRoom?.peers[detail.peerId];
+            console.log('✓ Peer data exists?', !!peerData);
+            console.log('✓ Peer stream exists?', !!peerData?.stream);
+            
+            if (peerData?.stream) {
                 console.log('📹 Setting stream for remote video:', detail.peerId);
-                videoElement.srcObject = PlayOnlineApp.videoRoom.peers[detail.peerId].stream;
+                videoElement.srcObject = peerData.stream;
                 videoElement.play().catch(err => {
                     console.warn('⚠️ Could not play remote video:', err.message);
                 });
+                console.log('✅ Remote video stream set and playback started');
+            } else {
+                console.warn('⚠️ No stream available yet for peer:', detail.peerId);
             }
+        } else {
+            console.error('❌ remoteVideosContainer not found in DOM!');
         }
         
         const startBtn = document.getElementById('startVideoBtn');
