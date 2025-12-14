@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Creation Test - Step by Step</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .test-section {
+            margin-bottom: 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .test-section h2 {
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-icon {
+            font-size: 20px;
+        }
+        .status-icon.pending { color: #ff9800; }
+        .status-icon.success { color: #4caf50; }
+        .status-icon.error { color: #f44336; }
+        .status-icon.skip { color: #9e9e9e; }
+
+        .output {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+        .output.error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .output.success {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #388e3c;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4caf50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .variable-display {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .variable-display strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Room Creation Test Suite</h1>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Step 1: Module Loading -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step1Icon">⏳</span>
+                Step 1: Load Modules
+            </h2>
+            <div class="output" id="step1Output"></div>
+        </div>
+
+        <!-- Step 2: Initialize Supabase -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step2Icon">⏳</span>
+                Step 2: Initialize Supabase Client
+            </h2>
+            <div class="output" id="step2Output"></div>
+            <div class="variable-display" id="step2Vars"></div>
+        </div>
+
+        <!-- Step 3: Initialize GuestAuth -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step3Icon">⏳</span>
+                Step 3: Initialize Guest Auth
+            </h2>
+            <div class="output" id="step3Output"></div>
+            <div class="variable-display" id="step3Vars"></div>
+        </div>
+
+        <!-- Step 4: Initialize RoomManager -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step4Icon">⏳</span>
+                Step 4: Initialize RoomManager
+            </h2>
+            <div class="output" id="step4Output"></div>
+            <div class="variable-display" id="step4Vars"></div>
+        </div>
+
+        <!-- Step 5: Generate Room Code -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step5Icon">⏳</span>
+                Step 5: Generate Room Code
+            </h2>
+            <div class="output" id="step5Output"></div>
+            <div class="variable-display" id="step5Vars"></div>
+        </div>
+
+        <!-- Step 6: Generate UUID -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step6Icon">⏳</span>
+                Step 6: Generate UUID
+            </h2>
+            <div class="output" id="step6Output"></div>
+            <div class="variable-display" id="step6Vars"></div>
+        </div>
+
+        <!-- Step 7: Create Room in Database -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step7Icon">⏳</span>
+                Step 7: Insert Room into Database
+            </h2>
+            <div class="output" id="step7Output"></div>
+            <div class="variable-display" id="step7Vars"></div>
+        </div>
+
+        <!-- Step 8: Verify Room Created -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="step8Icon">⏳</span>
+                Step 8: Verify Room in Database
+            </h2>
+            <div class="output" id="step8Output"></div>
+            <div class="variable-display" id="step8Vars"></div>
+        </div>
+
+        <!-- Summary -->
+        <div class="test-section">
+            <h2>
+                <span class="status-icon pending" id="summaryIcon">⏳</span>
+                Test Summary
+            </h2>
+            <div class="output" id="summaryOutput"></div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="runFullTest()">▶️ Run Full Test</button>
+            <button class="btn-success" onclick="runStepByStep()">📋 Run Step by Step</button>
+            <button class="btn-danger" onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Test state
+        let testState = {
+            supabaseClient: null,
+            playerId: null,
+            roomCode: null,
+            roomId: null,
+            insertedData: null,
+            verifiedData: null,
+            errors: []
+        };
+
+        window.testState = testState;
+
+        // Helper function to log to UI
+        function log(stepNum, message, type = 'info') {
+            const output = document.getElementById(`step${stepNum}Output`);
+            const timestamp = new Date().toLocaleTimeString();
+            const line = `[${timestamp}] ${message}\n`;
+            output.textContent += line;
+            output.scrollTop = output.scrollHeight;
+            console.log(`Step ${stepNum}:`, message);
+        }
+
+        function setStatus(stepNum, status) {
+            const icon = document.getElementById(`step${stepNum}Icon`);
+            const section = document.querySelector(`#step${stepNum}Output`).parentElement.parentElement;
+            
+            icon.textContent = status === 'success' ? '✅' : 
+                              status === 'error' ? '❌' : 
+                              status === 'skip' ? '⊘' : '⏳';
+            icon.className = `status-icon ${status}`;
+
+            const output = document.getElementById(`step${stepNum}Output`);
+            if (status === 'error') output.classList.add('error');
+            if (status === 'success') output.classList.add('success');
+        }
+
+        function setVariable(stepNum, key, value) {
+            const vars = document.getElementById(`step${stepNum}Vars`);
+            if (!vars) return;
+            const display = value && typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value);
+            vars.innerHTML += `<strong>${key}:</strong> ${display}<br>`;
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        // Step 1: Load modules
+        window.step1 = async function() {
+            try {
+                log(1, '📦 Starting module load...');
+                updateProgress(12);
+                
+                log(1, '📦 Loading guest-auth.js...');
+                await import('./guest-auth.js');
+                log(1, '✅ guest-auth.js loaded');
+                
+                log(1, '📦 Loading supabase-config.js...');
+                await import('../../../supabase-config.js');
+                log(1, '✅ supabase-config.js loaded');
+                
+                log(1, '📦 Loading room-manager.js...');
+                await import('./room-manager.js');
+                log(1, '✅ room-manager.js loaded');
+                
+                setStatus(1, 'success');
+                return true;
+            } catch (error) {
+                log(1, `❌ Error: ${error.message}`, 'error');
+                setStatus(1, 'error');
+                testState.errors.push({ step: 1, error });
+                return false;
+            }
+        };
+
+        // Step 2: Initialize Supabase
+        window.step2 = async function() {
+            try {
+                log(2, '🔌 Checking Supabase client...');
+                updateProgress(24);
+                
+                // Wait for Supabase to be ready
+                let retries = 0;
+                while (!window.supabaseClient && retries < 10) {
+                    log(2, `⏳ Waiting for Supabase client... (${retries + 1}/10)`);
+                    await new Promise(r => setTimeout(r, 500));
+                    retries++;
+                }
+                
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase client not initialized');
+                }
+                
+                testState.supabaseClient = window.supabaseClient;
+                log(2, '✅ Supabase client ready');
+                setVariable(2, 'Supabase URL', window.supabaseClient.supabaseUrl);
+                setVariable(2, 'Has Auth', !!window.supabaseClient.auth);
+                setVariable(2, 'Has Realtime', !!window.supabaseClient.realtime);
+                
+                setStatus(2, 'success');
+                return true;
+            } catch (error) {
+                log(2, `❌ Error: ${error.message}`, 'error');
+                setStatus(2, 'error');
+                testState.errors.push({ step: 2, error });
+                return false;
+            }
+        };
+
+        // Step 3: Initialize GuestAuth
+        window.step3 = async function() {
+            try {
+                log(3, '🔐 Checking GuestAuth...');
+                updateProgress(36);
+                
+                let retries = 0;
+                while (!window.GuestAuth && retries < 10) {
+                    log(3, `⏳ Waiting for GuestAuth... (${retries + 1}/10)`);
+                    await new Promise(r => setTimeout(r, 500));
+                    retries++;
+                }
+                
+                if (!window.GuestAuth) {
+                    throw new Error('GuestAuth not initialized');
+                }
+                
+                log(3, '✅ GuestAuth ready');
+                const isGuest = window.GuestAuth.isGuest();
+                const guestId = window.localStorage.getItem('guest_id');
+                
+                setVariable(3, 'Is Guest Mode', isGuest);
+                setVariable(3, 'Guest ID', guestId || 'N/A');
+                
+                if (isGuest) {
+                    log(3, `✅ Guest mode active: ${guestId}`);
+                } else {
+                    log(3, '⚠️ Not in guest mode');
+                }
+                
+                setStatus(3, 'success');
+                return true;
+            } catch (error) {
+                log(3, `❌ Error: ${error.message}`, 'error');
+                setStatus(3, 'error');
+                testState.errors.push({ step: 3, error });
+                return false;
+            }
+        };
+
+        // Step 4: Initialize RoomManager
+        window.step4 = async function() {
+            try {
+                log(4, '🏠 Initializing RoomManager...');
+                updateProgress(48);
+                
+                let retries = 0;
+                while (!window.RoomManager && retries < 10) {
+                    log(4, `⏳ Waiting for RoomManager... (${retries + 1}/10)`);
+                    await new Promise(r => setTimeout(r, 500));
+                    retries++;
+                }
+                
+                if (!window.RoomManager) {
+                    throw new Error('RoomManager not loaded');
+                }
+                
+                // Generate player ID
+                const playerId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+                
+                testState.playerId = playerId;
+                await window.RoomManager.initialize(window.supabaseClient, playerId);
+                
+                log(4, '✅ RoomManager initialized');
+                setVariable(4, 'Player ID', playerId);
+                
+                setStatus(4, 'success');
+                return true;
+            } catch (error) {
+                log(4, `❌ Error: ${error.message}`, 'error');
+                setStatus(4, 'error');
+                testState.errors.push({ step: 4, error });
+                return false;
+            }
+        };
+
+        // Step 5: Generate Room Code
+        window.step5 = async function() {
+            try {
+                log(5, '🔑 Generating room code...');
+                updateProgress(60);
+                
+                const roomCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+                testState.roomCode = roomCode;
+                
+                log(5, `✅ Room code generated: ${roomCode}`);
+                setVariable(5, 'Room Code', roomCode);
+                
+                setStatus(5, 'success');
+                return true;
+            } catch (error) {
+                log(5, `❌ Error: ${error.message}`, 'error');
+                setStatus(5, 'error');
+                testState.errors.push({ step: 5, error });
+                return false;
+            }
+        };
+
+        // Step 6: Generate UUID
+        window.step6 = async function() {
+            try {
+                log(6, '🆔 Generating UUID...');
+                updateProgress(72);
+                
+                const roomId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+                
+                testState.roomId = roomId;
+                
+                log(6, `✅ UUID generated: ${roomId}`);
+                setVariable(6, 'Room ID (UUID)', roomId);
+                
+                // Validate UUID format
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+                if (uuidRegex.test(roomId)) {
+                    log(6, '✅ UUID format valid');
+                } else {
+                    log(6, '⚠️ UUID format may be invalid');
+                }
+                
+                setStatus(6, 'success');
+                return true;
+            } catch (error) {
+                log(6, `❌ Error: ${error.message}`, 'error');
+                setStatus(6, 'error');
+                testState.errors.push({ step: 6, error });
+                return false;
+            }
+        };
+
+        // Step 7: Insert Room into Database
+        window.step7 = async function() {
+            try {
+                log(7, '💾 Inserting room into database...');
+                updateProgress(84);
+                
+                const insertData = {
+                    id: testState.roomId,
+                    room_code: testState.roomCode,
+                    host_id: testState.playerId,
+                    status: 'waiting',
+                    game_state: {
+                        participants: [{ 
+                            id: testState.playerId, 
+                            name: 'Host', 
+                            joinedAt: new Date().toISOString() 
+                        }],
+                        createdAt: new Date().toISOString()
+                    }
+                };
+                
+                log(7, '📋 Insert data:', 'info');
+                setVariable(7, 'Insert Payload', insertData);
+                
+                log(7, '⏳ Sending insert request...');
+                const { data, error } = await window.supabaseClient
+                    .from('game_rooms')
+                    .insert([insertData])
+                    .select();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                testState.insertedData = data;
+                log(7, '✅ Room inserted successfully');
+                setVariable(7, 'Response', data);
+                
+                setStatus(7, 'success');
+                return true;
+            } catch (error) {
+                log(7, `❌ Insert failed: ${error.message}`, 'error');
+                if (error.code) log(7, `   Error Code: ${error.code}`, 'error');
+                if (error.details) log(7, `   Details: ${error.details}`, 'error');
+                if (error.hint) log(7, `   Hint: ${error.hint}`, 'error');
+                
+                setVariable(7, 'Error Code', error.code || 'N/A');
+                setVariable(7, 'Error Details', error.details || 'N/A');
+                setVariable(7, 'Error Hint', error.hint || 'N/A');
+                
+                setStatus(7, 'error');
+                testState.errors.push({ step: 7, error });
+                return false;
+            }
+        };
+
+        // Step 8: Verify Room Created
+        window.step8 = async function() {
+            try {
+                log(8, '🔍 Verifying room in database...');
+                updateProgress(96);
+                
+                const { data, error } = await window.supabaseClient
+                    .from('game_rooms')
+                    .select('*')
+                    .eq('room_code', testState.roomCode)
+                    .single();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                testState.verifiedData = data;
+                log(8, '✅ Room verified in database');
+                setVariable(8, 'Verified Data', data);
+                
+                setStatus(8, 'success');
+                return true;
+            } catch (error) {
+                log(8, `⚠️ Verification warning: ${error.message}`, 'error');
+                setStatus(8, 'error');
+                testState.errors.push({ step: 8, error });
+                return false;
+            }
+        };
+
+        // Summary
+        window.showSummary = function() {
+            const summaryOutput = document.getElementById('summaryOutput');
+            const errors = testState.errors;
+            
+            updateProgress(100);
+            
+            const summaryText = `
+TEST SUMMARY
+============
+Total Errors: ${errors.length}
+Room Code: ${testState.roomCode || 'N/A'}
+Room ID: ${testState.roomId || 'N/A'}
+Player ID: ${testState.playerId || 'N/A'}
+
+${errors.length === 0 ? '✅ ALL TESTS PASSED!' : '❌ TESTS FAILED'}
+
+${errors.length > 0 ? `
+ERRORS:
+${errors.map((e, i) => `  Step ${e.step}: ${e.error.message}`).join('\n')}
+` : ''}
+            `;
+            
+            summaryOutput.textContent = summaryText;
+            setStatus('summary', errors.length === 0 ? 'success' : 'error');
+        };
+
+        // Run full test
+        window.runFullTest = async function() {
+            clearLogs();
+            log('summary', 'Running full test...\n');
+            
+            const steps = [1, 2, 3, 4, 5, 6, 7, 8];
+            for (const step of steps) {
+                const success = await window[`step${step}`]();
+                if (!success && [1, 2, 3, 4].includes(step)) {
+                    log('summary', `Test stopped at step ${step}`);
+                    showSummary();
+                    return;
+                }
+                await new Promise(r => setTimeout(r, 300));
+            }
+            
+            showSummary();
+        };
+
+        // Run step by step (with user prompts)
+        window.runStepByStep = async function() {
+            clearLogs();
+            log('summary', 'Ready for step-by-step testing.\n');
+            log('summary', 'Run each step manually or click Run Full Test\n');
+        };
+
+        // Clear logs
+        window.clearLogs = function() {
+            for (let i = 1; i <= 8; i++) {
+                const output = document.getElementById(`step${i}Output`);
+                const vars = document.getElementById(`step${i}Vars`);
+                const icon = document.getElementById(`step${i}Icon`);
+                if (output) output.textContent = '';
+                if (output) output.classList.remove('error', 'success');
+                if (vars) vars.innerHTML = '';
+                if (icon) {
+                    icon.textContent = '⏳';
+                    icon.className = 'status-icon pending';
+                }
+            }
+            document.getElementById('summaryOutput').textContent = '';
+            document.getElementById('summaryIcon').textContent = '⏳';
+            document.getElementById('summaryIcon').className = 'status-icon pending';
+            updateProgress(0);
+            testState.errors = [];
+            console.clear();
+        };
+    </script>
+</body>
+</html>
