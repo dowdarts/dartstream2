@@ -890,32 +890,76 @@
         // Check auth on page load
         async function checkAuth() {
             try {
-                // Wait for Supabase client to be ready (with longer timeout)
+                console.log('🔐 Starting auth check...');
+                
+                // Wait for Supabase client to be ready
                 let retries = 0;
-                while (!window.supabaseClient && retries < 30) {
+                while (!window.supabaseClient && retries < 50) {
                     await new Promise(r => setTimeout(r, 100));
                     retries++;
                 }
                 
                 if (!window.supabaseClient) {
-                    console.warn('Supabase client not initialized after 3 seconds');
-                    showAuthWall();
+                    console.warn('❌ Supabase client not initialized after 5 seconds');
+                    // Check localStorage as fallback
+                    const authToken = localStorage.getItem(`sb_${window.location.hostname.split('.')[0]}_auth_token`) || 
+                                     localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
+                    if (authToken) {
+                        console.log('✅ Found auth token in localStorage, allowing access');
+                        hideAuthWall();
+                    } else {
+                        showAuthWall();
+                    }
                     return;
                 }
                 
                 console.log('✅ Supabase client ready, checking auth session...');
+                
+                // Wait for auth to be initialized
+                let authRetries = 0;
+                while (!window.supabaseClient.auth && authRetries < 20) {
+                    await new Promise(r => setTimeout(r, 100));
+                    authRetries++;
+                }
+                
+                if (!window.supabaseClient.auth) {
+                    console.warn('⚠️ Auth module not available, checking localStorage');
+                    const authData = localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
+                    if (authData) {
+                        hideAuthWall();
+                    } else {
+                        showAuthWall();
+                    }
+                    return;
+                }
+                
+                // Try to get session
                 const { data: { session } } = await window.supabaseClient.auth.getSession();
                 
                 if (session) {
                     console.log('✅ User already authenticated:', session.user.email);
                     hideAuthWall();
                 } else {
-                    console.log('⚠️ No active session, showing auth wall');
-                    showAuthWall();
+                    console.log('⚠️ No active session found');
+                    // Check localStorage as final fallback
+                    const authData = localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
+                    if (authData) {
+                        console.log('✅ Auth data found in localStorage, allowing access');
+                        hideAuthWall();
+                    } else {
+                        showAuthWall();
+                    }
                 }
             } catch (error) {
                 console.error('Auth check error:', error);
-                showAuthWall();
+                // Try localStorage fallback
+                const authData = localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
+                if (authData) {
+                    console.log('✅ Using localStorage fallback for auth');
+                    hideAuthWall();
+                } else {
+                    showAuthWall();
+                }
             }
         }
         
@@ -933,10 +977,14 @@
             if (testContainer) testContainer.style.display = 'block';
         }
         
-        // Run auth check after a brief delay to ensure Supabase loads
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(checkAuth, 500);
-        });
+        // Run auth check after scripts load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(checkAuth, 1000);
+            });
+        } else {
+            setTimeout(checkAuth, 1000);
+        }
     </script>
 </body>
 </html>
