@@ -101,6 +101,13 @@ const PlayOnlineApp = {
     },
     
     /**
+     * PUBLIC: JOIN ROOM (alias for joinExistingRoom)
+     */
+    async joinRoom(roomCode) {
+        return await this.joinExistingRoom(roomCode);
+    },
+    
+    /**
      * JOIN EXISTING ROOM flow
      */
     async joinExistingRoom(roomCode) {

@@ -49,45 +49,19 @@ const PlayOnlineUI = {
      * Load country flags into dropdown
      */
     async loadCountryFlags() {
-        const select = document.getElementById('countryFlag');
-        const commonCountries = [
-            { code: 'GB', name: 'Great Britain' },
-            { code: 'US', name: 'United States' },
-            { code: 'AU', name: 'Australia' },
-            { code: 'NL', name: 'Netherlands' },
-            { code: 'DE', name: 'Germany' },
-            { code: 'FR', name: 'France' },
-            { code: 'ES', name: 'Spain' },
-            { code: 'IE', name: 'Ireland' },
-            { code: 'BE', name: 'Belgium' },
-            { code: 'JP', name: 'Japan' },
-        ];
-        
-        commonCountries.forEach(country => {
-            const option = document.createElement('option');
-            option.value = country.code;
-            option.textContent = `${country.name} (${country.code})`;
-            select.appendChild(option);
-        });
+        // No longer needed - we skip the setup screen
     },
     
     /**
      * Attach all event listeners
      */
     attachEventListeners() {
-        // Setup Screen
-        document.getElementById('setupForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleSetupSubmit();
-        });
+        // Host or Join Screen
+        document.getElementById('hostGameBtn')?.addEventListener('click', () => this.handleHostGame());
+        document.getElementById('joinGameBtn')?.addEventListener('click', () => this.handleJoinGame());
         
-        // Room Select Screen
-        document.getElementById('createRoomBtn')?.addEventListener('click', () => this.handleCreateRoom());
-        document.getElementById('joinRoomBtn')?.addEventListener('click', () => this.handleJoinRoom());
-        document.getElementById('backToSetupBtn')?.addEventListener('click', () => this.showScreen('setupScreen'));
-        
-        // Room code input - auto-format to 4 digits
-        document.getElementById('roomCodeInput')?.addEventListener('input', (e) => {
+        // Join code input - auto-format to 4 digits
+        document.getElementById('joinRoomCodeInput')?.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
         });
         
@@ -123,6 +97,10 @@ const PlayOnlineUI = {
      * SCREEN MANAGEMENT
      */
     
+    /**
+     * SCREEN MANAGEMENT
+     */
+    
     showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(screen => {
             screen.classList.remove('active');
@@ -150,34 +128,74 @@ const PlayOnlineUI = {
     },
     
     /**
-     * SETUP FLOW
+     * HOST OR JOIN FLOW
      */
     
-    async handleSetupSubmit() {
+    async handleHostGame() {
         try {
-            const playerName = document.getElementById('playerName').value.trim();
-            const country = document.getElementById('countryFlag').value || 'GB';
+            // Generate unique player ID (UUID v4)
+            this.currentPlayerId = generateUUID();
+            console.log('✅ Host mode - Player ID:', this.currentPlayerId);
             
-            if (!playerName) {
-                document.getElementById('nameError').textContent = 'Please enter your name';
+            this.showLoading('Setting up video test...');
+            
+            // Initialize app with host
+            await PlayOnlineApp.initialize(
+                this.supabaseClient,
+                this.currentPlayerId,
+                'Host'
+            );
+            
+            // Create room first
+            const roomData = await PlayOnlineApp.createAndStartRoom();
+            this.hideLoading();
+            
+            // Show test screen before lobby
+            this.showScreen('testScreen');
+            this.currentRoomCode = roomData.roomCode;
+            
+        } catch (error) {
+            console.error('❌ Host game error:', error);
+            this.hideLoading();
+            this.showError(error.message || 'Error hosting game');
+        }
+    },
+    
+    async handleJoinGame() {
+        try {
+            const roomCode = document.getElementById('joinRoomCodeInput').value.trim();
+            
+            if (!roomCode || roomCode.length !== 4) {
+                document.getElementById('joinCodeError').textContent = 'Please enter a valid 4-digit code';
                 return;
             }
             
-            this.currentPlayerName = playerName;
-            this.currentCountry = country;
-            
             // Generate unique player ID (UUID v4)
             this.currentPlayerId = generateUUID();
+            console.log('✅ Join mode - Player ID:', this.currentPlayerId);
             
-            console.log('✅ Setup complete:', { playerId: this.currentPlayerId, playerName });
+            this.showLoading('Joining game...');
+            document.getElementById('joinCodeError').textContent = '';
             
-            // Show room selection
-            document.getElementById('displayPlayerName').textContent = playerName;
-            this.showScreen('roomSelectScreen');
+            // Initialize app with guest
+            await PlayOnlineApp.initialize(
+                this.supabaseClient,
+                this.currentPlayerId,
+                'Guest'
+            );
+            
+            // Join room
+            const roomData = await PlayOnlineApp.joinRoom(roomCode);
+            this.hideLoading();
+            
+            // Show test screen before lobby
+            this.showScreen('testScreen');
+            this.currentRoomCode = roomCode;
             
         } catch (error) {
-            console.error('❌ Setup error:', error);
-            this.showError('Error completing setup');
+            console.error('❌ Join game error:', error);
+            this.hideLoading();
+            document.getElementById('joinCodeError').textContent = error.message || 'Failed to join room';
         }
     },
     

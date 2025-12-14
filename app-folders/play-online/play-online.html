@@ -27,85 +27,46 @@
     <!-- Main App Container -->
     <div class="play-online-container">
         
-        <!-- SCREEN 1: Login / Player Setup -->
-        <div id="setupScreen" class="screen active">
+        <!-- SCREEN 1: Host or Join -->
+        <div id="hostOrJoinScreen" class="screen active">
             <div class="screen-content">
                 <div class="setup-card">
-                    <h2>Welcome to DartStream Play Online</h2>
-                    <p>Connect with your teammates via video call</p>
+                    <h2>DartStream Play Online</h2>
+                    <p>Play darts with your opponent via video call</p>
                     
-                    <form id="setupForm">
-                        <div class="form-group">
-                            <label for="playerName">Your Name:</label>
-                            <input 
-                                type="text" 
-                                id="playerName" 
-                                placeholder="Enter your name" 
-                                required
-                                maxlength="30"
-                            >
-                            <small id="nameError" class="error-text"></small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="countryFlag">Country:</label>
-                            <select id="countryFlag">
-                                <option value="">Select a country...</option>
-                                <!-- Options will be populated by JS -->
-                            </select>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary btn-large">
-                            Continue
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- SCREEN 2: Room Selection (Create or Join) -->
-        <div id="roomSelectScreen" class="screen">
-            <div class="screen-content">
-                <div class="room-select-card">
-                    <h2>Create or Join a Room</h2>
-                    <p class="player-info">Playing as: <strong id="displayPlayerName"></strong></p>
-                    
-                    <div class="room-options">
+                    <div class="room-options" style="margin-top: 30px;">
                         <div class="room-option create-room">
-                            <h3>🆕 Create New Room</h3>
-                            <p>Start a new video call session</p>
-                            <button id="createRoomBtn" class="btn btn-primary">
-                                Create Room
+                            <h3>🆕 Host Game</h3>
+                            <p>Start a new video game session and invite an opponent</p>
+                            <button id="hostGameBtn" class="btn btn-primary btn-large">
+                                Host
                             </button>
                         </div>
                         
                         <div class="divider">OR</div>
                         
                         <div class="room-option join-room">
-                            <h3>🔗 Join Existing Room</h3>
-                            <p>Join a room using a 4-digit code</p>
+                            <h3>🔗 Join Game</h3>
+                            <p>Join a game using a 4-digit code</p>
                             <input 
                                 type="text" 
-                                id="roomCodeInput" 
-                                placeholder="Enter room code" 
+                                id="joinRoomCodeInput" 
+                                placeholder="Enter 4-digit code" 
                                 maxlength="4"
                                 pattern="[0-9]{4}"
+                                class="room-code-input"
                             >
-                            <small id="roomCodeError" class="error-text"></small>
-                            <button id="joinRoomBtn" class="btn btn-secondary">
-                                Join Room
+                            <small id="joinCodeError" class="error-text"></small>
+                            <button id="joinGameBtn" class="btn btn-secondary btn-large">
+                                Join
                             </button>
                         </div>
                     </div>
-                    
-                    <button id="backToSetupBtn" class="btn btn-link">
-                        Back
-                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- SCREEN 3: Camera/Mic Test -->
+        <!-- SCREEN 2: Camera/Mic Test -->
         <div id="testScreen" class="screen">
             <div class="screen-content">
                 <div class="test-card">
@@ -149,7 +110,7 @@
             </div>
         </div>
 
-        <!-- SCREEN 4: Room Lobby (Waiting for Peers) -->
+        <!-- SCREEN 3: Room Lobby (Waiting for Peers) -->
         <div id="lobbyScreen" class="screen">
             <div class="screen-content">
                 <div class="lobby-card">
@@ -191,7 +152,7 @@
             </div>
         </div>
 
-        <!-- SCREEN 5: Active Video Call -->
+        <!-- SCREEN 4: Active Video Call -->
         <div id="videoCallScreen" class="screen">
             <div class="video-call-grid">
                 <!-- Local Video -->
@@ -229,7 +190,7 @@
             </div>
         </div>
 
-        <!-- SCREEN 6: Call Ended -->
+        <!-- SCREEN 5: Call Ended -->
         <div id="endedScreen" class="screen">
             <div class="screen-content">
                 <div class="ended-card">
