@@ -526,6 +526,18 @@ const PlayOnlineUI = {
             // Create room
             const roomData = await PlayOnlineApp.createAndStartRoom();
             
+            // IMPORTANT: Host must also JOIN their own room for proper Realtime sync
+            // This ensures both host and guest are in the same channel
+            console.log('👨‍💻 HOST: Created room with code:', roomData.roomCode);
+            console.log('👨‍💻 HOST: Now joining own room for Realtime sync...');
+            
+            // Host joins as if they were a guest joining their own room
+            await PlayOnlineApp.joinRoom(roomData.roomCode);
+            console.log('✅ HOST: Successfully joined own room');
+            
+            // Store room code for display
+            this.currentRoomCode = roomData.roomCode;
+            
             this.hideLoading();
             
             // Show lobby
