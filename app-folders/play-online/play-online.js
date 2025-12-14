@@ -209,14 +209,47 @@ const PlayOnlineUI = {
      */
     
     showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(screen => {
+        console.log('========== SCREEN TRANSITION DEBUG ==========');
+        console.log('📱 showScreen() called with:', screenId);
+        
+        // Validate screen exists
+        const screenEl = document.getElementById(screenId);
+        console.log('✓ Target screen exists?', !!screenEl);
+        
+        if (!screenEl) {
+            console.error('❌ Screen not found:', screenId);
+            return;
+        }
+        
+        // Remove active from all screens
+        const allScreens = document.querySelectorAll('.screen');
+        console.log('📊 Total screens on page:', allScreens.length);
+        
+        allScreens.forEach((screen, idx) => {
+            const hadActive = screen.classList.contains('active');
+            const screenName = screen.id || `unnamed-${idx}`;
+            if (hadActive) {
+                console.log(`  🔴 Removing active from: ${screenName}`);
+            }
             screen.classList.remove('active');
         });
-        document.getElementById(screenId)?.classList.add('active');
-        console.log('📱 Showing screen:', screenId);
+        
+        // Add active to target screen
+        screenEl.classList.add('active');
+        console.log(`✅ Added active to: ${screenId}`);
+        console.log(`✓ Screen now has active class?`, screenEl.classList.contains('active'));
+        
+        // Verify it's visible
+        const style = window.getComputedStyle(screenEl);
+        console.log(`✓ Screen display: ${style.display}`);
+        console.log(`✓ Screen opacity: ${style.opacity}`);
+        console.log(`✓ Screen visibility: ${style.visibility}`);
+        
+        console.log('========== END SCREEN TRANSITION ==========');
         
         // Load devices when showing lobby screen
         if (screenId === 'lobbyScreen') {
+            console.log('🎯 Lobby screen detected - loading devices');
             this.loadDeviceList();
         }
     },
@@ -445,15 +478,55 @@ const PlayOnlineUI = {
     
     async handleStartVideo() {
         try {
+            console.log('========== START VIDEO CALL DEBUG ==========');
+            console.log('🎬 handleStartVideo() called');
+            
+            // Check button state
+            const startBtn = document.getElementById('startVideoBtn');
+            console.log('Start button disabled?', startBtn?.disabled);
+            console.log('Start button exists?', !!startBtn);
+            
+            // Check if app is initialized
+            console.log('PlayOnlineApp state:', PlayOnlineApp?.getState?.());
+            console.log('PlayOnlineApp videoRoom:', !!PlayOnlineApp?.videoRoom);
+            console.log('PlayOnlineApp roomManager:', !!PlayOnlineApp?.roomManager);
+            
+            // Check local conditions
+            console.log('Current player ID:', this.currentPlayerId);
+            console.log('Current room code:', this.currentRoomCode);
+            
             this.showLoading('Starting video call...');
+            console.log('✅ Loading indicator shown');
+            
             this.startTime = Date.now();
+            console.log('⏱️ Call timer started:', this.startTime);
+            
             this.startCallTimer();
+            console.log('✅ Timer callback registered');
+            
+            // Brief delay to ensure UI updates
+            await new Promise(resolve => setTimeout(resolve, 500));
+            console.log('✅ Delay completed');
+            
             this.hideLoading();
+            console.log('✅ Loading indicator hidden');
+            
+            console.log('📱 About to show videoCallScreen');
             this.showScreen('videoCallScreen');
+            console.log('✅ videoCallScreen shown');
+            
+            console.log('========== END VIDEO CALL DEBUG ==========');
+            
         } catch (error) {
-            console.error('❌ Start video error:', error);
+            console.error('========== START VIDEO ERROR ==========');
+            console.error('❌ Error name:', error.name);
+            console.error('❌ Error message:', error.message);
+            console.error('❌ Error stack:', error.stack);
+            console.error('❌ Full error:', error);
+            console.error('========== END ERROR ==========');
+            
             this.hideLoading();
-            this.showError('Failed to start video call');
+            this.showError('Failed to start video call: ' + error.message);
         }
     },
     

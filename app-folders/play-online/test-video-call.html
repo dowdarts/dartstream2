@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call Debug Test - DartStream Play Online</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #ff6b35;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #1a1a1a;
+            border-left: 4px solid #004e89;
+            border-radius: 4px;
+        }
+        
+        .test-button {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 10px 10px 10px 0;
+            background: #FF6B35;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .test-button:hover {
+            background: #e55a24;
+        }
+        
+        .test-button:active {
+            background: #d94e1f;
+        }
+        
+        .console-output {
+            background: #000;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin: 4px 0;
+            padding: 4px;
+            border-left: 2px solid transparent;
+        }
+        
+        .log-info {
+            color: #00ff00;
+            border-left-color: #00ff00;
+        }
+        
+        .log-error {
+            color: #ff0000;
+            border-left-color: #ff0000;
+        }
+        
+        .log-warn {
+            color: #ffaa00;
+            border-left-color: #ffaa00;
+        }
+        
+        .log-debug {
+            color: #00aaff;
+            border-left-color: #00aaff;
+        }
+        
+        .test-status {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background: #1a4d2e;
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+        
+        .status-error {
+            background: #4d1a1a;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        
+        .status-info {
+            background: #1a2d4d;
+            color: #00aaff;
+            border: 1px solid #00aaff;
+        }
+        
+        .html-check {
+            background: #1a1a1a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #004e89;
+        }
+        
+        .html-check-item {
+            margin: 8px 0;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .html-check-item.found {
+            color: #2ecc71;
+        }
+        
+        .html-check-item.missing {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 DartStream Play Online - Debug Test</h1>
+        
+        <div class="test-section">
+            <h2>📋 HTML Structure Check</h2>
+            <div class="html-check" id="htmlCheck"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Environment Check</h2>
+            <div id="envCheck"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎬 Test Controls</h2>
+            <button class="test-button" onclick="testScreenTransition()">Test Screen Transition</button>
+            <button class="test-button" onclick="testScreenVisibility()">Test Screen Visibility</button>
+            <button class="test-button" onclick="testStartVideoFlow()">Test Start Video Flow</button>
+            <button class="test-button" onclick="testAllScreens()">Test All Screens</button>
+            <button class="test-button" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Console Output</h2>
+            <div class="console-output" id="consoleOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        // Redirect all console output to the page
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // Also log to browser console
+            switch(type) {
+                case 'error': originalError(message); break;
+                case 'warn': originalWarn(message); break;
+                default: originalLog(message);
+            }
+        }
+        
+        console.log = function(msg) { addLog(msg, 'info'); };
+        console.error = function(msg) { addLog(msg, 'error'); };
+        console.warn = function(msg) { addLog(msg, 'warn'); };
+        
+        function clearLogs() {
+            consoleOutput.innerHTML = '';
+            addLog('🧹 Logs cleared', 'info');
+        }
+        
+        function checkHTMLStructure() {
+            const htmlCheck = document.getElementById('htmlCheck');
+            const checks = {
+                'videoCallScreen': document.getElementById('videoCallScreen'),
+                'lobbyScreen': document.getElementById('lobbyScreen'),
+                'hostOrJoinScreen': document.getElementById('hostOrJoinScreen'),
+                'startVideoBtn': document.getElementById('startVideoBtn'),
+                'localVideoContainer': document.getElementById('localVideoContainer'),
+                'participantsList': document.getElementById('participantsList'),
+                'remoteVideosContainer': document.getElementById('remoteVideosContainer')
+            };
+            
+            htmlCheck.innerHTML = '';
+            for (const [name, element] of Object.entries(checks)) {
+                const item = document.createElement('div');
+                item.className = `html-check-item ${element ? 'found' : 'missing'}`;
+                item.textContent = `${element ? '✓' : '✗'} ${name}`;
+                htmlCheck.appendChild(item);
+            }
+        }
+        
+        function checkEnvironment() {
+            const envCheck = document.getElementById('envCheck');
+            envCheck.innerHTML = '';
+            
+            const checks = [
+                { label: 'PlayOnlineUI loaded', value: typeof PlayOnlineUI !== 'undefined' },
+                { label: 'PlayOnlineApp loaded', value: typeof PlayOnlineApp !== 'undefined' },
+                { label: 'VideoRoom loaded', value: typeof VideoRoom !== 'undefined' },
+                { label: 'RoomManager loaded', value: typeof RoomManager !== 'undefined' },
+                { label: 'Browser supports WebRTC', value: !!navigator.mediaDevices },
+                { label: 'Supabase client ready', value: !!window.supabaseClient }
+            ];
+            
+            checks.forEach(check => {
+                const status = document.createElement('div');
+                status.className = `test-status ${check.value ? 'status-success' : 'status-error'}`;
+                status.textContent = `${check.value ? '✓' : '✗'} ${check.label}`;
+                envCheck.appendChild(status);
+            });
+        }
+        
+        function testScreenTransition() {
+            addLog('========== SCREEN TRANSITION TEST ==========', 'debug');
+            
+            const screens = document.querySelectorAll('.screen');
+            addLog(`Found ${screens.length} screen elements`, 'info');
+            
+            const videoCallScreen = document.getElementById('videoCallScreen');
+            if (!videoCallScreen) {
+                addLog('❌ videoCallScreen not found!', 'error');
+                return;
+            }
+            
+            addLog('🎯 Testing transition to videoCallScreen', 'debug');
+            
+            // Remove active from all
+            screens.forEach(s => s.classList.remove('active'));
+            addLog('✓ Removed active class from all screens', 'info');
+            
+            // Add to target
+            videoCallScreen.classList.add('active');
+            addLog('✓ Added active class to videoCallScreen', 'info');
+            
+            // Check visibility
+            const style = window.getComputedStyle(videoCallScreen);
+            addLog(`Display: ${style.display}`, 'debug');
+            addLog(`Opacity: ${style.opacity}`, 'debug');
+            addLog(`Visibility: ${style.visibility}`, 'debug');
+            
+            const hasActive = videoCallScreen.classList.contains('active');
+            addLog(hasActive ? '✓ Active class confirmed' : '✗ Active class missing', hasActive ? 'info' : 'error');
+            
+            addLog('========== END TEST ==========', 'debug');
+        }
+        
+        function testScreenVisibility() {
+            addLog('========== SCREEN VISIBILITY TEST ==========', 'debug');
+            
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach((screen, idx) => {
+                const style = window.getComputedStyle(screen);
+                const isActive = screen.classList.contains('active');
+                addLog(`Screen ${idx} (${screen.id}): active=${isActive}, display=${style.display}`, 'debug');
+            });
+            
+            addLog('========== END TEST ==========', 'debug');
+        }
+        
+        function testStartVideoFlow() {
+            addLog('========== START VIDEO FLOW TEST ==========', 'debug');
+            
+            if (typeof PlayOnlineUI === 'undefined') {
+                addLog('❌ PlayOnlineUI not available', 'error');
+                return;
+            }
+            
+            addLog('🎬 Calling PlayOnlineUI.handleStartVideo()', 'debug');
+            PlayOnlineUI.handleStartVideo().catch(err => {
+                addLog(`Error: ${err.message}`, 'error');
+            });
+            
+            setTimeout(() => {
+                const videoScreen = document.getElementById('videoCallScreen');
+                const isActive = videoScreen?.classList.contains('active');
+                addLog(`Result: videoCallScreen active = ${isActive}`, isActive ? 'info' : 'error');
+                addLog('========== END TEST ==========', 'debug');
+            }, 1000);
+        }
+        
+        function testAllScreens() {
+            addLog('========== TESTING ALL SCREENS ==========', 'debug');
+            const screens = ['hostOrJoinScreen', 'lobbyScreen', 'videoCallScreen', 'endedScreen'];
+            
+            screens.forEach(screenId => {
+                const screen = document.getElementById(screenId);
+                const exists = !!screen;
+                addLog(`${exists ? '✓' : '✗'} ${screenId}`, exists ? 'info' : 'error');
+            });
+            
+            addLog('========== END TEST ==========', 'debug');
+        }
+        
+        // Initial checks
+        window.addEventListener('load', () => {
+            addLog('Page loaded - running initial checks', 'info');
+            checkHTMLStructure();
+            checkEnvironment();
+        });
+    </script>
+</body>
+</html>
