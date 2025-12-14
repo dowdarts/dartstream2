@@ -681,10 +681,10 @@ const PlayOnlineUI = {
                     });
                     cameraSelect.addEventListener('change', (e) => this.onCameraChanged(e.target.value));
                     
-                    // Test first camera by default
+                    // Start with first camera by default
                     if (cameras.length > 0) {
                         cameraSelect.value = cameras[0].deviceId;
-                        await this.testDevice('video', cameras[0].deviceId);
+                        await this.startCameraPreview(cameras[0].deviceId);
                     }
                 } else {
                     cameraSelect.innerHTML = '<option>No cameras found</option>';
@@ -704,10 +704,9 @@ const PlayOnlineUI = {
                     });
                     micSelect.addEventListener('change', (e) => this.onMicrophoneChanged(e.target.value));
                     
-                    // Test first microphone by default
+                    // Set first microphone as default
                     if (microphones.length > 0) {
                         micSelect.value = microphones[0].deviceId;
-                        await this.testDevice('audio', microphones[0].deviceId);
                     }
                 } else {
                     micSelect.innerHTML = '<option>No microphones found</option>';
@@ -720,12 +719,60 @@ const PlayOnlineUI = {
         }
     },
     
+    async startCameraPreview(deviceId) {
+        try {
+            // Stop previous stream if exists
+            if (this.previewStream) {
+                this.previewStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Get media stream with specific camera
+            this.previewStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: deviceId } },
+                audio: false
+            });
+            
+            // Create or reuse video element
+            let videoElement = document.getElementById('previewVideo');
+            if (!videoElement) {
+                videoElement = document.createElement('video');
+                videoElement.id = 'previewVideo';
+                videoElement.autoplay = true;
+                videoElement.playsinline = true;
+                videoElement.muted = true;
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                videoElement.style.borderRadius = '8px';
+                videoElement.style.objectFit = 'cover';
+                
+                const container = document.getElementById('localVideoContainer');
+                container.innerHTML = '';
+                container.appendChild(videoElement);
+            }
+            
+            // Attach stream to video element
+            videoElement.srcObject = this.previewStream;
+            
+            // Update status
+            document.getElementById('cameraStatus').textContent = '🟢 Connected';
+            document.getElementById('cameraStatus').classList.remove('disconnected');
+            document.getElementById('cameraStatus').classList.add('connected');
+            
+            console.log('✅ Camera preview started');
+        } catch (error) {
+            console.error('❌ Camera preview error:', error);
+            document.getElementById('cameraStatus').textContent = '🔴 Disconnected';
+            document.getElementById('cameraStatus').classList.add('disconnected');
+            document.getElementById('cameraStatus').classList.remove('connected');
+        }
+    },
+    
     async onCameraChanged(deviceId) {
         console.log('📹 Camera changed to:', deviceId);
         this.selectedCameraId = deviceId;
         
-        // Test the camera
-        await this.testDevice('video', deviceId);
+        // Start preview with new camera
+        await this.startCameraPreview(deviceId);
     },
     
     async onMicrophoneChanged(deviceId) {
