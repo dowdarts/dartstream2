@@ -172,6 +172,48 @@ const PlayOnlineUI = {
         // Update participant status to connected
         this.updateParticipantsList(detail.peerId, null, 'connected');
         
+        // Create remote video element if it doesn't exist
+        const remoteVideosContainer = document.getElementById('remoteVideosContainer');
+        if (remoteVideosContainer) {
+            let videoElement = document.getElementById(`video-${detail.peerId}`);
+            
+            if (!videoElement) {
+                console.log('📹 Creating remote video element for peer:', detail.peerId);
+                
+                // Create video wrapper
+                const videoWrapper = document.createElement('div');
+                videoWrapper.className = 'video-grid-item remote';
+                videoWrapper.id = `peer-video-${detail.peerId}`;
+                
+                // Create video element
+                videoElement = document.createElement('video');
+                videoElement.id = `video-${detail.peerId}`;
+                videoElement.autoplay = true;
+                videoElement.playsinline = true;
+                
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'video-label remote-label';
+                label.textContent = detail.peerName || 'Guest';
+                
+                // Append to wrapper and container
+                videoWrapper.appendChild(videoElement);
+                videoWrapper.appendChild(label);
+                remoteVideosContainer.appendChild(videoWrapper);
+                
+                console.log('✅ Remote video element created for:', detail.peerId);
+            }
+            
+            // Set the stream if available from videoRoom
+            if (PlayOnlineApp?.videoRoom?.peers[detail.peerId]?.stream) {
+                console.log('📹 Setting stream for remote video:', detail.peerId);
+                videoElement.srcObject = PlayOnlineApp.videoRoom.peers[detail.peerId].stream;
+                videoElement.play().catch(err => {
+                    console.warn('⚠️ Could not play remote video:', err.message);
+                });
+            }
+        }
+        
         const startBtn = document.getElementById('startVideoBtn');
         console.log('🔍 Start button element:', !!startBtn);
         console.log('🔍 Start button disabled before:', startBtn?.disabled);
@@ -548,6 +590,47 @@ const PlayOnlineUI = {
             
             this.showLoading('Starting video call...');
             console.log('✅ Loading indicator shown');
+            
+            // Get the selected camera constraints
+            const selectedConstraints = this.getMediaConstraints();
+            console.log('📸 Selected camera constraints:', selectedConstraints);
+            
+            // If a camera was selected in settings, get a new stream with that camera
+            if (this.selectedCameraId && PlayOnlineApp?.videoRoom?.localStream) {
+                try {
+                    console.log('🎥 Updating stream to use selected camera:', this.selectedCameraId);
+                    const newStream = await navigator.mediaDevices.getUserMedia(selectedConstraints);
+                    
+                    // Stop old tracks
+                    PlayOnlineApp.videoRoom.localStream.getTracks().forEach(track => {
+                        if (track.kind === 'video') track.stop();
+                    });
+                    
+                    // Add new video track to existing stream
+                    const newVideoTrack = newStream.getVideoTracks()[0];
+                    if (newVideoTrack) {
+                        // Replace video track
+                        const sender = PlayOnlineApp.videoRoom.peerConnections?.[Object.keys(PlayOnlineApp.videoRoom.peerConnections || {})[0]]?.getSenders?.().find(s => s.track?.kind === 'video');
+                        if (sender) {
+                            await sender.replaceTrack(newVideoTrack);
+                            console.log('✅ Video track replaced in peer connections');
+                        }
+                        
+                        // Update local stream
+                        const oldVideoTrack = PlayOnlineApp.videoRoom.localStream.getVideoTracks()[0];
+                        if (oldVideoTrack) {
+                            PlayOnlineApp.videoRoom.localStream.removeTrack(oldVideoTrack);
+                            PlayOnlineApp.videoRoom.localStream.addTrack(newVideoTrack);
+                            console.log('✅ Local stream updated with new video track');
+                        }
+                    }
+                    
+                    // Stop audio from new stream (we keep the original audio)
+                    newStream.getAudioTracks().forEach(track => track.stop());
+                } catch (error) {
+                    console.warn('⚠️ Could not switch to selected camera:', error.message);
+                }
+            }
             
             this.startTime = Date.now();
             console.log('⏱️ Call timer started:', this.startTime);
