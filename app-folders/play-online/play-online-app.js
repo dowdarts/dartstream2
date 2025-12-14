@@ -151,22 +151,15 @@ const PlayOnlineApp = {
             
             console.log('✅ Joined room:', roomCode);
             
-            // Step 2: Initialize video room with peer signaling
-            const localVideo = document.getElementById('localVideoContainer');
-            if (!localVideo) {
-                throw new Error('Local video container not found');
-            }
+            // Step 2: Initialize Realtime channel but DON'T initialize video room yet
+            // (let the UI configure devices first via handleConfirmDevices)
+            const roomCodeChannel = `video-room:${roomCode}`;
+            console.log('📡 Setting up Realtime channel:', roomCodeChannel);
             
-            await this.videoRoom.initialize(
-                roomCode,
-                this.state.playerId,
-                this.state.playerName,
-                localVideo,
-                window.PlayOnlineUI?.mediaStream,  // Pass existing media stream if available
-                window.PlayOnlineUI?.getMediaConstraints?.()  // Pass media constraints from UI
-            );
-            
-            console.log('✅ Video room initialized');
+            // Initialize minimal channel setup for presence
+            this.videoRoom.roomCode = roomCode;
+            this.videoRoom.currentPlayerId = this.state.playerId;
+            this.videoRoom.currentPlayerName = this.state.playerName;
             
             // Set up event callbacks
             this.setupVideoRoomCallbacks();
@@ -175,7 +168,7 @@ const PlayOnlineApp = {
                 roomCode: roomCode,
                 role: 'guest',
                 hostId: roomData.hostId,
-                isReady: true,
+                isReady: false,  // Video NOT ready until devices confirmed
                 participants: roomData.participants
             };
             

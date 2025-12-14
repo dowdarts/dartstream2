@@ -605,22 +605,45 @@ const PlayOnlineUI = {
     
     async handleConfirmDevices() {
         try {
-            this.showLoading('Initializing video room...');
+            console.log('⚙️ Confirming devices - initializing video room');
+            this.showLoading('Starting video...');
             
-            // Now initialize the video room with selected devices
+            // Check that we have room code and video room
+            if (!this.currentRoomCode) {
+                throw new Error('No room code set');
+            }
+            
+            if (!PlayOnlineApp.videoRoom) {
+                throw new Error('Video room not initialized');
+            }
+            
+            // Get selected devices
             const selectedCameraId = document.getElementById('cameraSelect')?.value;
             const selectedMicId = document.getElementById('microphoneSelect')?.value;
             
-            console.log('⚙️ Confirming devices - Camera:', selectedCameraId, 'Mic:', selectedMicId);
+            console.log('📸 Selected camera:', selectedCameraId);
+            console.log('🎙️ Selected microphone:', selectedMicId);
             
-            // Initialize the video room (this creates the local stream and starts WebRTC)
-            const constraints = this.getMediaConstraints();
+            // Build constraints based on selected devices
+            const constraints = {
+                video: selectedCameraId ? { deviceId: { exact: selectedCameraId } } : true,
+                audio: selectedMicId ? { deviceId: { exact: selectedMicId } } : true
+            };
+            
+            console.log('📋 Media constraints:', constraints);
+            
+            // Initialize the video room with selected devices
+            const localVideoContainer = document.getElementById('localVideoContainer');
+            if (!localVideoContainer) {
+                throw new Error('Local video container not found');
+            }
+            
             await PlayOnlineApp.videoRoom.initialize(
                 this.currentRoomCode,
                 this.currentPlayerId,
                 'Player',
-                document.getElementById('localVideoContainer'),
-                null,
+                localVideoContainer,
+                null,  // No existing stream
                 constraints
             );
             
@@ -638,8 +661,10 @@ const PlayOnlineUI = {
             
         } catch (error) {
             console.error('❌ Error confirming devices:', error);
+            console.error('❌ Full error:', error.toString());
+            console.error('❌ Stack:', error.stack);
             this.hideLoading();
-            this.showError('Failed to initialize video: ' + error.message);
+            this.showError('Failed to initialize video: ' + (error?.message || error?.toString() || 'Unknown error'));
         }
     },
     
