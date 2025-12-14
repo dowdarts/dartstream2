@@ -36,6 +36,8 @@ class PlayOnlineV7 {
         this.buttons = {
             createRoom: document.getElementById('createRoomBtn'),
             joinRoom: document.getElementById('joinRoomBtn'),
+            copyCode: document.getElementById('copyCodeBtn'),
+            joinRoomCode: document.getElementById('joinRoomCodeBtn'),
             cancelRoom: document.getElementById('cancelRoomBtn'),
             joinGame: document.getElementById('joinGameBtn'),
             backToStart: document.getElementById('backToStartBtn'),
@@ -77,6 +79,8 @@ class PlayOnlineV7 {
 
         // Room code screen
         this.buttons.cancelRoom.addEventListener('click', () => this.cancelRoomCreation());
+        this.buttons.copyCode.addEventListener('click', () => this.copyRoomCode());
+        this.buttons.joinRoomCode.addEventListener('click', () => this.autoJoinAsHost());
 
         // Join screen
         this.buttons.joinGame.addEventListener('click', () => this.handleJoinRoom());
@@ -265,6 +269,39 @@ class PlayOnlineV7 {
         }
         this.roomCode = null;
         this.showScreen('start');
+    }
+
+    copyRoomCode() {
+        if (!this.roomCode) {
+            this.showError('No room code to copy');
+            return;
+        }
+        
+        navigator.clipboard.writeText(this.roomCode).then(() => {
+            console.log('✅ Room code copied to clipboard:', this.roomCode);
+            // Show feedback
+            const btn = this.buttons.copyCode;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy code:', err);
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = this.roomCode;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            const btn = this.buttons.copyCode;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        });
     }
 
     async handleJoinRoom() {

@@ -498,7 +498,11 @@
             <div id="roomCodeDisplay">----</div>
             <div id="roomCountdown">Expires in 60 seconds</div>
             <p class="info-text">Share this code with your opponent<br>They have 60 seconds to join</p>
-            <button class="btn-secondary" id="cancelRoomBtn">Cancel</button>
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button class="btn-primary" id="copyCodeBtn" style="flex: 1; min-width: unset;">📋 Copy Code</button>
+                <button class="btn-primary" id="joinRoomCodeBtn" style="flex: 1; min-width: unset;">✓ Join Room</button>
+            </div>
+            <button class="btn-secondary" id="cancelRoomBtn" style="margin-top: 15px; width: 100%;">Cancel</button>
         </div>
 
         <!-- JOIN ROOM SCREEN -->
