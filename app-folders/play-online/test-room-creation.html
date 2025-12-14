@@ -14,87 +14,7 @@
             box-sizing: border-box;
         }
         
-        /* Auth Wall */
-        .auth-wall {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,78,137,0.9) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .auth-wall-content {
-            text-align: center;
-            color: white;
-        }
-
-        .auth-wall-card {
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(255, 107, 53, 0.5);
-            border-radius: 16px;
-            padding: 3rem 2rem;
-            max-width: 450px;
-            backdrop-filter: blur(10px);
-        }
-
-        .auth-wall-card h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            color: #FF6B35;
-        }
-
-        .auth-wall-card p {
-            font-size: 1.1rem;
-            margin-bottom: 0.8rem;
-            color: rgba(255,255,255,0.8);
-            line-height: 1.6;
-        }
-
-        .auth-buttons-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .auth-btn {
-            display: inline-block;
-            padding: 0.9rem 1.8rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-        .auth-btn.sign-in {
-            background: #FF6B35;
-            color: white;
-        }
-
-        .auth-btn.sign-in:hover {
-            background: #ff5520;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
-        }
-
-        .auth-btn.create {
-            background: rgba(255, 107, 53, 0.2);
-            color: #FF6B35;
-            border: 2px solid #FF6B35;
-        }
-
-        .auth-btn.create:hover {
-            background: rgba(255, 107, 53, 0.35);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
-        }
+        
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -222,30 +142,10 @@
     </style>
 </head>
 <body>
-    <!-- Auth Wall (shown if not logged in) -->
-    <div id="authWall" class="auth-wall" style="display: none;">
-        <div class="auth-wall-content">
-            <div class="auth-wall-card">
-                <h2>🔐 Sign In Required</h2>
-                <p>You need to be signed in to test room creation.</p>
-                <p>This test requires authentication to verify RLS policies work correctly.</p>
-                
-                <div class="auth-buttons-container">
-                    <a href="../player-account/player-account.html?action=login&return=play-online/test-room-creation" class="auth-btn sign-in">
-                        ✓ Sign In
-                    </a>
-                    <a href="../player-account/player-account.html?action=register&return=play-online/test-room-creation" class="auth-btn create">
-                        + Create Account
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container" id="testContainer" style="display: none;">
+    <div class="container" id="testContainer">
         <h1>🧪 Room Creation Test Suite</h1>
         <div style="background: #e3f2fd; padding: 8px; border-radius: 4px; margin-bottom: 15px; font-size: 12px; color: #1565c0;">
-            <strong>Version 2.2</strong> - Last Updated: Dec 14, 2025 - Requires Authentication
+            <strong>Version 2.3</strong> - Last Updated: Dec 14, 2025 - Public Test
         </div>
         
         <div class="progress-bar">
@@ -887,104 +787,10 @@
             console.clear();
         };
 
-        // Check auth on page load
-        async function checkAuth() {
-            try {
-                console.log('🔐 Starting auth check...');
-                
-                // Wait for Supabase client to be ready
-                let retries = 0;
-                while (!window.supabaseClient && retries < 50) {
-                    await new Promise(r => setTimeout(r, 100));
-                    retries++;
-                }
-                
-                if (!window.supabaseClient) {
-                    console.warn('❌ Supabase client not initialized after 5 seconds');
-                    // Check localStorage as fallback
-                    const authToken = localStorage.getItem(`sb_${window.location.hostname.split('.')[0]}_auth_token`) || 
-                                     localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
-                    if (authToken) {
-                        console.log('✅ Found auth token in localStorage, allowing access');
-                        hideAuthWall();
-                    } else {
-                        showAuthWall();
-                    }
-                    return;
-                }
-                
-                console.log('✅ Supabase client ready, checking auth session...');
-                
-                // Wait for auth to be initialized
-                let authRetries = 0;
-                while (!window.supabaseClient.auth && authRetries < 20) {
-                    await new Promise(r => setTimeout(r, 100));
-                    authRetries++;
-                }
-                
-                if (!window.supabaseClient.auth) {
-                    console.warn('⚠️ Auth module not available, checking localStorage');
-                    const authData = localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
-                    if (authData) {
-                        hideAuthWall();
-                    } else {
-                        showAuthWall();
-                    }
-                    return;
-                }
-                
-                // Try to get session
-                const { data: { session } } = await window.supabaseClient.auth.getSession();
-                
-                if (session) {
-                    console.log('✅ User already authenticated:', session.user.email);
-                    hideAuthWall();
-                } else {
-                    console.log('⚠️ No active session found');
-                    // Check localStorage as final fallback
-                    const authData = localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
-                    if (authData) {
-                        console.log('✅ Auth data found in localStorage, allowing access');
-                        hideAuthWall();
-                    } else {
-                        showAuthWall();
-                    }
-                }
-            } catch (error) {
-                console.error('Auth check error:', error);
-                // Try localStorage fallback
-                const authData = localStorage.getItem('sb_kswwbqumgsdissnwuiab_auth_token');
-                if (authData) {
-                    console.log('✅ Using localStorage fallback for auth');
-                    hideAuthWall();
-                } else {
-                    showAuthWall();
-                }
-            }
-        }
-        
-        function showAuthWall() {
-            const authWall = document.getElementById('authWall');
-            const testContainer = document.getElementById('testContainer');
-            if (authWall) authWall.style.display = 'flex';
-            if (testContainer) testContainer.style.display = 'none';
-        }
-        
-        function hideAuthWall() {
-            const authWall = document.getElementById('authWall');
-            const testContainer = document.getElementById('testContainer');
-            if (authWall) authWall.style.display = 'none';
-            if (testContainer) testContainer.style.display = 'block';
-        }
-        
-        // Run auth check after scripts load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(checkAuth, 1000);
-            });
-        } else {
-            setTimeout(checkAuth, 1000);
-        }
+        // Start test on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            runTest();
+        });
     </script>
 </body>
 </html>
