@@ -39,7 +39,14 @@ const VideoRoom = {
      * @param {Object} mediaConstraints - (Optional) Media device constraints
      */
     async initialize(roomCode, playerId, playerName, localVideoEl, existingStream, mediaConstraints) {
-        console.log('🎥 VideoRoom initializing:', { roomCode, playerId, playerName });
+        console.log('🎥 VideoRoom.initialize() called with:', { roomCode, playerId, playerName });
+        
+        // Guard: Check if already initialized for this room
+        if (this.realtimeChannel && this.roomCode === roomCode && this.localStream) {
+            console.log('⚠️ VideoRoom already initialized for this room. Skipping re-initialization.');
+            console.log('   Reusing existing stream and channel');
+            return;
+        }
         
         this.roomCode = roomCode;
         this.playerId = playerId;
@@ -93,6 +100,18 @@ const VideoRoom = {
      */
     setupRealtimeChannel() {
         console.log('🌐 Setting up Realtime channel:', `video-room:${this.roomCode}`);
+        
+        // Guard: Don't set up channel twice for the same room
+        if (this.realtimeChannel && this.realtimeChannel.topic === `video-room:${this.roomCode}`) {
+            console.log('⚠️ Realtime channel already set up for this room. Skipping.');
+            return;
+        }
+        
+        // Unsubscribe from old channel if exists
+        if (this.realtimeChannel) {
+            console.log('🔌 Unsubscribing from old channel');
+            this.realtimeChannel.unsubscribe();
+        }
         
         this.realtimeChannel = this.supabaseClient.channel(`video-room:${this.roomCode}`);
         

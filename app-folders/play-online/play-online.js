@@ -606,6 +606,13 @@ const PlayOnlineUI = {
     async handleConfirmDevices() {
         try {
             console.log('⚙️ Confirming devices - initializing video room');
+            console.log('📊 Current state:', {
+                roomCode: this.currentRoomCode,
+                playerId: this.currentPlayerId,
+                hasVideoRoom: !!PlayOnlineApp.videoRoom,
+                hasRoomManager: !!PlayOnlineApp.roomManager
+            });
+            
             this.showLoading('Starting video...');
             
             // Check that we have room code and video room
@@ -638,6 +645,13 @@ const PlayOnlineUI = {
                 throw new Error('Local video container not found');
             }
             
+            console.log('🎥 Calling VideoRoom.initialize with:', {
+                roomCode: this.currentRoomCode,
+                playerId: this.currentPlayerId,
+                container: !!localVideoContainer,
+                constraints: constraints
+            });
+            
             await PlayOnlineApp.videoRoom.initialize(
                 this.currentRoomCode,
                 this.currentPlayerId,
@@ -651,6 +665,7 @@ const PlayOnlineUI = {
             
             // Set up event callbacks if not already done
             if (!PlayOnlineApp.videoRoom.onPeerVideoReady) {
+                console.log('📡 Setting up video room callbacks');
                 PlayOnlineApp.setupVideoRoomCallbacks();
             }
             
@@ -661,10 +676,14 @@ const PlayOnlineUI = {
             
         } catch (error) {
             console.error('❌ Error confirming devices:', error);
-            console.error('❌ Full error:', error.toString());
-            console.error('❌ Stack:', error.stack);
+            console.error('   Error type:', typeof error);
+            console.error('   Error message:', error?.message);
+            console.error('   Error toString:', error?.toString());
+            console.error('   Error stack:', error?.stack);
+            
             this.hideLoading();
-            this.showError('Failed to initialize video: ' + (error?.message || error?.toString() || 'Unknown error'));
+            const errorMsg = error?.message || error?.toString() || 'Unknown error';
+            this.showError('Failed to initialize video: ' + errorMsg);
         }
     },
     
