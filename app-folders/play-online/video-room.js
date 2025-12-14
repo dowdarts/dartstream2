@@ -412,10 +412,7 @@ const VideoRoom = {
         return this.peers[peerId];
     }
 };
-
 // Export for use
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = VideoRoom;
-}
+window.VideoRoom = VideoRoom;
 
 console.log('📦 video-room.js loaded');

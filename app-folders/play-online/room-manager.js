@@ -298,4 +298,7 @@ const RoomManager = {
     }
 };
 
+// Export for use in modules
+window.RoomManager = RoomManager;
+
 console.log('📦 room-manager.js loaded');

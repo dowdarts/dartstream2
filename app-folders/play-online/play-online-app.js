@@ -316,4 +316,7 @@ const PlayOnlineApp = {
     }
 };
 
+// Export for use
+window.PlayOnlineApp = PlayOnlineApp;
+
 console.log('🎮 play-online-app.js loaded');
