@@ -628,24 +628,6 @@
             }
         };
 
-        // Step 4: Initialize RoomManager
-        window.step4 = async function() {
-            try {
-                log(4, '🏠 Initializing RoomManager...');
-                updateProgress(48);
-                
-                let retries = 0;
-                while (!window.RoomManager && retries < 10) {
-                    log(4, `⏳ Waiting for RoomManager... (${retries + 1}/10)`);
-                    await new Promise(r => setTimeout(r, 500));
-                    retries++;
-                }
-                
-                if (!window.RoomManager) {
-                    throw new Error('RoomManager not loaded');
-                }
-                
-                // Generate player ID
         // Step 4: Get Authenticated User ID
         window.step4 = async function() {
             try {
