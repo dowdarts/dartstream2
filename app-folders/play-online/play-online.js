@@ -284,16 +284,17 @@ const PlayOnlineUI = {
             
             video.srcObject = stream;
             
-            // Check audio level
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const analyser = audioContext.createAnalyser();
-            const microphone = audioContext.createMediaStreamAudioSource(stream);
-            microphone.connect(analyser);
+            // Simple audio check - just verify stream has audio tracks
+            const audioTracks = stream.getAudioTracks();
+            const videoTracks = stream.getVideoTracks();
             
-            document.getElementById('testAudioCheck').checked = true;
-            document.getElementById('testVideoCheck').checked = true;
+            // Set checkboxes based on actual tracks
+            document.getElementById('testAudioCheck').checked = audioTracks.length > 0;
+            document.getElementById('testVideoCheck').checked = videoTracks.length > 0;
             
             console.log('✅ Test stream initialized');
+            console.log(`   - Audio tracks: ${audioTracks.length}`);
+            console.log(`   - Video tracks: ${videoTracks.length}`);
             
         } catch (error) {
             console.error('❌ Test screen error:', error);
