@@ -2,8 +2,8 @@
 CREATE TABLE IF NOT EXISTS game_rooms (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     room_code VARCHAR(4) UNIQUE NOT NULL,
-    host_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    guest_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    host_id UUID, -- Can be auth user or locally-generated guest ID
+    guest_id UUID, -- Can be auth user or locally-generated guest ID
     status VARCHAR(20) DEFAULT 'waiting', -- 'waiting', 'active', 'finished'
     current_turn VARCHAR(10) DEFAULT 'host', -- 'host' or 'guest'
     game_state JSONB DEFAULT '{}',
