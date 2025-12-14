@@ -36,15 +36,21 @@ CREATE POLICY "Users can delete their rooms" ON game_rooms
     FOR DELETE TO authenticated
     USING (auth.uid() = host_id);
 
--- Function to clean up old waiting rooms (older than 1 hour)
-CREATE OR REPLACE FUNCTION cleanup_old_rooms()
+-- Enable pg_cron extension for scheduled cleanup jobs
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Function to clean up inactive rooms (not updated for 1 minute)
+CREATE OR REPLACE FUNCTION cleanup_inactive_rooms()
 RETURNS void AS $$
 BEGIN
     DELETE FROM game_rooms
-    WHERE status = 'waiting'
-    AND created_at < NOW() - INTERVAL '1 hour';
+    WHERE status != 'active'
+    AND updated_at < NOW() - INTERVAL '1 minute';
 END;
 $$ LANGUAGE plpgsql;
+
+-- Schedule cleanup to run every 30 seconds
+SELECT cron.schedule('cleanup-inactive-rooms', '30 seconds', 'SELECT cleanup_inactive_rooms()');
 
 -- Enable Realtime for game_rooms table
 ALTER PUBLICATION supabase_realtime ADD TABLE game_rooms;
