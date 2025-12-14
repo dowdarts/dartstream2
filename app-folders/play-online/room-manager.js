@@ -49,40 +49,44 @@ const RoomManager = {
             // Generate a UUID for the room ID
             const roomId = this.generateUUID();
             
-            // Get Supabase config from window or client
-            const supabaseUrl = window.supabaseClient?.supabaseUrl || 'https://kswwbqumgsdissnwuiab.supabase.co';
-            const supabaseKey = window.supabaseClient?.supabaseKey || (window.localStorage.getItem('supabase.auth.token') ? '' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50');
+            // Prepare room data
+            const roomData = {
+                id: roomId,
+                room_code: roomCode,
+                host_id: this.playerId,
+                status: 'waiting',
+                game_state: {
+                    participants: [{ id: this.playerId, name: 'Host', joinedAt: new Date().toISOString() }],
+                    createdAt: new Date().toISOString()
+                }
+            };
             
-            console.log('🔑 Using Supabase URL:', supabaseUrl);
+            console.log('📤 Sending room creation request to Edge Function');
             
-            // Use Supabase client to make the request (it handles auth properly)
-            const { error } = await this.supabaseClient
-                .from('game_rooms')
-                .insert({
-                    id: roomId,
-                    room_code: roomCode,
-                    host_id: this.playerId,
-                    status: 'waiting',
-                    game_state: {
-                        participants: [{ id: this.playerId, name: 'Host', joinedAt: new Date().toISOString() }],
-                        createdAt: new Date().toISOString()
-                    }
-                });
+            // Use Edge Function for room creation (bypasses PostgREST RLS issues)
+            const supabaseUrl = this.supabaseClient?.supabaseUrl || 'https://kswwbqumgsdissnwuiab.supabase.co';
+            const response = await fetch(`${supabaseUrl}/functions/v1/create_game_room`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await this.getAuthToken()}`
+                },
+                body: JSON.stringify(roomData)
+            });
             
-            if (error) {
-                console.error('❌ Error creating room - Message:', error.message);
-                console.error('❌ Error creating room - Code:', error.code);
-                console.error('❌ Error creating room - Details:', error.details);
-                console.error('❌ Error creating room - Hint:', error.hint);
-                console.error('❌ Error creating room - Full:', JSON.stringify(error, null, 2));
-                throw error;
+            const result = await response.json();
+            
+            if (!response.ok) {
+                console.error('❌ Edge Function error - Status:', response.status);
+                console.error('❌ Edge Function error - Response:', result);
+                throw new Error(result.error || `HTTP ${response.status}`);
             }
             
             this.currentRoomCode = roomCode;
             this.currentRoomId = roomId;
             this.isHost = true;
             
-            console.log('✅ Room created:', { roomCode, roomId });
+            console.log('✅ Room created via Edge Function:', { roomCode, roomId });
             return {
                 roomCode: roomCode,
                 roomId: roomId,
@@ -91,13 +95,25 @@ const RoomManager = {
             };
             
         } catch (error) {
-            console.error('❌ Error creating room - Catch Message:', error.message);
-            console.error('❌ Error creating room - Catch Code:', error.code);
-            console.error('❌ Error creating room - Catch Details:', error.details);
-            console.error('❌ Error creating room - Catch Hint:', error.hint);
-            console.error('❌ Error creating room - Catch Full:', JSON.stringify(error, null, 2));
+            console.error('❌ Error creating room:', error.message);
             throw error;
         }
+    },
+    
+    /**
+     * Get auth token for requests
+     */
+    async getAuthToken() {
+        try {
+            const session = await this.supabaseClient?.auth?.getSession();
+            if (session?.data?.session?.access_token) {
+                return session.data.session.access_token;
+            }
+        } catch (e) {
+            console.log('⚠️ No authenticated user, using anon token');
+        }
+        return 'anon';
+
     },
     
     /**
