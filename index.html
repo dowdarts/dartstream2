@@ -375,6 +375,14 @@
                 <div class="device-type">📱 All Devices</div>
             </a>
 
+            <a href="app-folders/play-online/test-room-creation.html" class="app-card" id="test-card" style="display: none;">
+                <div class="app-icon">🧪</div>
+                <h2>Room Test</h2>
+                <p>Diagnostic test for room creation system - verify RLS policies and authentication</p>
+                <div class="device-type">💻 Desktop / Laptop</div>
+                <p class="future-badge">🔍 Debug tool</p>
+            </a>
+
             <a href="app-folders/player-account/player-account.html" class="app-card" id="my-stats-card" style="display: none;">
                 <div class="app-icon">📊</div>
                 <h2>My Stats</h2>
@@ -425,11 +433,15 @@
                     document.getElementById('logged-in-section').style.display = 'block';
                     document.getElementById('user-name').textContent = userName;
                     document.getElementById('my-stats-card').style.display = 'block';
+                    const testCard = document.getElementById('test-card');
+                    if (testCard) testCard.style.display = 'block';
                 } else {
                     // User is logged out
                     document.getElementById('logged-out-buttons').style.display = 'flex';
                     document.getElementById('logged-in-section').style.display = 'none';
                     document.getElementById('my-stats-card').style.display = 'none';
+                    const testCard = document.getElementById('test-card');
+                    if (testCard) testCard.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error checking auth state:', error);
@@ -437,6 +449,8 @@
                 document.getElementById('logged-out-buttons').style.display = 'flex';
                 document.getElementById('logged-in-section').style.display = 'none';
                 document.getElementById('my-stats-card').style.display = 'none';
+                const testCard = document.getElementById('test-card');
+                if (testCard) testCard.style.display = 'none';
             }
         }
         
