@@ -200,9 +200,16 @@ const PlayOnlineUI = {
             const roomData = await PlayOnlineApp.createAndStartRoom();
             this.hideLoading();
             
+            // Store and display room code
+            this.currentRoomCode = roomData.roomCode;
+            const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+            if (roomCodeDisplay) {
+                roomCodeDisplay.textContent = this.currentRoomCode;
+                console.log('🏠 Room code displayed:', this.currentRoomCode);
+            }
+            
             // Skip test screen, go directly to lobby
             this.showScreen('lobbyScreen');
-            this.currentRoomCode = roomData.roomCode;
             
         } catch (error) {
             console.error('❌ Host game error:', error);
@@ -238,9 +245,16 @@ const PlayOnlineUI = {
             const roomData = await PlayOnlineApp.joinRoom(roomCode);
             this.hideLoading();
             
+            // Store and display room code
+            this.currentRoomCode = roomCode;
+            const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+            if (roomCodeDisplay) {
+                roomCodeDisplay.textContent = this.currentRoomCode;
+                console.log('📍 Room code displayed:', this.currentRoomCode);
+            }
+            
             // Skip test screen, go directly to lobby
             this.showScreen('lobbyScreen');
-            this.currentRoomCode = roomCode;
             
         } catch (error) {
             console.error('❌ Join game error:', error);
