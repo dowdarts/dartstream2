@@ -172,3 +172,6 @@ if (document.readyState === 'loading') {
 }
 
 console.log('📦 guest-auth.js loaded');
+
+// Export GuestAuth globally
+window.GuestAuth = GuestAuth;
