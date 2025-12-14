@@ -363,8 +363,20 @@
                 
                 log(1, '📦 Loading guest-auth.js...');
                 try {
-                    await import('./guest-auth.js');
-                    log(1, '✅ guest-auth.js loaded');
+                    // Load guest-auth as a script tag (not module)
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = './guest-auth.js';
+                        script.onload = () => {
+                            log(1, '✅ guest-auth.js loaded');
+                            resolve();
+                        };
+                        script.onerror = (e) => {
+                            log(1, `⚠️ Failed to load guest-auth.js: ${e}`);
+                            reject(e);
+                        };
+                        document.head.appendChild(script);
+                    });
                 } catch (e) {
                     log(1, `⚠️ guest-auth.js error: ${e.message}`);
                 }
