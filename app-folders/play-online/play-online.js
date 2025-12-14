@@ -604,8 +604,13 @@ const PlayOnlineUI = {
      */
     
     async handleConfirmDevices() {
+        let detailedLog = '🔍 handleConfirmDevices detailed trace:\n';
+        
         try {
+            detailedLog += '1. Starting device confirmation\n';
             console.log('⚙️ Confirming devices - initializing video room');
+            
+            detailedLog += '2. Checking current state\n';
             console.log('📊 Current state:', {
                 roomCode: this.currentRoomCode,
                 playerId: this.currentPlayerId,
@@ -624,13 +629,16 @@ const PlayOnlineUI = {
                 throw new Error('Video room not initialized');
             }
             
+            detailedLog += '3. Getting selected devices\n';
             // Get selected devices
             const selectedCameraId = document.getElementById('cameraSelect')?.value;
             const selectedMicId = document.getElementById('microphoneSelect')?.value;
             
             console.log('📸 Selected camera:', selectedCameraId);
             console.log('🎙️ Selected microphone:', selectedMicId);
+            detailedLog += `   Camera: ${selectedCameraId}, Mic: ${selectedMicId}\n`;
             
+            detailedLog += '4. Building media constraints\n';
             // Build constraints based on selected devices
             const constraints = {
                 video: selectedCameraId ? { deviceId: { exact: selectedCameraId } } : true,
@@ -638,13 +646,17 @@ const PlayOnlineUI = {
             };
             
             console.log('📋 Media constraints:', constraints);
+            detailedLog += `   Constraints: ${JSON.stringify(constraints)}\n`;
             
+            detailedLog += '5. Getting local video container\n';
             // Initialize the video room with selected devices
             const localVideoContainer = document.getElementById('localVideoContainer');
             if (!localVideoContainer) {
                 throw new Error('Local video container not found');
             }
+            detailedLog += `   Container found: ${!!localVideoContainer}\n`;
             
+            detailedLog += '6. Calling VideoRoom.initialize()\n';
             console.log('🎥 Calling VideoRoom.initialize with:', {
                 roomCode: this.currentRoomCode,
                 playerId: this.currentPlayerId,
@@ -652,7 +664,8 @@ const PlayOnlineUI = {
                 constraints: constraints
             });
             
-            await PlayOnlineApp.videoRoom.initialize(
+            // Call initialize
+            const initResult = await PlayOnlineApp.videoRoom.initialize(
                 this.currentRoomCode,
                 this.currentPlayerId,
                 'Player',
@@ -661,28 +674,42 @@ const PlayOnlineUI = {
                 constraints
             );
             
+            detailedLog += '7. VideoRoom.initialize() succeeded\n';
             console.log('✅ Video room initialized with selected devices');
             
+            detailedLog += '8. Setting up event callbacks\n';
             // Set up event callbacks if not already done
             if (!PlayOnlineApp.videoRoom.onPeerVideoReady) {
                 console.log('📡 Setting up video room callbacks');
                 PlayOnlineApp.setupVideoRoomCallbacks();
             }
+            detailedLog += '   Callbacks ready\n';
             
+            detailedLog += '9. Hiding loading and showing lobby\n';
             this.hideLoading();
             
             // Show lobby/waiting screen with start button
             this.showScreen('lobbyScreen');
+            detailedLog += '10. ✅ SUCCESS - Device confirmation complete\n';
+            console.log('✅ Device confirmation complete. Ready for video call.');
             
         } catch (error) {
-            console.error('❌ Error confirming devices:', error);
-            console.error('   Error type:', typeof error);
-            console.error('   Error message:', error?.message);
-            console.error('   Error toString:', error?.toString());
-            console.error('   Error stack:', error?.stack);
+            detailedLog += `❌ ERROR CAUGHT:\n`;
+            detailedLog += `   Error: ${error}\n`;
+            detailedLog += `   Type: ${typeof error}\n`;
+            detailedLog += `   Is Error object: ${error instanceof Error}\n`;
+            detailedLog += `   Message: ${error?.message || 'NO MESSAGE'}\n`;
+            detailedLog += `   ToString: ${error?.toString?.() || 'NO TOSTRING'}\n`;
+            detailedLog += `   Stack: ${error?.stack?.substring(0, 500) || 'NO STACK'}\n`;
+            
+            console.error('❌ Confirm devices error:', error);
+            console.error('❌ Detailed trace:\n' + detailedLog);
+            console.error('❌ Full error object:', error);
+            console.error('❌ Error keys:', Object.keys(error || {}));
             
             this.hideLoading();
-            const errorMsg = error?.message || error?.toString() || 'Unknown error';
+            const errorMsg = error?.message || error?.toString?.() || String(error) || 'Unknown error';
+            console.error('❌ Final error message:', errorMsg);
             this.showError('Failed to initialize video: ' + errorMsg);
         }
     },
