@@ -44,11 +44,11 @@ const VideoRoom = {
         this.playerName = playerName;
         this.localVideoElement = localVideoEl;
         
-        // Initialize Supabase client
-        this.supabaseClient = window.supabase.createClient(
-            'https://kswwbqumgsdissnwuiab.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnV1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Mzk1OTExMjgsImV4cCI6MTk1NTE2NzEyOH0.rH2m0cUi5Bi8lUGNahIZ7b9M2vJrF4rMVlYH7VN4dzY'
-        );
+        // Use global Supabase client (already initialized with auth token)
+        this.supabaseClient = window.supabaseClient;
+        if (!this.supabaseClient) {
+            throw new Error('Supabase client not initialized. Make sure supabase-config.js is loaded.');
+        }
         
         // Request camera/microphone access
         try {
