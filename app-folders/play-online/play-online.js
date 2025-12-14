@@ -120,11 +120,15 @@ const PlayOnlineUI = {
      */
     onPeerJoined(detail) {
         console.log('🎨 UI: Peer joined event received', detail);
-        // Will wait for peerVideoReady to enable button
+        // Add participant to the list
+        this.updateParticipantsList(detail.peerId, detail.peerData.name, 'connecting');
     },
     
     onPeerVideoReady(detail) {
         console.log('🎨 UI: Peer video ready, enabling Start Video Call button', detail);
+        // Update participant status to connected
+        this.updateParticipantsList(detail.peerId, null, 'connected');
+        
         const startBtn = document.getElementById('startVideoBtn');
         if (startBtn) {
             startBtn.disabled = false;
@@ -134,6 +138,9 @@ const PlayOnlineUI = {
     
     onPeerLeft(detail) {
         console.log('🎨 UI: Peer left, disabling Start Video Call button', detail);
+        // Remove participant from list
+        this.removeParticipantFromList(detail.peerId);
+        
         const startBtn = document.getElementById('startVideoBtn');
         if (startBtn) {
             startBtn.disabled = true;
@@ -144,6 +151,57 @@ const PlayOnlineUI = {
     onVideoRoomError(detail) {
         console.error('🎨 UI: Video room error:', detail.error);
         this.showError('Video call error: ' + detail.error?.message || 'Unknown error');
+    },
+    
+    updateParticipantsList(peerId, peerName, status) {
+        const participantsList = document.getElementById('participantsList');
+        if (!participantsList) return;
+        
+        let participantEl = document.getElementById(`participant-${peerId}`);
+        
+        if (!participantEl) {
+            // Create new participant element
+            participantEl = document.createElement('div');
+            participantEl.id = `participant-${peerId}`;
+            participantEl.className = 'participant-item';
+            participantEl.innerHTML = `
+                <span class="participant-name">${peerName || 'Guest'}</span>
+                <span class="participant-status ${status}">${status === 'connected' ? '🟢 Connected' : '⏳ Connecting'}</span>
+            `;
+            participantsList.appendChild(participantEl);
+            
+            // Update count
+            const countEl = document.getElementById('participantCount');
+            if (countEl) {
+                const currentCount = parseInt(countEl.textContent) || 1;
+                countEl.textContent = currentCount + 1;
+            }
+        } else if (status === 'connected') {
+            // Update status
+            const statusEl = participantEl.querySelector('.participant-status');
+            if (statusEl) {
+                statusEl.className = 'participant-status connected';
+                statusEl.textContent = '🟢 Connected';
+            }
+        }
+        
+        console.log('📋 Participants list updated');
+    },
+    
+    removeParticipantFromList(peerId) {
+        const participantEl = document.getElementById(`participant-${peerId}`);
+        if (participantEl) {
+            participantEl.remove();
+            
+            // Update count
+            const countEl = document.getElementById('participantCount');
+            if (countEl) {
+                const currentCount = parseInt(countEl.textContent) || 2;
+                countEl.textContent = Math.max(1, currentCount - 1);
+            }
+        }
+        
+        console.log('📋 Participant removed from list');
     },
     
     /**

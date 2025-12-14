@@ -1228,3 +1228,53 @@ body {
         font-size: 1.2rem;
     }
 }
+
+/* Participant List Styles */
+.participants-list {
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.participant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.participant-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.participant-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.participant-status.connected {
+    color: var(--success-color);
+}
+
+.participant-status.connecting {
+    color: var(--warning-color);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+
