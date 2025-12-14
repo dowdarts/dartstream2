@@ -104,7 +104,8 @@ const PlayOnlineApp = {
                 roomData.roomCode,
                 this.state.playerId,
                 this.state.playerName,
-                localVideo
+                localVideo,
+                window.PlayOnlineUI?.mediaStream  // Pass existing media stream if available
             );
             
             console.log('✅ Video room initialized');
@@ -159,7 +160,8 @@ const PlayOnlineApp = {
                 roomCode,
                 this.state.playerId,
                 this.state.playerName,
-                localVideo
+                localVideo,
+                window.PlayOnlineUI?.mediaStream  // Pass existing media stream if available
             );
             
             console.log('✅ Video room initialized');

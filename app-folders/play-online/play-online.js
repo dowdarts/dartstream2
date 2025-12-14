@@ -17,6 +17,7 @@ const PlayOnlineUI = {
     startTime: null,
     callTimer: null,
     supabaseClient: null,
+    mediaStream: null, // Store and reuse media stream
     
     /**
      * Initialize the UI system
@@ -276,17 +277,22 @@ const PlayOnlineUI = {
         try {
             const video = document.getElementById('testVideo');
             
-            // Request camera and microphone
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-                audio: true
-            });
+            // Reuse existing stream if available, otherwise request new one
+            if (!this.mediaStream) {
+                this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: true
+                });
+                console.log('✅ Media stream acquired');
+            } else {
+                console.log('✅ Reusing existing media stream');
+            }
             
-            video.srcObject = stream;
+            video.srcObject = this.mediaStream;
             
             // Simple audio check - just verify stream has audio tracks
-            const audioTracks = stream.getAudioTracks();
-            const videoTracks = stream.getVideoTracks();
+            const audioTracks = this.mediaStream.getAudioTracks();
+            const videoTracks = this.mediaStream.getVideoTracks();
             
             // Set checkboxes based on actual tracks
             document.getElementById('testAudioCheck').checked = audioTracks.length > 0;

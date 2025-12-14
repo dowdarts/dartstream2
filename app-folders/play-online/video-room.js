@@ -35,8 +35,9 @@ const VideoRoom = {
      * @param {string} playerId - Local player ID (from Supabase auth)
      * @param {string} playerName - Local player nickname
      * @param {HTMLElement} localVideoEl - Element for local video
+     * @param {MediaStream} existingStream - (Optional) Existing media stream to reuse
      */
-    async initialize(roomCode, playerId, playerName, localVideoEl) {
+    async initialize(roomCode, playerId, playerName, localVideoEl, existingStream) {
         console.log('🎥 VideoRoom initializing:', { roomCode, playerId, playerName });
         
         this.roomCode = roomCode;
@@ -52,11 +53,18 @@ const VideoRoom = {
         
         // Request camera/microphone access
         try {
-            this.localStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-                audio: true
-            });
-            console.log('✅ Local media obtained');
+            if (existingStream) {
+                // Reuse existing media stream
+                this.localStream = existingStream;
+                console.log('✅ Reusing existing local media stream');
+            } else {
+                // Request new media stream
+                this.localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: true
+                });
+                console.log('✅ New local media stream obtained');
+            }
             
             // Display local video
             if (this.localVideoElement) {
