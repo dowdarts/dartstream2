@@ -214,23 +214,31 @@ const PlayOnlineApp = {
         
         // Peer's video ready
         this.videoRoom.onPeerVideoReady = (peerId, stream) => {
+            console.log('📹 [APP] ===== PEER VIDEO READY =====');
             console.log('📹 [APP] Peer video ready callback triggered:', peerId);
             console.log('📹 [APP] Stream exists?', !!stream);
+            console.log('📹 [APP] Stream ID:', stream?.id);
+            console.log('📹 [APP] Stream active?', stream?.active);
             
             this.state.isPeerConnected = true;
             
+            // Store peer name from peers object
+            const peerName = this.videoRoom.peers[peerId]?.name || 'Unknown Peer';
+            console.log('📹 [APP] Peer name from videoRoom.peers:', peerName);
+            
             // Dispatch event with full peer data
             // Let the UI handler create the element and set the stream
-            console.log('📡 [APP] Dispatching peerVideoReady event with peerId:', peerId);
+            console.log('📡 [APP] Dispatching peerVideoReady event with detail:', { peerId, peerName, streamExists: !!stream });
             const event = new CustomEvent('peerVideoReady', { 
                 detail: { 
                     peerId: peerId,
                     stream: stream,
-                    peerName: this.videoRoom.peers[peerId]?.name || 'Unknown'
+                    peerName: peerName
                 } 
             });
             window.dispatchEvent(event);
-            console.log('✅ [APP] peerVideoReady event dispatched');
+            console.log('✅ [APP] peerVideoReady event dispatched successfully');
+            console.log('📹 [APP] ===== END PEER VIDEO READY =====');
         };
         
         // Peer left

@@ -172,87 +172,103 @@ const PlayOnlineUI = {
     
     onPeerVideoReady(detail) {
         try {
-            console.log('🎨 UI: Peer video ready, enabling Start Video Call button', detail);
-            console.log('🔍 Handler entered - detail:', detail);
+            console.log('\n🎨 ========== UI HANDLER: PEER VIDEO READY ==========');
+            console.log('🎨 Handler called with detail:', detail);
+            console.log('🎨 Detail.peerId:', detail.peerId);
+            console.log('🎨 Detail.peerName:', detail.peerName);
+            console.log('🎨 Detail.stream exists?', !!detail.stream);
             
             // Update participant status to connected
-            console.log('🔍 About to call updateParticipantsList with:', detail.peerId, detail.peerName);
+            console.log('🎨 Step 1: Updating participant status...');
             this.updateParticipantsList(detail.peerId, detail.peerName, 'connected');
-            console.log('✅ updateParticipantsList completed');
+            console.log('✅ Step 1 complete: Participant status updated');
             
             // Create remote video element if it doesn't exist
-            console.log('🔍 Looking for remoteVideosContainer...');
+            console.log('🎨 Step 2: Looking for remoteVideosContainer...');
             const remoteVideosContainer = document.getElementById('remoteVideosContainer');
             console.log('✓ remoteVideosContainer found?', !!remoteVideosContainer);
             
-            if (remoteVideosContainer) {
-                console.log('🔍 Looking for existing video element: video-' + detail.peerId);
-                let videoElement = document.getElementById(`video-${detail.peerId}`);
-                console.log('✓ Video element already exists?', !!videoElement);
-                
-                if (!videoElement) {
-                    console.log('📹 Creating remote video element for peer:', detail.peerId);
-                    
-                    // Create video wrapper
-                    const videoWrapper = document.createElement('div');
-                    videoWrapper.className = 'video-grid-item remote';
-                    videoWrapper.id = `peer-video-${detail.peerId}`;
-                    
-                    // Create video element
-                    videoElement = document.createElement('video');
-                    videoElement.id = `video-${detail.peerId}`;
-                    videoElement.autoplay = true;
-                    videoElement.playsinline = true;
-                    
-                    // Create label
-                    const label = document.createElement('div');
-                    label.className = 'video-label remote-label';
-                    label.textContent = detail.peerName || 'Guest';
-                    
-                    // Append to wrapper and container
-                    videoWrapper.appendChild(videoElement);
-                    videoWrapper.appendChild(label);
-                    remoteVideosContainer.appendChild(videoWrapper);
-                    
-                    console.log('✅ Remote video element created for:', detail.peerId);
-                    console.log('📊 Container now has', remoteVideosContainer.children.length, 'children');
-                } else {
-                    console.log('ℹ️ Reusing existing video element for:', detail.peerId);
-                }
-                
-                // Set the stream if available from detail
-                console.log('🔍 Checking for stream in detail.stream...');
-                console.log('✓ detail.stream exists?', !!detail.stream);
-                
-                if (detail.stream) {
-                    console.log('📹 Setting stream for remote video:', detail.peerId);
-                    videoElement.srcObject = detail.stream;
-                    videoElement.play().catch(err => {
-                        console.warn('⚠️ Could not play remote video:', err.message);
-                    });
-                    console.log('✅ Remote video stream set and playback started');
-                } else {
-                    console.warn('⚠️ No stream available in detail for peer:', detail.peerId);
-                }
-            } else {
-                console.error('❌ remoteVideosContainer not found in DOM!');
+            if (!remoteVideosContainer) {
+                console.error('❌ FATAL: remoteVideosContainer not found!');
+                return;
             }
             
+            console.log('🎨 Step 3: Checking for existing video element...');
+            let videoElement = document.getElementById(`video-${detail.peerId}`);
+            console.log('✓ Video element already exists?', !!videoElement);
+            
+            if (!videoElement) {
+                console.log('🎨 Step 4a: Creating NEW remote video element for peer:', detail.peerId);
+                
+                // Create video wrapper
+                const videoWrapper = document.createElement('div');
+                videoWrapper.className = 'video-grid-item remote';
+                videoWrapper.id = `peer-video-${detail.peerId}`;
+                
+                // Create video element
+                videoElement = document.createElement('video');
+                videoElement.id = `video-${detail.peerId}`;
+                videoElement.autoplay = true;
+                videoElement.playsinline = true;
+                console.log('✓ Video element created:', videoElement.id);
+                
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'video-label remote-label';
+                label.textContent = detail.peerName || 'Guest';
+                console.log('✓ Label created:', label.textContent);
+                
+                // Append to wrapper and container
+                videoWrapper.appendChild(videoElement);
+                videoWrapper.appendChild(label);
+                remoteVideosContainer.appendChild(videoWrapper);
+                
+                console.log('✅ Step 4a complete: Remote video element created for:', detail.peerId);
+                console.log('📊 Container now has', remoteVideosContainer.children.length, 'children');
+            } else {
+                console.log('✅ Step 4b complete: Reusing existing video element for:', detail.peerId);
+            }
+            
+            // Set the stream
+            console.log('🎨 Step 5: Setting stream to video element...');
+            console.log('✓ detail.stream exists?', !!detail.stream);
+            
+            if (detail.stream) {
+                console.log('✓ Setting srcObject for video element:', videoElement.id);
+                videoElement.srcObject = detail.stream;
+                console.log('✓ srcObject set');
+                
+                videoElement.play().then(() => {
+                    console.log('✅ Video playback started');
+                }).catch(err => {
+                    console.warn('⚠️ Could not play remote video:', err.message);
+                });
+                
+                console.log('✅ Step 5 complete: Stream set and playback initiated');
+            } else {
+                console.warn('⚠️ Step 5 SKIPPED: No stream in detail');
+            }
+            
+            // Enable button
+            console.log('🎨 Step 6: Enabling Start Video button...');
             const startBtn = document.getElementById('startVideoBtn');
-            console.log('🔍 Start button element:', !!startBtn);
-            console.log('🔍 Start button disabled before:', startBtn?.disabled);
+            console.log('✓ Start button found?', !!startBtn);
             
             if (startBtn) {
+                console.log('✓ Start button disabled before:', startBtn.disabled);
                 startBtn.disabled = false;
-                console.log('✅ Start Video Call button enabled');
-                console.log('🔍 Start button disabled after:', startBtn?.disabled);
-                console.log('🔍 Button is clickable now');
+                console.log('✓ Start button disabled after:', startBtn.disabled);
+                console.log('✅ Step 6 complete: Start button enabled');
             } else {
-                console.error('❌ Start button element not found!');
+                console.error('❌ FATAL: Start button not found!');
             }
+            
+            console.log('🎨 ========== UI HANDLER COMPLETE ==========\n');
         } catch (error) {
-            console.error('💥 ERROR in onPeerVideoReady:', error.message);
-            console.error('Stack:', error.stack);
+            console.error('\n💥 ========== ERROR IN UI HANDLER ==========');
+            console.error('💥 Error message:', error.message);
+            console.error('💥 Error stack:', error.stack);
+            console.error('💥 ========== END ERROR ==========\n');
         }
     },
     

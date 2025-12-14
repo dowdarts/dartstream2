@@ -207,6 +207,7 @@ const VideoRoom = {
                 const peerConnection = new RTCPeerConnection(this.rtcConfig);
                 this.peers[peerId] = {
                     id: peerId,
+                    name: 'Unknown',  // Will be updated when peer-joined signal arrives
                     connection: peerConnection,
                     stream: null,
                     videoElement: null
