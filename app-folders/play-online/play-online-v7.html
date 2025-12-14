@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DartStream - Play Online v7</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            display: flex;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ===== START SCREEN ===== */
+        #startScreen {
+            gap: 30px;
+            text-align: center;
+        }
+
+        #startScreen h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        #startScreen p {
+            font-size: 1.1rem;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #cc0000 100%);
+            color: #fff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ===== ROOM CODE SCREEN ===== */
+        #roomCodeScreen {
+            gap: 40px;
+            text-align: center;
+        }
+
+        #roomCodeScreen h2 {
+            font-size: 2rem;
+            color: #00d4ff;
+        }
+
+        #roomCodeDisplay {
+            font-size: 4rem;
+            font-weight: bold;
+            letter-spacing: 20px;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #00d4ff;
+            font-family: 'Courier New', monospace;
+            min-width: 400px;
+        }
+
+        #roomCountdown {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .info-text {
+            color: #aaa;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* ===== JOIN ROOM SCREEN ===== */
+        #joinScreen {
+            gap: 30px;
+        }
+
+        #joinScreen h2 {
+            font-size: 2rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input[type="text"],
+        select {
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            background: rgba(0, 212, 255, 0.05);
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]::placeholder {
+            color: #666;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+            padding-right: 40px;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 24px;
+            padding-right: 35px;
+        }
+
+        /* ===== DEVICE CONFIG SCREEN ===== */
+        #deviceConfigScreen {
+            gap: 30px;
+        }
+
+        #deviceConfigScreen h2 {
+            font-size: 2rem;
+            color: #00d4ff;
+        }
+
+        .device-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .device-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .device-group label {
+            font-size: 0.9rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .device-group select {
+            width: 100%;
+        }
+
+        #cameraPreview {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            background: #000;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        /* ===== VIDEO CALL SCREEN ===== */
+        #videoCallScreen {
+            padding: 0;
+            gap: 0;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            padding: 10px;
+            background: #0a0a0f;
+        }
+
+        #remoteVideo {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .local-video-container {
+            position: relative;
+            width: 200px;
+            height: 150px;
+            background: #1a1a2e;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #localVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #00d4ff;
+            z-index: 10;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 212, 255, 0.6);
+        }
+
+        .control-btn.off {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+
+        .control-btn.off:hover {
+            background: rgba(255, 107, 107, 0.6);
+        }
+
+        .participants {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+
+        .participant {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00d4ff;
+        }
+
+        .status-dot.offline {
+            background: #666;
+        }
+
+        /* ===== ERROR MESSAGE ===== */
+        #errorMessage {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 107, 107, 0.9);
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(500px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #errorMessage.hidden {
+            display: none;
+        }
+
+        /* ===== LOADING ===== */
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 212, 255, 0.3);
+            border-top: 4px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .video-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+            }
+
+            .local-video-container {
+                width: 100%;
+                height: 150px;
+            }
+
+            #startScreen h1 {
+                font-size: 2rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            #roomCodeDisplay {
+                font-size: 2.5rem;
+                letter-spacing: 10px;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- START SCREEN -->
+        <div id="startScreen" class="screen active">
+            <h1>🎯 DartStream</h1>
+            <p>Play darts online with live video</p>
+            <div class="button-group">
+                <button class="btn-primary" id="createRoomBtn">Create Room</button>
+                <button class="btn-secondary" id="joinRoomBtn">Join Room</button>
+            </div>
+        </div>
+
+        <!-- ROOM CODE SCREEN -->
+        <div id="roomCodeScreen" class="screen">
+            <h2>Room Created</h2>
+            <div id="roomCodeDisplay">----</div>
+            <div id="roomCountdown">Expires in 60 seconds</div>
+            <p class="info-text">Share this code with your opponent<br>They have 60 seconds to join</p>
+            <button class="btn-secondary" id="cancelRoomBtn">Cancel</button>
+        </div>
+
+        <!-- JOIN ROOM SCREEN -->
+        <div id="joinScreen" class="screen">
+            <h2>Join a Room</h2>
+            <div class="input-group">
+                <input type="text" id="roomCodeInput" placeholder="Enter 4-digit code" maxlength="4">
+                <input type="text" id="playerNameInput" placeholder="Your name">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="joinGameBtn" style="flex: 1;">Join</button>
+                    <button class="btn-secondary" id="backToStartBtn" style="flex: 1;">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEVICE CONFIG SCREEN -->
+        <div id="deviceConfigScreen" class="screen">
+            <h2>Select Devices</h2>
+            <div class="device-selection">
+                <div class="device-group">
+                    <label>Camera:</label>
+                    <select id="cameraSelect"></select>
+                </div>
+                <div class="device-group">
+                    <label>Microphone:</label>
+                    <select id="microphoneSelect"></select>
+                </div>
+                <video id="cameraPreview" autoplay playsinline muted></video>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="confirmDevicesBtn" style="flex: 1;">Start Video Call</button>
+                    <button class="btn-secondary" id="cancelDevicesBtn" style="flex: 1;">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIDEO CALL SCREEN -->
+        <div id="videoCallScreen" class="screen">
+            <div class="video-container">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="local-video-container">
+                    <video id="localVideo" autoplay playsinline muted></video>
+                    <div class="video-info">You</div>
+                    <div class="video-controls">
+                        <button class="control-btn" id="toggleMicBtn" title="Toggle microphone">🎤</button>
+                        <button class="control-btn" id="toggleCameraBtn" title="Toggle camera">📷</button>
+                        <button class="control-btn" id="endCallBtn" title="End call">🔴</button>
+                    </div>
+                </div>
+            </div>
+            <div class="participants">
+                <div class="participant">
+                    <div class="status-dot"></div>
+                    <span id="opponentName">Opponent</span>
+                </div>
+                <div class="participant">
+                    <div class="status-dot"></div>
+                    <span id="youName">You</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR MESSAGE -->
+    <div id="errorMessage" class="hidden"></div>
+
+    <!-- SCRIPTS -->
+    <script src="../../supabase-config.js"></script>
+    <script src="video-room.js?v=13"></script>
+    <script src="room-manager.js?v=13"></script>
+    <script src="play-online-v7.js?v=1"></script>
+</body>
+</html>
