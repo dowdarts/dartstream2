@@ -569,12 +569,32 @@ const PlayOnlineUI = {
             this.showScreen('videoCallScreen');
             console.log('✅ videoCallScreen should now be visible');
             
+            // Transfer local stream from lobby preview to video call element
+            console.log('📸 Transferring local video stream...');
+            const localVideoEl = document.getElementById('localVideo');
+            if (localVideoEl && PlayOnlineApp?.videoRoom?.localStream) {
+                localVideoEl.srcObject = PlayOnlineApp.videoRoom.localStream;
+                console.log('✅ Local video stream transferred to #localVideo element');
+            } else {
+                console.warn('⚠️ Could not transfer local stream');
+                console.log('   - localVideoEl exists?', !!localVideoEl);
+                console.log('   - localStream exists?', !!PlayOnlineApp?.videoRoom?.localStream);
+            }
+            
             // Verify transition worked
             setTimeout(() => {
                 const isActive = videoScreen?.classList.contains('active');
                 console.log('📱 videoCallScreen has active class?', isActive);
                 const style = window.getComputedStyle(videoScreen || document.body);
                 console.log('📱 videoCallScreen display:', style.display);
+                
+                // Also verify local video is now playing
+                const localVid = document.getElementById('localVideo');
+                if (localVid) {
+                    console.log('📹 Local video element srcObject exists?', !!localVid.srcObject);
+                    console.log('📹 Local video readyState:', localVid.readyState);
+                    console.log('📹 Local video paused?', localVid.paused);
+                }
             }, 100);
             
             console.log('========== END VIDEO CALL DEBUG ==========');
