@@ -3,492 +3,574 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DartStream Play Online - Peer-to-peer video calling room">
-    <meta name="theme-color" content="#FF6B35">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>DartStream Play Online</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="dartstream-logo.png">
-    <link rel="stylesheet" href="styles.css">
-    <script src="guest-auth.js"></script>
+    <title>DartStream - Video Calling</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            display: flex;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== START SCREEN ===== */
+        #startScreen {
+            gap: 40px;
+            text-align: center;
+        }
+
+        #startScreen .logo {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+            opacity: 0.95;
+        }
+
+        #startScreen h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        #startScreen p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 14px 40px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            min-width: 180px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35 0%, #E55A24 100%);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #FF7B4A 0%, #D54A14 100%);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #004E89 0%, #003d6b 100%);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #1a6fa0 0%, #004E89 100%);
+            box-shadow: 0 8px 25px rgba(0, 78, 137, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ===== ROOM CODE SCREEN ===== */
+        #roomCodeScreen {
+            gap: 40px;
+            text-align: center;
+        }
+
+        #roomCodeScreen h2 {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 20px;
+        }
+
+        #roomCodeDisplay {
+            font-size: 5rem;
+            font-weight: 700;
+            letter-spacing: 30px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+            padding: 50px 60px;
+            border-radius: 16px;
+            border: 2px solid #3b82f6;
+            font-family: 'Monaco', 'Courier New', monospace;
+            min-width: 450px;
+            color: #3b82f6;
+        }
+
+        #roomCountdown {
+            font-size: 1.8rem;
+            color: #f59e0b;
+            font-weight: 600;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .info-text {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 500px;
+        }
+
+        /* ===== JOIN ROOM SCREEN ===== */
+        #joinScreen {
+            gap: 30px;
+        }
+
+        #joinScreen h2 {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        input[type="text"],
+        select {
+            padding: 15px 18px;
+            font-size: 1.05rem;
+            border: 2px solid #475569;
+            border-radius: 10px;
+            background: #1e293b;
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            background: #0f172a;
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+            padding-right: 45px;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%233b82f6" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 24px;
+            padding-right: 45px;
+        }
+
+        /* ===== DEVICE CONFIG SCREEN ===== */
+        #deviceConfigScreen {
+            gap: 30px;
+        }
+
+        #deviceConfigScreen h2 {
+            font-size: 2.5rem;
+            color: #3b82f6;
+        }
+
+        .device-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .device-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .device-group label {
+            font-size: 1rem;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        #cameraPreview {
+            width: 100%;
+            max-width: 550px;
+            height: 350px;
+            background: #0f172a;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        /* ===== VIDEO CALL SCREEN ===== */
+        #videoCallScreen {
+            padding: 0;
+            gap: 0;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            padding: 12px;
+            background: #0f172a;
+        }
+
+        #remoteVideo {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .local-video-container {
+            position: relative;
+            width: 220px;
+            height: 170px;
+            background: #1e293b;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
+        }
+
+        #localVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-info {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #3b82f6;
+            z-index: 10;
+            font-weight: 600;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            transition: all 0.3s;
+            border: 2px solid #3b82f6;
+        }
+
+        .control-btn:hover {
+            background: rgba(59, 130, 246, 0.6);
+            transform: scale(1.1);
+        }
+
+        .control-btn.off {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .control-btn.off:hover {
+            background: rgba(239, 68, 68, 0.6);
+        }
+
+        .participants {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 16px 22px;
+            border-radius: 10px;
+            font-size: 1rem;
+            z-index: 10;
+            border: 1px solid #3b82f6;
+        }
+
+        .participant {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: blink 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #6b7280;
+            animation: none;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ===== ERROR MESSAGE ===== */
+        #errorMessage {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            padding: 18px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
+            max-width: 450px;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(500px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #errorMessage.hidden {
+            display: none;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .video-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+            }
+
+            .local-video-container {
+                width: 100%;
+                height: 150px;
+            }
+
+            #startScreen h1 {
+                font-size: 2.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                min-width: unset;
+            }
+
+            #roomCodeDisplay {
+                font-size: 3rem;
+                letter-spacing: 15px;
+                min-width: auto;
+                padding: 30px 40px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- DEBUG PANEL (Press D to toggle) -->
-    <div id="debugPanel" class="debug-panel" style="display: none;">
-        <div class="debug-header">
-            <h3>🐛 Debug Console</h3>
-            <button onclick="document.getElementById('debugPanel').style.display='none'">✕</button>
-        </div>
-        <div id="debugOutput" class="debug-output"></div>
-        <div class="debug-controls">
-            <button onclick="clearDebugLogs()">Clear</button>
-            <button onclick="testScreenTransition()">Test Transition</button>
-            <button onclick="testStartVideo()">Test Start Video</button>
-        </div>
-    </div>
-    
-    <!-- Auth Wall (shown if not logged in) -->
-    <div id="authWall" class="auth-wall" style="display: none;">
-        <div class="auth-wall-content">
-            <div class="auth-wall-card">
-                <h2>🔐 Sign In Required</h2>
-                <p>You need to be signed in to use DartStream Play Online.</p>
-                <p>This allows us to track your stats and connect you with other players.</p>
-                
-                <div class="auth-buttons-container">
-                    <a href="../player-account/player-account.html?action=login&return=play-online" class="auth-btn sign-in">
-                        ✓ Sign In
-                    </a>
-                    <a href="../player-account/player-account.html?action=register&return=play-online" class="auth-btn create">
-                        + Create Account
-                    </a>
-                </div>
+    <div class="container">
+        <!-- START SCREEN -->
+        <div id="startScreen" class="screen active">
+            <img src="Video Stream Logo.png" alt="DartStream Video Stream" class="logo">
+            <h1>DartStream</h1>
+            <p>Live Video Calling for Darts Matches</p>
+            <div class="button-group">
+                <button class="btn-primary" id="createRoomBtn">Create & Join Room</button>
+                <button class="btn-secondary" id="joinRoomBtn">Join Existing Room</button>
             </div>
         </div>
-    </div>
 
-    <!-- Navigation Bar -->
-    <nav class="navbar play-online">
-        <div class="navbar-brand">
-            <img src="dartstream-logo.png" alt="DartStream" class="logo">
-            <h1>DartStream Play Online</h1>
-            <span class="version-badge">v6.4</span>
+        <!-- ROOM CODE SCREEN -->
+        <div id="roomCodeScreen" class="screen">
+            <h2>Room Created</h2>
+            <div id="roomCodeDisplay">----</div>
+            <div id="roomCountdown">Expires in 60 seconds</div>
+            <p class="info-text">Share this code with your opponent<br>They have 60 seconds to join</p>
+            <button class="btn-secondary" id="cancelRoomBtn">Cancel</button>
         </div>
-        <div class="navbar-status">
-            <span id="statusIndicator" class="status-dot offline"></span>
-            <span id="statusText">Ready</span>
-        </div>
-    </nav>
 
-    <!-- Main App Container -->
-    <div class="play-online-container">
-        
-        <!-- SCREEN 1: Create or Join Room -->
-        <div id="hostOrJoinScreen" class="screen active">
-            <div class="screen-content">
-                <div class="setup-card welcome-card">
-                    <div class="welcome-header">
-                        <img src="./Video Stream Logo.png" alt="Video Stream" class="welcome-logo">
-                        <h1>DartStream Play Online</h1>
-                        <p class="subtitle">Challenge your opponent to a live darts match via video call</p>
-                    </div>
-                    
-                    <div class="room-options-grid">
-                        <!-- Create Room Option -->
-                        <div class="room-option-card host-card">
-                            <div class="option-icon">🆕</div>
-                            <h3>Create Room</h3>
-                            <p>Generate a unique 4-digit code to share with your opponent. Code expires in 60 seconds.</p>
-                            <button id="createRoomBtn" class="btn btn-primary btn-large btn-prominent">
-                                Create Room #
-                            </button>
-                            <div class="option-features">
-                                <span>✓ Get unique code</span>
-                                <span>✓ Share with opponent</span>
-                                <span>✓ 60 second expiry</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Divider -->
-                        <div class="divider-card">
-                            <span class="divider-text">or</span>
-                        </div>
-                        
-                        <!-- Join Room Option -->
-                        <div class="room-option-card join-card">
-                            <div class="option-icon">🔗</div>
-                            <h3>Join Room</h3>
-                            <p id="joinPromptText">Have a 4-digit code from your opponent? Click below to join their room.</p>
-                            
-                            <!-- Code Input (Hidden Initially) -->
-                            <div id="joinCodeContainer" style="display: none;">
-                                <input 
-                                    type="text" 
-                                    id="joinRoomCodeInput" 
-                                    placeholder="Enter 4-digit code" 
-                                    maxlength="4"
-                                    pattern="[0-9]{4}"
-                                    class="room-code-input join-code-input"
-                                    autocomplete="off"
-                                >
-                                <small id="joinCodeError" class="error-text"></small>
-                                <div class="join-button-group">
-                                    <button id="joinGameBtn" class="btn btn-primary btn-large" style="flex: 1;">
-                                        Join Room
-                                    </button>
-                                    <button id="cancelJoinBtn" class="btn btn-secondary" style="flex: 1;">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Initial Join Button -->
-                            <button id="joinPromptBtn" class="btn btn-secondary btn-large btn-prominent">
-                                Join Room
-                            </button>
-                            
-                            <div class="option-features">
-                                <span>✓ Enter code</span>
-                                <span>✓ Join room</span>
-                                <span>✓ Configure settings</span>
-                            </div>
-                        </div>
-                    </div>
+        <!-- JOIN ROOM SCREEN -->
+        <div id="joinScreen" class="screen">
+            <h2>Join a Room</h2>
+            <div class="input-group">
+                <input type="text" id="roomCodeInput" placeholder="Enter 4-digit code" maxlength="4">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="joinGameBtn" style="flex: 1; min-width: unset;">Join</button>
+                    <button class="btn-secondary" id="backToStartBtn" style="flex: 1; min-width: unset;">Back</button>
                 </div>
             </div>
         </div>
 
-        <!-- SCREEN 1b: Room Code Waiting (Display code for 60 seconds) -->
-        <div id="roomCodeWaitingScreen" class="screen">
-            <div class="screen-content">
-                <div class="setup-card welcome-card">
-                    <div class="welcome-header">
-                        <h1>Room Created!</h1>
-                        <p class="subtitle">Share this code with your opponent</p>
-                    </div>
-                    
-                    <div style="text-align: center; padding: 2rem;">
-                        <div style="background: #f5f5f5; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
-                            <p style="color: #666; margin: 0 0 0.5rem 0; font-size: 0.9rem;">Your Room Code:</p>
-                            <div id="generatedRoomCode" style="font-size: 3rem; font-weight: bold; color: #FF6B35; font-family: monospace; letter-spacing: 8px; margin-bottom: 1rem;">
-                                0000
-                            </div>
-                            <button id="copyGeneratedCodeBtn" class="btn btn-secondary" style="width: 100%;">
-                                📋 Copy Code
-                            </button>
-                        </div>
-                        
-                        <div style="background: #e8f4f8; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid #3498db;">
-                            <p style="margin: 0; color: #333; font-size: 0.95rem;">
-                                ⏱️ Code expires in <span id="countdownTimer" style="font-weight: bold; color: #e74c3c;">60</span> seconds
-                            </p>
-                        </div>
-                        
-                        <p style="color: #999; font-size: 0.9rem; margin: 0;">
-                            Waiting for opponent to join using this code...
-                        </p>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                        <button id="backFromCodeBtn" class="btn btn-secondary" style="flex: 1;">
-                            ← Back
-                        </button>
-                        <button id="copyAndShareBtn" class="btn btn-primary" style="flex: 1;">
-                            📤 Share Code
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SCREEN 2: Device Configuration (After joining room) -->
+        <!-- DEVICE CONFIG SCREEN -->
         <div id="deviceConfigScreen" class="screen">
-            <div class="screen-content">
-                <div class="lobby-card">
-                    <div class="lobby-header">
-                        <h2>Configure Your Devices</h2>
-                        <p style="color: #666; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Room: <span id="roomCodeDisplayConfig" class="room-code"></span></p>
-                    </div>
-                    
-                    <div class="lobby-content">
-                        <div class="local-video-section">
-                            <h3>You</h3>
-                            <div id="localVideoContainer" class="video-container"></div>
-                            <div class="player-label" id="localPlayerLabel"></div>
-                            
-                            <!-- Device Selection -->
-                            <div class="device-selection">
-                                <div class="device-item">
-                                    <label for="cameraSelect">📹 Camera:</label>
-                                    <div class="device-row">
-                                        <select id="cameraSelect" class="device-select">
-                                            <option value="">Loading cameras...</option>
-                                        </select>
-                                        <span id="cameraStatus" class="device-status disconnected">🔴 Disconnected</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="device-item">
-                                    <label for="microphoneSelect">🎙️ Microphone:</label>
-                                    <div class="device-row">
-                                        <select id="microphoneSelect" class="device-select">
-                                            <option value="">Loading microphones...</option>
-                                        </select>
-                                        <span id="microphoneStatus" class="device-status disconnected">🔴 Disconnected</span>
-                                    </div>
-                                </div>
-                                
-                                <button id="confirmDevicesBtn" class="btn btn-primary btn-block" style="margin-top: 1rem;">
-                                    ✓ Confirm Settings
-                                </button>
-                            </div>
-                            
-                            <!-- Camera Settings Modal -->
-                            <div id="cameraSettingsModal" class="modal" style="display: none;">
-                                <div class="modal-content camera-settings-panel">
-                                    <div class="modal-header">
-                                        <h3>⚙️ Camera Settings</h3>
-                                        <button class="modal-close" id="closeSettingsBtn">✕</button>
-                                    </div>
-                                    
-                                    <div class="settings-controls">
-                                        <!-- Device Selection in Settings -->
-                                        <div class="setting-item">
-                                            <label for="settingsCameraSelect">📹 Camera</label>
-                                            <select id="settingsCameraSelect" class="device-select">
-                                                <option value="">Loading cameras...</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="setting-item">
-                                            <label for="settingsMicrophoneSelect">🎙️ Microphone</label>
-                                            <select id="settingsMicrophoneSelect" class="device-select">
-                                                <option value="">Loading microphones...</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <!-- Image Adjustments -->
-                                        <div style="border-top: 1px solid #eee; padding-top: 1rem; margin-top: 1rem;">
-                                            <div class="setting-item">
-                                                <label for="brightnessSlider">🔆 Brightness</label>
-                                                <input 
-                                                    type="range" 
-                                                    id="brightnessSlider" 
-                                                    min="50" 
-                                                    max="150" 
-                                                    value="100" 
-                                                    class="settings-slider"
-                                                >
-                                                <span id="brightnessValue">100%</span>
-                                            </div>
-                                            
-                                            <div class="setting-item">
-                                                <label for="contrastSlider">⚫ Contrast</label>
-                                                <input 
-                                                    type="range" 
-                                                    id="contrastSlider" 
-                                                    min="50" 
-                                                    max="150" 
-                                                    value="100" 
-                                                    class="settings-slider"
-                                                >
-                                                <span id="contrastValue">100%</span>
-                                            </div>
-                                            
-                                            <div class="setting-item">
-                                                <label for="saturationSlider">🎨 Saturation</label>
-                                                <input 
-                                                    type="range" 
-                                                    id="saturationSlider" 
-                                                    min="0" 
-                                                    max="200" 
-                                                value="100" 
-                                                class="settings-slider"
-                                            >
-                                            <span id="saturationValue">100%</span>
-                                        </div>
-                                        
-                                        <div class="setting-item">
-                                            <label for="hueSlider">🌈 Hue</label>
-                                            <input 
-                                                type="range" 
-                                                id="hueSlider" 
-                                                min="0" 
-                                                max="360" 
-                                                value="0" 
-                                                class="settings-slider"
-                                            >
-                                            <span id="hueValue">0°</span>
-                                        </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="settings-actions">
-                                        <button id="resetSettingsBtn" class="btn btn-secondary">
-                                            ↺ Reset
-                                        </button>
-                                        <button id="applySettingsBtn" class="btn btn-primary">
-                                            ✓ Apply
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="peers-section">
-                            <h3>Participants (<span id="participantCount">1</span>)</h3>
-                            <div id="participantsList" class="participants-list">
-                                <!-- Populated by JS -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="lobby-status">
-                        <p id="lobbyStatusMessage">Waiting for peers to join...</p>
-                    </div>
-                    
-                    <div class="lobby-actions">
-                        <button id="startVideoBtn" class="btn btn-primary btn-large" disabled onclick="PlayOnlineUI.handleStartVideo()">
-                            ▶️ Start Video Call
-                        </button>
-                        <button id="leaveLobbyBtn" class="btn btn-secondary">
-                            Leave Room
-                        </button>
-                    </div>
+            <h2>Select Your Devices</h2>
+            <div class="device-selection">
+                <div class="device-group">
+                    <label>📷 Camera:</label>
+                    <select id="cameraSelect"></select>
+                </div>
+                <div class="device-group">
+                    <label>🎤 Microphone:</label>
+                    <select id="microphoneSelect"></select>
+                </div>
+                <video id="cameraPreview" autoplay playsinline muted></video>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="confirmDevicesBtn" style="flex: 1; min-width: unset;">Start Video Call</button>
+                    <button class="btn-secondary" id="cancelDevicesBtn" style="flex: 1; min-width: unset;">Back</button>
                 </div>
             </div>
         </div>
 
-        <!-- SCREEN 4: Active Video Call -->
+        <!-- VIDEO CALL SCREEN -->
         <div id="videoCallScreen" class="screen">
-            <div class="video-call-grid">
-                <!-- Local Video -->
-                <div class="video-grid-item local">
+            <div class="video-container">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="local-video-container">
                     <video id="localVideo" autoplay playsinline muted></video>
-                    <div class="video-label local-label" id="localVideoLabel"></div>
-                </div>
-                
-                <!-- Remote Videos Container -->
-                <div id="remoteVideosContainer" class="remote-videos">
-                    <!-- Remote peer videos populated by JS -->
-                </div>
-            </div>
-            
-            <!-- Video Call Controls -->
-            <div class="video-controls">
-                <button id="micToggleBtn" class="btn btn-control btn-mic" title="Toggle Microphone">
-                    🎙️
-                </button>
-                <button id="cameraToggleBtn" class="btn btn-control btn-camera" title="Toggle Camera">
-                    📹
-                </button>
-                <button id="screenShareBtn" class="btn btn-control btn-share" title="Share Screen" disabled>
-                    🖥️
-                </button>
-                <button id="hangupBtn" class="btn btn-control btn-hang-up" title="End Call">
-                    📞
-                </button>
-            </div>
-            
-            <!-- Call Info Bar -->
-            <div class="call-info">
-                <span id="callDuration">00:00</span>
-                <span id="connectionStatus" class="connection-status">Connected</span>
-            </div>
-        </div>
-
-        <!-- SCREEN 5: Call Ended -->
-        <div id="endedScreen" class="screen">
-            <div class="screen-content">
-                <div class="ended-card">
-                    <h2>Call Ended</h2>
-                    <div class="ended-stats">
-                        <div class="stat">
-                            <span class="stat-label">Duration:</span>
-                            <span id="finalDuration" class="stat-value">00:00</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">Participants:</span>
-                            <span id="finalParticipantCount" class="stat-value">2</span>
-                        </div>
-                    </div>
-                    
-                    <div class="ended-actions">
-                        <button id="newCallBtn" class="btn btn-primary">
-                            Start New Call
-                        </button>
-                        <button id="exitAppBtn" class="btn btn-secondary">
-                            Exit to Home
-                        </button>
+                    <div class="video-info">You</div>
+                    <div class="video-controls">
+                        <button class="control-btn" id="toggleMicBtn" title="Toggle microphone">🎤</button>
+                        <button class="control-btn" id="toggleCameraBtn" title="Toggle camera">📷</button>
+                        <button class="control-btn" id="endCallBtn" title="End call">🔴</button>
                     </div>
                 </div>
             </div>
+            <div class="participants">
+                <div class="participant">
+                    <div class="status-dot"></div>
+                    <span id="opponentName">Opponent</span>
+                </div>
+                <div class="participant">
+                    <div class="status-dot"></div>
+                    <span id="youName">You</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Loading Indicator -->
-    <div id="loadingIndicator" class="loading-overlay" style="display: none;">
-        <div class="spinner"></div>
-        <p id="loadingText">Loading...</p>
-    </div>
+    <!-- ERROR MESSAGE -->
+    <div id="errorMessage" class="hidden"></div>
 
-    <!-- Error Modal -->
-    <div id="errorModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h3>Error</h3>
-            <p id="errorMessage"></p>
-            <button id="errorCloseBtn" class="btn btn-primary">OK</button>
-        </div>
-    </div>
-
-    <!-- Supabase & App Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SCRIPTS -->
+    <!-- Supabase library MUST load first -->
+    <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Then our config that depends on Supabase -->
     <script src="../../supabase-config.js"></script>
-    <script>
-        // Check authentication before loading the app
-        async function checkAuth() {
-            try {
-                // Wait for Supabase client to be ready
-                let retries = 0;
-                while (!window.supabaseClient && retries < 10) {
-                    await new Promise(r => setTimeout(r, 100));
-                    retries++;
-                }
-                
-                if (!window.supabaseClient) {
-                    console.error('Supabase client not initialized');
-                    showAuthWall();
-                    return;
-                }
-                
-                const { data: { session } } = await window.supabaseClient.auth.getSession();
-                
-                if (!session) {
-                    // Not logged in - show auth wall
-                    showAuthWall();
-                } else {
-                    // Logged in - hide auth wall and continue loading app
-                    hideAuthWall();
-                }
-            } catch (error) {
-                console.error('Error checking auth:', error);
-                showAuthWall();
-            }
-        }
-        
-        function showAuthWall() {
-            const authWall = document.getElementById('authWall');
-            if (authWall) {
-                authWall.style.display = 'flex';
-            }
-            // Hide the main app
-            const container = document.querySelector('.play-online-container');
-            if (container) {
-                container.style.display = 'none';
-            }
-        }
-        
-        function hideAuthWall() {
-            const authWall = document.getElementById('authWall');
-            if (authWall) {
-                authWall.style.display = 'none';
-            }
-            // Show the main app
-            const container = document.querySelector('.play-online-container');
-            if (container) {
-                container.style.display = 'block';
-            }
-        }
-        
-        // Check auth when page loads
-        document.addEventListener('DOMContentLoaded', checkAuth);
-    </script>
-    <script src="browser-detect.js"></script>
-    <script src="video-room.js?v=12"></script>
-    <script src="room-manager.js?v=12"></script>
-    <script src="play-online-app.js?v=12"></script>
-    <script src="play-online.js?v=12"></script>
+    <script src="video-room.js?v=13"></script>
+    <script src="room-manager.js?v=13"></script>
+    <script src="play-online.js?v=3"></script>
 </body>
 </html>
