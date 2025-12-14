@@ -58,13 +58,17 @@ CREATE POLICY "Public can verify player linking"
     USING (true);
 
 -- Function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_player_accounts_updated_at()
-RETURNS TRIGGER AS $$
+-- WITH SECURE search_path to prevent privilege escalation
+CREATE OR REPLACE FUNCTION public.update_player_accounts_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.updated_at = pg_catalog.NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Trigger to automatically update updated_at
 CREATE TRIGGER player_accounts_updated_at
