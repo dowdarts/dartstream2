@@ -627,6 +627,11 @@ body {
     background: #4caf50;
 }
 
+.device-selection .btn-block {
+    width: 100%;
+    margin-top: 1rem !important;
+}
+
 .participants-list {
     max-height: 300px;
     overflow-y: auto;
