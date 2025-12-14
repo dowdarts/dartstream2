@@ -346,19 +346,25 @@
                     await import('./guest-auth.js');
                     log(1, '✅ guest-auth.js loaded');
                 } catch (e) {
-                    log(1, `⚠️ guest-auth.js not found or error: ${e.message}`);
+                    log(1, `⚠️ guest-auth.js error: ${e.message}`);
                 }
                 
                 log(1, '📦 Loading supabase-config.js...');
                 try {
-                    // Try loading from root (GitHub Pages)
-                    const response = await fetch('../../../supabase-config.js');
-                    if (response.ok) {
+                    // Load supabase-config as a script tag (not module)
+                    await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
                         script.src = '../../../supabase-config.js';
+                        script.onload = () => {
+                            log(1, '✅ supabase-config.js loaded');
+                            resolve();
+                        };
+                        script.onerror = (e) => {
+                            log(1, `⚠️ Failed to load supabase-config.js: ${e}`);
+                            reject(e);
+                        };
                         document.head.appendChild(script);
-                        log(1, '✅ supabase-config.js loaded');
-                    }
+                    });
                 } catch (e) {
                     log(1, `⚠️ supabase-config.js error: ${e.message}`);
                 }
@@ -368,10 +374,10 @@
                     await import('./room-manager.js');
                     log(1, '✅ room-manager.js loaded');
                 } catch (e) {
-                    log(1, `⚠️ room-manager.js not found or error: ${e.message}`);
+                    log(1, `⚠️ room-manager.js error: ${e.message}`);
                 }
                 
-                // Wait a moment for scripts to initialize
+                // Wait for scripts to initialize
                 await new Promise(r => setTimeout(r, 1000));
                 
                 setStatus(1, 'success');
