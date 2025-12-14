@@ -36,13 +36,17 @@ USING (true)
 WITH CHECK (true);
 
 -- Create a function to automatically update the updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- WITH SECURE search_path to prevent privilege escalation
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
-    NEW.updated_at = TIMEZONE('utc'::text, NOW());
+    NEW.updated_at = TIMEZONE('utc'::text, pg_catalog.NOW());
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
 
 -- Create trigger to call the function on every update
 CREATE TRIGGER update_players_updated_at 
