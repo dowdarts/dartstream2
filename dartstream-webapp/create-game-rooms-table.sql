@@ -19,22 +19,22 @@ CREATE INDEX IF NOT EXISTS idx_game_rooms_host ON game_rooms(host_id);
 -- Enable RLS
 ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies - optimized with scalar subqueries to avoid per-row auth.uid() evaluation
 CREATE POLICY "Users can create rooms" ON game_rooms
     FOR INSERT TO authenticated
-    WITH CHECK (auth.uid() = host_id);
+    WITH CHECK ((SELECT auth.uid()) = host_id);
 
 CREATE POLICY "Users can view their rooms" ON game_rooms
     FOR SELECT TO authenticated
-    USING (auth.uid() = host_id OR auth.uid() = guest_id);
+    USING ((SELECT auth.uid()) = host_id OR (SELECT auth.uid()) = guest_id);
 
 CREATE POLICY "Users can update their rooms" ON game_rooms
     FOR UPDATE TO authenticated
-    USING (auth.uid() = host_id OR auth.uid() = guest_id);
+    USING ((SELECT auth.uid()) = host_id OR (SELECT auth.uid()) = guest_id);
 
 CREATE POLICY "Users can delete their rooms" ON game_rooms
     FOR DELETE TO authenticated
-    USING (auth.uid() = host_id);
+    USING ((SELECT auth.uid()) = host_id);
 
 -- Enable pg_cron extension for scheduled cleanup jobs
 CREATE EXTENSION IF NOT EXISTS pg_cron;
