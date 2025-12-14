@@ -143,12 +143,11 @@ const RoomManager = {
         try {
             console.log('🔗 Joining room:', roomCode);
             
-            // Find room by code
+            // Find room by code - status can be 'waiting' (no one joined yet) or 'active' (has participants)
             const { data: rooms, error: searchError } = await this.supabaseClient
                 .from('game_rooms')
                 .select('*')
-                .eq('room_code', roomCode)
-                .eq('status', 'waiting');
+                .eq('room_code', roomCode);
             
             if (searchError) {
                 console.error('❌ Error searching for room:', searchError);
@@ -156,24 +155,46 @@ const RoomManager = {
             }
             
             if (!rooms || rooms.length === 0) {
-                throw new Error('Room not found or already in progress');
+                throw new Error('Room code not found');
             }
             
             const room = rooms[0];
             
-            // Update room with guest
+            // Check if room is expired or completed
+            if (room.status === 'completed' || room.status === 'expired') {
+                throw new Error('Room is no longer available. Please create or join a different room.');
+            }
+            
+            // Check if this user is already in the room (re-joining for device config)
             const participants = room.game_state?.participants || [];
+            const isAlreadyParticipant = participants.some(p => p.id === this.playerId);
+            
+            if (isAlreadyParticipant) {
+                console.log('ℹ️ Player already in room, skipping duplicate join');
+                return {
+                    roomCode: roomCode,
+                    roomId: room.id,
+                    isHost: false,
+                    hostId: room.host_id,
+                    participants: participants
+                };
+            }
+            
+            // Add guest to participants
             participants.push({
                 id: this.playerId,
                 name: playerName,
                 joinedAt: new Date().toISOString()
             });
             
+            // If status is still 'waiting' and this is the first guest, set to 'active'
+            const newStatus = room.status === 'waiting' ? 'active' : room.status;
+            
             const { data: updated, error: updateError } = await this.supabaseClient
                 .from('game_rooms')
                 .update({
                     guest_id: this.playerId,
-                    status: 'active',
+                    status: newStatus,
                     game_state: {
                         ...room.game_state,
                         participants: participants
@@ -191,7 +212,7 @@ const RoomManager = {
             this.currentRoomId = room.id;
             this.isHost = false;
             
-            console.log('✅ Joined room:', roomCode);
+            console.log('✅ Joined room:', roomCode, 'with status:', newStatus);
             return {
                 roomCode: roomCode,
                 roomId: room.id,
