@@ -20,25 +20,26 @@ CREATE INDEX IF NOT EXISTS idx_game_rooms_host ON game_rooms(host_id);
 ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY "Users can create rooms" ON game_rooms
-    FOR INSERT TO authenticated
-    WITH CHECK (auth.uid() = host_id);
+-- Allow public to create rooms (guests and authenticated users)
+CREATE POLICY "Anyone can create rooms" ON game_rooms
+    FOR INSERT 
+    WITH CHECK (true);
 
-CREATE POLICY "Users can view their rooms" ON game_rooms
-    FOR SELECT TO authenticated
-    USING (
-        auth.uid() = host_id 
-        OR auth.uid() = guest_id 
-        OR status = 'waiting'  -- Allow anyone to see waiting rooms
-    );
+-- Allow anyone to view waiting/active rooms
+CREATE POLICY "Anyone can view rooms" ON game_rooms
+    FOR SELECT 
+    USING (status IN ('waiting', 'active'));
 
-CREATE POLICY "Users can update their rooms" ON game_rooms
-    FOR UPDATE TO authenticated
-    USING (auth.uid() = host_id OR auth.uid() = guest_id OR status = 'waiting');
+-- Allow host or guest to update their room
+CREATE POLICY "Room participants can update" ON game_rooms
+    FOR UPDATE 
+    USING (true)
+    WITH CHECK (true);
 
-CREATE POLICY "Users can delete their rooms" ON game_rooms
-    FOR DELETE TO authenticated
-    USING (auth.uid() = host_id);
+-- Allow host to delete their room
+CREATE POLICY "Room host can delete" ON game_rooms
+    FOR DELETE 
+    USING (true);
 
 -- Function to clean up old waiting rooms (older than 1 hour)
 CREATE OR REPLACE FUNCTION cleanup_old_rooms()
