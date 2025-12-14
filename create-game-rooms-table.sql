@@ -16,8 +16,13 @@ CREATE INDEX IF NOT EXISTS idx_game_rooms_code ON game_rooms(room_code);
 CREATE INDEX IF NOT EXISTS idx_game_rooms_status ON game_rooms(status);
 CREATE INDEX IF NOT EXISTS idx_game_rooms_host ON game_rooms(host_id);
 
--- RLS is disabled for this public video room table
--- No authentication required - guests and authenticated users can create/join rooms
+-- Enable RLS with permissive policy to allow all users (authenticated and guest)
+ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all operations" ON game_rooms
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
 
 -- Function to clean up old waiting rooms (older than 1 hour)
 CREATE OR REPLACE FUNCTION cleanup_old_rooms()
