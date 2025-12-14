@@ -385,6 +385,10 @@
                         };
                         document.head.appendChild(script);
                     });
+                    // Wait for initialization to complete
+                    await new Promise(r => setTimeout(r, 2000));
+                    log(1, `📊 window.supabaseClient = ${window.supabaseClient ? 'SET' : 'NOT SET'}`);
+                    log(1, `📊 window.PlayerDB = ${window.PlayerDB ? 'SET' : 'NOT SET'}`);
                 } catch (e) {
                     log(1, `⚠️ supabase-config.js error: ${e.message}`);
                 }
@@ -416,10 +420,16 @@
                 log(2, '🔌 Checking Supabase client...');
                 updateProgress(24);
                 
+                // If supabaseClient not set, try to initialize it directly
+                if (!window.supabaseClient && window.supabase && window.getSupabaseClient) {
+                    log(2, '🔧 Manually initializing Supabase client...');
+                    window.getSupabaseClient();
+                }
+                
                 // Wait for Supabase to be ready
                 let retries = 0;
-                while (!window.supabaseClient && retries < 10) {
-                    log(2, `⏳ Waiting for Supabase client... (${retries + 1}/10)`);
+                while (!window.supabaseClient && retries < 20) {
+                    log(2, `⏳ Waiting for Supabase client... (${retries + 1}/20)`);
                     await new Promise(r => setTimeout(r, 500));
                     retries++;
                 }
