@@ -232,13 +232,43 @@
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" onclick="runFullTest()">▶️ Run Full Test</button>
-            <button class="btn-success" onclick="runStepByStep()">📋 Run Step by Step</button>
-            <button class="btn-danger" onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button class="btn-primary" id="btnRunFull">▶️ Run Full Test</button>
+            <button class="btn-success" id="btnRunStepByStep">📋 Run Step by Step</button>
+            <button class="btn-danger" id="btnClear">🗑️ Clear Logs</button>
         </div>
     </div>
 
     <script type="module">
+        // Initialize buttons after DOM is ready
+        async function initializeButtons() {
+            const btnRunFull = document.getElementById('btnRunFull');
+            const btnRunStepByStep = document.getElementById('btnRunStepByStep');
+            const btnClear = document.getElementById('btnClear');
+            
+            if (btnRunFull) btnRunFull.onclick = () => window.runFullTest();
+            if (btnRunStepByStep) btnRunStepByStep.onclick = () => window.runStepByStep();
+            if (btnClear) btnClear.onclick = () => window.clearLogs();
+            
+            console.log('✅ Test page initialized and ready');
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeButtons);
+        } else {
+            initializeButtons();
+        }
+        // Wait for DOM to be ready
+        function waitForDOM() {
+            return new Promise((resolve) => {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
         // Test state
         let testState = {
             supabaseClient: null,
@@ -256,15 +286,21 @@
         function log(stepNum, message, type = 'info') {
             const elementId = stepNum === 'summary' ? 'summaryOutput' : `step${stepNum}Output`;
             const output = document.getElementById(elementId);
-            if (!output) {
-                console.log(`Step ${stepNum}:`, message);
-                return;
+            
+            // Always log to console as fallback
+            console.log(`[Step ${stepNum}] ${message}`);
+            
+            // Only update UI if element exists
+            if (output) {
+                const timestamp = new Date().toLocaleTimeString();
+                const line = `[${timestamp}] ${message}\n`;
+                output.textContent += line;
+                try {
+                    output.scrollTop = output.scrollHeight;
+                } catch (e) {
+                    // Ignore scroll errors
+                }
             }
-            const timestamp = new Date().toLocaleTimeString();
-            const line = `[${timestamp}] ${message}\n`;
-            output.textContent += line;
-            output.scrollTop = output.scrollHeight;
-            console.log(`Step ${stepNum}:`, message);
         }
 
         function setStatus(stepNum, status) {
