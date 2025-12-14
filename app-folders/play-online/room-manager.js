@@ -46,43 +46,54 @@ const RoomManager = {
             
             console.log('🆕 Creating new video room with code:', roomCode);
             
-            const { data, error } = await this.supabaseClient
+            // Generate a UUID for the room ID
+            const roomId = this.generateUUID();
+            
+            const { error } = await this.supabaseClient
                 .from('game_rooms')
-                .insert([
-                    {
-                        room_code: roomCode,
-                        host_id: this.playerId,
-                        status: 'waiting',
-                        game_state: {
-                            participants: [{ id: this.playerId, name: 'Host', joinedAt: new Date().toISOString() }],
-                            createdAt: new Date().toISOString()
-                        }
+                .insert({
+                    id: roomId,
+                    room_code: roomCode,
+                    host_id: this.playerId,
+                    status: 'waiting',
+                    game_state: {
+                        participants: [{ id: this.playerId, name: 'Host', joinedAt: new Date().toISOString() }],
+                        createdAt: new Date().toISOString()
                     }
-                ])
-                .select();
+                });
             
             if (error) {
                 console.error('❌ Error creating room:', error);
                 throw error;
             }
             
-            const room = data[0];
             this.currentRoomCode = roomCode;
-            this.currentRoomId = room.id;
+            this.currentRoomId = roomId;
             this.isHost = true;
             
-            console.log('✅ Room created:', { roomCode, roomId: room.id });
+            console.log('✅ Room created:', { roomCode, roomId });
             return {
                 roomCode: roomCode,
-                roomId: room.id,
+                roomId: roomId,
                 isHost: true,
-                participants: room.game_state.participants
+                participants: []
             };
             
         } catch (error) {
             console.error('❌ Error creating room:', error);
             throw error;
         }
+    },
+    
+    /**
+     * Generate UUID v4
+     */
+    generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     },
     
     /**
