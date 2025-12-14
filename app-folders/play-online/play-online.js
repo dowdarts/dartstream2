@@ -76,10 +76,6 @@ const PlayOnlineUI = {
             e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
         });
         
-        // Test Screen
-        document.getElementById('testRetryBtn')?.addEventListener('click', () => this.handleTestRetry());
-        document.getElementById('testContinueBtn')?.addEventListener('click', () => this.handleTestContinue());
-        
         // Lobby Screen
         document.getElementById('copyRoomCodeBtn')?.addEventListener('click', () => this.copyRoomCodeToClipboard());
         document.getElementById('editSettingsBtn')?.addEventListener('click', () => this.openCameraSettings());
@@ -186,7 +182,7 @@ const PlayOnlineUI = {
             this.currentPlayerId = generateUUID();
             console.log('✅ Host mode - Player ID:', this.currentPlayerId);
             
-            this.showLoading('Setting up video test...');
+            this.showLoading('Creating room...');
             
             // Initialize app with host
             await PlayOnlineApp.initialize(
@@ -199,8 +195,8 @@ const PlayOnlineUI = {
             const roomData = await PlayOnlineApp.createAndStartRoom();
             this.hideLoading();
             
-            // Show test screen before lobby
-            this.showScreen('testScreen');
+            // Skip test screen, go directly to lobby
+            this.showScreen('lobbyScreen');
             this.currentRoomCode = roomData.roomCode;
             
         } catch (error) {
@@ -237,8 +233,8 @@ const PlayOnlineUI = {
             const roomData = await PlayOnlineApp.joinRoom(roomCode);
             this.hideLoading();
             
-            // Show test screen before lobby
-            this.showScreen('testScreen');
+            // Skip test screen, go directly to lobby
+            this.showScreen('lobbyScreen');
             this.currentRoomCode = roomCode;
             
         } catch (error) {
@@ -268,9 +264,8 @@ const PlayOnlineUI = {
             
             this.hideLoading();
             
-            // Show test screen
-            await this.initializeTestScreen();
-            this.showScreen('testScreen');
+            // Show lobby
+            this.showScreen('lobbyScreen');
             
         } catch (error) {
             console.error('❌ Create room error:', error);
@@ -306,96 +301,13 @@ const PlayOnlineUI = {
             
             this.hideLoading();
             
-            // Show test screen
-            await this.initializeTestScreen();
-            this.showScreen('testScreen');
+            // Show lobby
+            this.showScreen('lobbyScreen');
             
         } catch (error) {
             console.error('❌ Join room error:', error);
             this.hideLoading();
             document.getElementById('roomCodeError').textContent = error.message;
-        }
-    },
-    
-    /**
-     * TEST SCREEN
-     */
-    
-    async initializeTestScreen() {
-        try {
-            const video = document.getElementById('testVideo');
-            
-            // Reuse existing stream if available, otherwise request new one
-            if (!this.mediaStream) {
-                this.mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-                    audio: true
-                });
-                console.log('✅ Media stream acquired');
-            } else {
-                console.log('✅ Reusing existing media stream');
-            }
-            
-            video.srcObject = this.mediaStream;
-            
-            // Simple audio check - just verify stream has audio tracks
-            const audioTracks = this.mediaStream.getAudioTracks();
-            const videoTracks = this.mediaStream.getVideoTracks();
-            
-            // Set checkboxes based on actual tracks
-            document.getElementById('testAudioCheck').checked = audioTracks.length > 0;
-            document.getElementById('testVideoCheck').checked = videoTracks.length > 0;
-            
-            console.log('✅ Test stream initialized');
-            console.log(`   - Audio tracks: ${audioTracks.length}`);
-            console.log(`   - Video tracks: ${videoTracks.length}`);
-            
-        } catch (error) {
-            console.error('❌ Test screen error:', error);
-            const testError = document.getElementById('testError');
-            testError.style.display = 'block';
-            testError.textContent = 'Camera/Microphone access denied. Please check your browser permissions.';
-            document.getElementById('testContinueBtn').disabled = true;
-        }
-    },
-    
-    async handleTestRetry() {
-        try {
-            const video = document.getElementById('testVideo');
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-            }
-            await this.initializeTestScreen();
-        } catch (error) {
-            console.error('❌ Retry error:', error);
-            this.showError('Failed to access camera/microphone');
-        }
-    },
-    
-    async handleTestContinue() {
-        try {
-            // Stop test video
-            const video = document.getElementById('testVideo');
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-            }
-            
-            // Show lobby
-            const roomData = PlayOnlineApp.roomManager.getCurrentRoom();
-            document.getElementById('roomCodeDisplay').textContent = roomData.roomCode;
-            document.getElementById('localPlayerLabel').textContent = this.currentPlayerName;
-            document.getElementById('localVideoContainer').innerHTML = `
-                <video id="localVideo" autoplay playsinline muted></video>
-            `;
-            
-            // Populate device selections
-            await this.loadDeviceList();
-            
-            this.showScreen('lobbyScreen');
-            
-        } catch (error) {
-            console.error('❌ Continue error:', error);
-            this.showError('Error proceeding to lobby');
         }
     },
     

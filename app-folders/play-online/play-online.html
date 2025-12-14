@@ -40,14 +40,11 @@
         <div class="navbar-brand">
             <img src="dartstream-logo.png" alt="DartStream" class="logo">
             <h1>DartStream Play Online</h1>
-            <span class="version-badge">v2.7</span>
+            <span class="version-badge">v2.8</span>
         </div>
         <div class="navbar-status">
             <span id="statusIndicator" class="status-dot offline"></span>
             <span id="statusText">Ready</span>
-            <a href="test-room-creation.html" class="btn btn-sm btn-secondary" style="margin-left: 15px;" title="Run diagnostic test">
-                🧪 Test
-            </a>
         </div>
     </nav>
 
@@ -128,51 +125,7 @@
             </div>
         </div>
 
-        <!-- SCREEN 2: Camera/Mic Test -->
-        <div id="testScreen" class="screen">
-            <div class="screen-content">
-                <div class="test-card">
-                    <h2>Camera & Microphone Test</h2>
-                    <p>Make sure your camera and microphone are working</p>
-                    
-                    <div class="video-test-container">
-                        <div id="testVideoElement" class="test-video">
-                            <video id="testVideo" autoplay playsinline muted></video>
-                            <div class="video-label">Your Camera</div>
-                        </div>
-                    </div>
-                    
-                    <div class="test-controls">
-                        <div class="control-group">
-                            <label>
-                                <input type="checkbox" id="testAudioCheck" checked>
-                                Microphone Working
-                            </label>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>
-                                <input type="checkbox" id="testVideoCheck" checked>
-                                Camera Working
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div id="testError" class="error-box" style="display: none;"></div>
-                    
-                    <div class="test-actions">
-                        <button id="testRetryBtn" class="btn btn-secondary">
-                            Retry
-                        </button>
-                        <button id="testContinueBtn" class="btn btn-primary">
-                            Continue to Room
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SCREEN 3: Room Lobby (Waiting for Peers) -->
+        <!-- SCREEN 2: Room Lobby (Waiting for Peers) -->
         <div id="lobbyScreen" class="screen">
             <div class="screen-content">
                 <div class="lobby-card">
