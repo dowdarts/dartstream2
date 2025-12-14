@@ -49,9 +49,19 @@ const RoomManager = {
             // Generate a UUID for the room ID
             const roomId = this.generateUUID();
             
-            const { error } = await this.supabaseClient
-                .from('game_rooms')
-                .insert({
+            // Get the Supabase URL and key
+            const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+            
+            // Use REST API directly instead of Supabase client to bypass any RLS caching
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/game_rooms`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
                     id: roomId,
                     room_code: roomCode,
                     host_id: this.playerId,
@@ -60,17 +70,17 @@ const RoomManager = {
                         participants: [{ id: this.playerId, name: 'Host', joinedAt: new Date().toISOString() }],
                         createdAt: new Date().toISOString()
                     }
-                });
+                })
+            });
             
-            if (error) {
+            if (!response.ok) {
+                const errorData = await response.json();
                 console.error('❌ Error creating room:', {
-                    message: error.message,
-                    code: error.code,
-                    details: error.details,
-                    hint: error.hint,
-                    fullError: error
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorData
                 });
-                throw error;
+                throw new Error(`Failed to create room: ${errorData.message || response.statusText}`);
             }
             
             this.currentRoomCode = roomCode;
