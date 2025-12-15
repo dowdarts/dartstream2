@@ -511,6 +511,7 @@ class PlayOnlineV7 {
 
                 this.isSettingsMode = false;
                 this.showScreen('videoCall');
+                this.setupConnectionStatusListener();
                 this.showError('Settings updated and reconnected!');
                 console.log('✅ Settings updated and video call reconnected');
                 return;
@@ -563,8 +564,9 @@ class PlayOnlineV7 {
             this.showScreen('videoCall');
             this.display.youName.textContent = this.playerName || 'You';
             
-            // Start connection timer
+            // Start connection timer and setup connection status listener
             this.startConnectionTracking();
+            this.setupConnectionStatusListener();
 
             console.log('✅ Device confirmation successful - video call started');
         } catch (err) {
@@ -689,6 +691,9 @@ class PlayOnlineV7 {
             this.buttons.toggleMic.textContent = '🎤';
             this.buttons.toggleCamera.textContent = '📷';
 
+            // Setup connection status listener for refresh scenario
+            this.setupConnectionStatusListener();
+
             this.showError('Video call refreshed successfully!');
 
             console.log('✅ Video call refreshed');
@@ -786,6 +791,9 @@ class PlayOnlineV7 {
         
         console.log('✅ Connection banner showing success');
         
+        // Send connection success signal to opponent
+        this.sendConnectionSuccessSignal();
+        
         // Auto-hide after 5 seconds
         if (this.connectionAutoHideTimer) {
             clearTimeout(this.connectionAutoHideTimer);
@@ -810,6 +818,51 @@ class PlayOnlineV7 {
         }
         
         this.connectionStartTime = null;
+    }
+
+    sendConnectionSuccessSignal() {
+        if (!this.videoRoom || !this.videoRoom.realtimeChannel) {
+            console.log('⚠️ Cannot send connection signal - VideoRoom not initialized');
+            return;
+        }
+
+        const signal = {
+            type: 'connection-success',
+            playerId: this.playerId,
+            playerName: this.playerName,
+            timestamp: Date.now()
+        };
+
+        this.videoRoom.realtimeChannel.send({
+            type: 'broadcast',
+            event: 'peer-signal',
+            payload: {
+                from: this.playerId,
+                type: 'connection-success',
+                data: signal
+            }
+        });
+
+        console.log('📢 Sent connection success signal to opponent');
+    }
+
+    setupConnectionStatusListener() {
+        if (!this.videoRoom || !this.videoRoom.realtimeChannel) {
+            console.log('⚠️ Cannot setup connection listener - VideoRoom not initialized');
+            return;
+        }
+
+        // Listen for opponent's connection success signal
+        this.videoRoom.realtimeChannel.on('broadcast', { event: 'peer-signal' }, (payload) => {
+            const { from, type } = payload.payload;
+            
+            // Ignore own messages and non-connection signals
+            if (from === this.playerId || type !== 'connection-success') return;
+            
+            console.log('🟢 Received connection success signal from opponent:', from);
+            // Trigger connection success for the opponent
+            this.showConnectionSuccess();
+        });
     }
 }
 
