@@ -304,6 +304,9 @@ class PlayOnlineV7 {
             // Join as host to the room just created
             await this.roomManager.joinRoom(this.roomCode, this.playerName);
             
+            // Stop the countdown timer - user has progressed past the room code screen
+            this.stopRoomCountdown();
+            
             // Show device config screen
             this.showScreen('deviceConfig');
             await this.loadDevices();
@@ -332,9 +335,19 @@ class PlayOnlineV7 {
     cancelRoomCreation() {
         if (this.currentRoomCountdown) {
             clearInterval(this.currentRoomCountdown);
+            this.currentRoomCountdown = null;
         }
         this.roomCode = null;
         this.showScreen('start');
+    }
+    
+    stopRoomCountdown() {
+        // Stop the countdown timer once user moves past the room code screen
+        if (this.currentRoomCountdown) {
+            clearInterval(this.currentRoomCountdown);
+            this.currentRoomCountdown = null;
+            console.log('⏹️  Room countdown stopped - user has progressed past code screen');
+        }
     }
 
     copyRoomCode() {
