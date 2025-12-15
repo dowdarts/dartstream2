@@ -18,6 +18,98 @@
 <body>
     
     <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen">
+            <div class="auth-container">
+                <img src="dartstream-logo.png" alt="DartStream" class="auth-logo">
+                <h1>DartStream</h1>
+                <p class="auth-subtitle">Professional Dart Live Streaming Tools</p>
+                
+                <div class="auth-form">
+                    <h2>Sign In to Your Account</h2>
+                    <p class="auth-info">Sign in to access your linked player profile and join remote games</p>
+                    
+                    <input type="email" id="login-email" class="auth-input" placeholder="Email address" autocomplete="email">
+                    <input type="password" id="login-password" class="auth-input" placeholder="Password" autocomplete="current-password">
+                    
+                    <button class="auth-btn" id="login-btn">Sign In</button>
+                    <button class="auth-btn secondary" id="guest-btn">Continue as Guest</button>
+                    
+                    <div id="login-error" class="auth-error" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Mode Selection Screen -->
+        <div id="connection-mode-screen" class="screen" style="display: none;">
+            <div class="modal-header">
+                <h1>Remote Connection</h1>
+            </div>
+            <div class="modal-content">
+                <div class="auth-info-box">
+                    <p id="logged-in-player">Logged in as: <span id="current-player-name" class="yellow-text">--</span></p>
+                </div>
+                
+                <h2 class="section-title">Choose Connection Mode</h2>
+                <div class="game-options">
+                    <button class="game-option-btn" id="create-room-btn">
+                        <strong>Create Game Room</strong><br>
+                        <span>Generate a connection code for opponent to join</span>
+                    </button>
+                    <button class="game-option-btn" id="join-room-btn">
+                        <strong>Join Game Room</strong><br>
+                        <span>Enter opponent's connection code to join</span>
+                    </button>
+                </div>
+                
+                <button class="back-btn" id="logout-btn">Sign Out</button>
+            </div>
+        </div>
+
+        <!-- Room Created Screen (Host) -->
+        <div id="room-created-screen" class="screen" style="display: none;">
+            <div class="modal-header">
+                <h1>Game Room Created</h1>
+            </div>
+            <div class="modal-content">
+                <div class="room-code-display">
+                    <p class="room-code-label">Share this code with your opponent:</p>
+                    <div class="room-code-box" id="room-code-display">ABC123</div>
+                    <button class="copy-btn" id="copy-code-btn">📋 Copy Code</button>
+                </div>
+                
+                <div class="connection-status">
+                    <h2>Waiting for opponent...</h2>
+                    <div class="status-indicator waiting">
+                        <div class="spinner"></div>
+                        <p id="host-waiting-text">Waiting for opponent to join with code</p>
+                    </div>
+                </div>
+                
+                <button class="back-btn" id="cancel-room-btn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Join Room Screen (Guest) -->
+        <div id="join-room-screen" class="screen" style="display: none;">
+            <div class="modal-header">
+                <h1>Join Game Room</h1>
+            </div>
+            <div class="modal-content">
+                <div class="auth-info-box">
+                    <p>Joining as: <span id="join-player-name" class="yellow-text">--</span></p>
+                </div>
+                
+                <h2 class="section-title">Enter Connection Code</h2>
+                <input type="text" id="room-code-input" class="auth-input" placeholder="Enter 6-character code (e.g., ABC123)" maxlength="6" style="text-transform: uppercase; font-size: 24px; text-align: center; letter-spacing: 4px;">
+                
+                <button class="auth-btn" id="join-room-btn-submit">Join Game</button>
+                <div id="join-error" class="auth-error" style="display: none;"></div>
+                
+                <button class="back-btn" id="back-to-connection-mode">Back</button>
+            </div>
+        </div>
+
         <!-- Game Mode Selection Screen - Hidden -->
         <div id="game-mode-screen" class="screen" style="display: none;">
             <div class="modal-header">
@@ -540,6 +632,17 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+        
+        // Initialize Supabase client
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+    <script src="remote-control.js"></script>
+    <script src="remote-control-ui.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
