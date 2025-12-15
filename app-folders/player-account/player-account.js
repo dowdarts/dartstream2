@@ -35,6 +35,21 @@ async function initializeAccountSystem() {
     const urlParams = new URLSearchParams(window.location.search);
     const action = urlParams.get('action');
     
+    // Check if user is already authenticated via Supabase
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+            // User is logged in via Supabase
+            console.log('User already authenticated via Supabase:', session.user.id);
+            await loadAccountFromDatabase(session.user.id);
+            showAccountDetails();
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking Supabase session:', error);
+    }
+    
     // Wait for GuestAuth to initialize
     await new Promise(resolve => {
         if (window.GuestAuth && window.GuestAuth.isAuthenticated !== undefined) {
