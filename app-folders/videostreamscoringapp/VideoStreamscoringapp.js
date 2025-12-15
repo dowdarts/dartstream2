@@ -127,9 +127,13 @@ const VideoStreamScoringApp = {
         document.getElementById('game-screen').style.display = 'none';
         document.getElementById('starting-player-screen').style.display = 'block';
         
-        // Update player names
+        // Update player names in header
         document.getElementById('starting-player1-name-top').textContent = this.gameState.players.player1.name;
         document.getElementById('starting-player2-name-top').textContent = this.gameState.players.player2.name;
+        
+        // Update button text to match player names
+        document.getElementById('start-player1').textContent = this.gameState.players.player1.name;
+        document.getElementById('start-player2').textContent = this.gameState.players.player2.name;
         
         // Set button event listeners
         document.getElementById('start-player1').onclick = () => this.selectStartingPlayer(1);
