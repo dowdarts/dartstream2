@@ -15,8 +15,15 @@ const RemoteControlUI = {
         // Wait for both modules to be ready
         await this.waitForModules();
         
-        // Check if user is already logged in
-        await this.checkExistingSession();
+        // Check if user is already logged in (from main app)
+        const isAuthenticated = await this.checkExistingSession();
+        
+        // If not authenticated, show login screen
+        // If authenticated, connection mode screen is shown in checkExistingSession
+        if (!isAuthenticated) {
+            console.log('⚠️ No authenticated user found - showing login screen');
+            this.switchScreen('login-screen');
+        }
         
         // Set up event listeners
         this.setupEventListeners();
@@ -41,23 +48,35 @@ const RemoteControlUI = {
     },
 
     /**
-     * Check if user has existing session
+     * Check if user has existing session (from main app)
+     * Returns true if authenticated, false otherwise
      */
     async checkExistingSession() {
         try {
             const user = await RemoteControlModule.getCurrentUser();
             if (user) {
-                // User is logged in
+                console.log('✅ Found existing Supabase session for:', user.email);
+                
+                // Get linked player info
                 const player = await RemoteControlModule.getLinkedPlayer(user.id);
                 if (player) {
+                    console.log('✅ Linked player found:', player.fullName);
+                    // Show connection mode screen with player info
                     this.showConnectionModeScreen(player);
+                    return true;
                 } else {
-                    // No linked player account
-                    this.showErrorScreen('No linked player account found. Please create one first.');
+                    // User authenticated but no linked player
+                    console.warn('⚠️ User authenticated but no linked player account');
+                    this.showErrorScreen('No linked player account found. Please create one in the main app first.');
+                    return false;
                 }
+            } else {
+                console.log('⚠️ No existing Supabase session found');
+                return false;
             }
         } catch (error) {
             console.error('Error checking session:', error);
+            return false;
         }
     },
 
@@ -222,6 +241,33 @@ const RemoteControlUI = {
         }
         
         this.switchScreen('connection-mode-screen');
+    },
+
+    /**
+     * Show error screen (player not linked, etc)
+     */
+    showErrorScreen(message) {
+        const modalContent = document.createElement('div');
+        modalContent.innerHTML = `
+            <div id="error-screen" class="screen active" style="display: flex;">
+                <div class="auth-container">
+                    <h1>Error</h1>
+                    <div class="auth-form" style="text-align: center;">
+                        <p style="color: #ff6666; font-size: 16px; margin: 20px 0;">
+                            ${message}
+                        </p>
+                        <button class="auth-btn" onclick="location.href='/'">
+                            Return to Main App
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const app = document.getElementById('app');
+        if (app) {
+            app.innerHTML = modalContent.innerHTML;
+        }
     },
 
     /**
