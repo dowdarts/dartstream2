@@ -444,13 +444,14 @@
                 const { data: { session } } = await supabase.auth.getSession();
                 
                 if (session) {
-                    // User is logged in
+                    // User is logged in - check if linked to a player card
                     const { data: accountData } = await supabase
                         .from('player_accounts')
-                        .select('first_name, last_name')
+                        .select('first_name, last_name, account_linked_player_id')
                         .eq('user_id', session.user.id)
                         .maybeSingle();
                     
+                    const isLinkedToPlayer = accountData?.account_linked_player_id != null;
                     const userName = accountData 
                         ? `${accountData.first_name} ${accountData.last_name}` 
                         : session.user.email;
@@ -459,7 +460,13 @@
                     document.getElementById('logged-out-buttons').style.display = 'none';
                     document.getElementById('logged-in-section').style.display = 'block';
                     document.getElementById('user-name').textContent = userName;
-                    document.getElementById('my-stats-card').style.display = 'block';
+                    
+                    // Show My Stats ONLY if linked to a player card
+                    if (isLinkedToPlayer) {
+                        document.getElementById('my-stats-card').style.display = 'block';
+                    } else {
+                        document.getElementById('my-stats-card').style.display = 'none';
+                    }
                 } else {
                     // User is logged out
                     document.getElementById('logged-out-buttons').style.display = 'flex';

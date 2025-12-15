@@ -491,13 +491,14 @@
                 const { data: { session } } = await supabase.auth.getSession();
                 
                 if (session) {
-                    // User is logged in
+                    // User is logged in - check if linked to a player card
                     const { data: accountData } = await supabase
                         .from('player_accounts')
-                        .select('first_name, last_name')
+                        .select('first_name, last_name, account_linked_player_id')
                         .eq('user_id', session.user.id)
                         .maybeSingle();
                     
+                    const isLinkedToPlayer = accountData?.account_linked_player_id != null;
                     const userName = accountData 
                         ? `${accountData.first_name} ${accountData.last_name}` 
                         : session.user.email;
@@ -514,23 +515,35 @@
                     console.log('My Stats card element:', myStatsCard);
                     console.log('VideoStream card element:', videostreamCard);
                     console.log('Test card element:', testCard);
+                    console.log('User linked to player:', isLinkedToPlayer);
                     
-                    if (myStatsCard) {
-                        myStatsCard.style.display = 'block';
-                        console.log('My Stats card display set to block');
-                    }
-                    if (videostreamCard) {
-                        videostreamCard.style.display = 'block';
-                        console.log('VideoStream card display set to block');
+                    // Only show if linked to a player card
+                    if (isLinkedToPlayer) {
+                        if (myStatsCard) {
+                            myStatsCard.style.display = 'block';
+                            console.log('My Stats card display set to block');
+                        }
+                        if (videostreamCard) {
+                            videostreamCard.style.display = 'block';
+                            console.log('VideoStream card display set to block');
+                        }
                     } else {
-                        console.error('VideoStream card element NOT FOUND!');
+                        if (myStatsCard) {
+                            myStatsCard.style.display = 'none';
+                            console.log('My Stats card hidden - not linked to player');
+                        }
+                        if (videostreamCard) {
+                            videostreamCard.style.display = 'none';
+                            console.log('VideoStream card hidden - not linked to player');
+                        }
                     }
+                    
                     if (testCard) {
                         testCard.style.display = 'block';
                         console.log('Test card display set to block');
                     }
                     
-                    console.log('Logged in - showing VideoStream card');
+                    console.log('Logged in - player linking status checked');
                 } else {
                     // User is logged out
                     document.getElementById('logged-out-buttons').style.display = 'flex';
@@ -544,7 +557,7 @@
                     if (videostreamCard) videostreamCard.style.display = 'none';
                     if (testCard) testCard.style.display = 'none';
                     
-                    console.log('Logged out - hiding VideoStream card');
+                    console.log('Logged out - hiding all restricted cards');
                 }
             } catch (error) {
                 console.error('Error checking auth state:', error);

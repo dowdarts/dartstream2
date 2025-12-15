@@ -369,7 +369,7 @@
                 <div class="device-type">📱 Phone / Tablet</div>
             </a>
 
-            <a href="app-folders/play-online/play-online.html" class="app-card">
+            <a href="app-folders/play-online/play-online.html" class="app-card" id="play-online-card" style="display: none;">
                 <div class="app-icon">📹✨</div>
                 <h2>Play Online</h2>
                 <p>Live video calling with clean interface - create rooms, invite opponents, go live</p>
@@ -410,13 +410,14 @@
                 const { data: { session } } = await supabase.auth.getSession();
                 
                 if (session) {
-                    // User is logged in
+                    // User is logged in - check if linked to a player card
                     const { data: accountData } = await supabase
                         .from('player_accounts')
-                        .select('first_name, last_name')
+                        .select('first_name, last_name, account_linked_player_id')
                         .eq('user_id', session.user.id)
                         .maybeSingle();
                     
+                    const isLinkedToPlayer = accountData?.account_linked_player_id != null;
                     const userName = accountData 
                         ? `${accountData.first_name} ${accountData.last_name}` 
                         : session.user.email;
@@ -425,13 +426,22 @@
                     document.getElementById('logged-out-buttons').style.display = 'none';
                     document.getElementById('logged-in-section').style.display = 'block';
                     document.getElementById('user-name').textContent = userName;
-                    document.getElementById('my-stats-card').style.display = 'block';
                     const testCard = document.getElementById('test-card');
                     if (testCard) testCard.style.display = 'block';
+                    
+                    // Show Play Online and My Stats ONLY if linked to a player card
+                    if (isLinkedToPlayer) {
+                        document.getElementById('play-online-card').style.display = 'block';
+                        document.getElementById('my-stats-card').style.display = 'block';
+                    } else {
+                        document.getElementById('play-online-card').style.display = 'none';
+                        document.getElementById('my-stats-card').style.display = 'none';
+                    }
                 } else {
                     // User is logged out
                     document.getElementById('logged-out-buttons').style.display = 'flex';
                     document.getElementById('logged-in-section').style.display = 'none';
+                    document.getElementById('play-online-card').style.display = 'none';
                     document.getElementById('my-stats-card').style.display = 'none';
                     const testCard = document.getElementById('test-card');
                     if (testCard) testCard.style.display = 'none';
@@ -441,6 +451,7 @@
                 // Default to logged out state
                 document.getElementById('logged-out-buttons').style.display = 'flex';
                 document.getElementById('logged-in-section').style.display = 'none';
+                document.getElementById('play-online-card').style.display = 'none';
                 document.getElementById('my-stats-card').style.display = 'none';
                 const testCard = document.getElementById('test-card');
                 if (testCard) testCard.style.display = 'none';
