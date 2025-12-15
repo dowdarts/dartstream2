@@ -484,6 +484,8 @@ class PlayOnlineV7 {
                 this.videoRoom.onPeerJoined = (peerId, peerName) => {
                     console.log('✅ Peer rejoined after settings change:', peerId, peerName);
                     this.display.opponentName.textContent = peerName || 'Opponent';
+                    // Show connection successful banner
+                    this.showConnectionSuccess();
                 };
 
                 this.videoRoom.onPeerVideoReady = (peerId, stream) => {
@@ -662,6 +664,8 @@ class PlayOnlineV7 {
             this.videoRoom.onPeerJoined = (peerId, peerName) => {
                 console.log('✅ Peer rejoined after refresh:', peerId, peerName);
                 this.display.opponentName.textContent = peerName || 'Opponent';
+                // Show connection successful banner
+                this.showConnectionSuccess();
             };
 
             this.videoRoom.onPeerVideoReady = (peerId, stream) => {
