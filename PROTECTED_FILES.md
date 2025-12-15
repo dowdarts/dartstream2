@@ -5,19 +5,46 @@
 
 The following files are **PROTECTED** and require explicit confirmation before any modifications:
 
-1. **`app-folders/scoring-app/scoring-app.html`** - Main scoring application
-2. **`dartstream-webapp/scoring-app.html`** - Fire OS compatible version
-3. **`app-folders/dartstream-webapp/scoring-app.html`** - Backup webapp version
+### Critical Core Files
+- **`app-folders/scoring-app/scoring-app.html`** - Main X01 scoring application
+- **`dartstream-webapp/scoring-app.html`** - Fire OS compatible scoring app
+- **`app-folders/dartstream-webapp/scoring-app.html`** - Backup scoring app version
+
+### Scoreboard Files
+- **`scoreboard.html`** - Main scoreboard display
+- **`app-folders/scoreboard/scoreboard.html`** - App-folders version
+- **`dartstream-webapp/scoreboard.html`** - Fire OS compatible scoreboard
+- **`app-folders/dartstream-webapp/scoreboard.html`** - Backup scoreboard
+
+### Play Online (Video Streaming)
+- **`app-folders/play-online/play-online.html`** - Video call interface
+- **`app-folders/play-online/play-online-combined.html`** - Split-screen mode
+- **`dartstream-webapp/play-online-combined.html`** - Fire OS split-screen
+
+### Player Account & Stats
+- **`app-folders/player-account/player-account.html`** - Player stats page
+- **`dartstream-webapp/player-account.html`** - Fire OS stats page
+- **`app-folders/dartstream-webapp/player-account.html`** - Backup stats page
+
+### Main Application Pages
+- **`index.html`** - Main home page
+- **`dartstream-webapp/index.html`** - Fire OS home page
+- **`controller.html`** - Game controller interface
+- **`match-central.html`** - Match management center
 
 ## Why Are These Files Locked?
 
-These scoring-app.html files are in **perfect working condition** and should NOT be touched. They form the core of the X01 scoring system and any accidental modifications could break the application.
+These files form the **core infrastructure** of DartStream and are in **perfect working condition**. Accidental modifications could:
+- Break the video streaming system
+- Corrupt scoring logic
+- Cause authentication issues
+- Break the UI/UX flow
 
 ## What This Means
 
 - **Git Hook Protection**: A pre-commit hook will intercept any attempt to modify these files
 - **Confirmation Required**: You must type `YES I UNDERSTAND` to override the protection
-- **Safety Check**: This prevents accidental commits that could corrupt the working app
+- **Safety Check**: This prevents accidental commits that could damage the application
 
 ## How to Override Protection (If Absolutely Necessary)
 
@@ -26,10 +53,10 @@ If you MUST modify one of these files:
 1. Attempt to commit changes
 2. You will see a warning:
    ```
-   ⚠️  WARNING: You are about to modify a PROTECTED FILE: app-folders/scoring-app/scoring-app.html
+   ⚠️  WARNING: You are about to modify a PROTECTED FILE: [filename]
    
    This file is locked to prevent accidental changes.
-   The scoring-app.html is in perfect working condition and should not be modified.
+   These application files are in perfect working condition and should not be modified.
    
    Are you ABSOLUTELY SURE you want to modify this file? Type 'YES I UNDERSTAND' to proceed:
    ```
@@ -48,13 +75,14 @@ git commit --no-verify
 
 ## Recovery
 
-If the file gets corrupted, restore to the last known good version:
+If any protected file gets corrupted, restore to the last known good version:
 ```bash
-git checkout f288a71 -- app-folders/scoring-app/scoring-app.html
+git checkout f288a71 -- [filename]
 ```
 
 ---
 
 **Last Protected**: December 14, 2025  
-**Protected Version**: f288a71  
-**Status**: 🟢 STABLE - DO NOT MODIFY
+**Protected Version**: f288a71 (Baseline)  
+**Status**: 🟢 STABLE - DO NOT MODIFY  
+**Total Files Protected**: 16
