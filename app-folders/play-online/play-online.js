@@ -440,6 +440,10 @@ class PlayOnlineV7 {
                 // Disconnect from current video room
                 if (this.videoRoom) {
                     await this.videoRoom.leaveRoom();
+                    // Reset VideoRoom state to force complete re-initialization
+                    this.videoRoom.realtimeChannel = null;
+                    this.videoRoom.roomCode = null;
+                    this.videoRoom.peers = {};
                 }
 
                 // Reconnect with new settings - use the VideoRoom object directly
@@ -457,19 +461,19 @@ class PlayOnlineV7 {
 
                 // Set up callbacks again
                 this.videoRoom.onPeerJoined = (peerId, peerName) => {
-                    console.log('✅ Peer joined:', peerId, peerName);
+                    console.log('✅ Peer rejoined after settings change:', peerId, peerName);
                     this.display.opponentName.textContent = peerName || 'Opponent';
                 };
 
                 this.videoRoom.onPeerVideoReady = (peerId, stream) => {
-                    console.log('📹 Peer video ready:', peerId);
+                    console.log('📹 Peer video ready after settings change:', peerId);
                     if (this.video.remote) {
                         this.video.remote.srcObject = stream;
                     }
                 };
 
                 this.videoRoom.onPeerLeft = (peerId) => {
-                    console.log('👋 Peer left:', peerId);
+                    console.log('👋 Peer left after settings change:', peerId);
                     this.display.opponentName.textContent = 'Opponent (disconnected)';
                     if (this.video.remote) {
                         this.video.remote.srcObject = null;
@@ -599,10 +603,17 @@ class PlayOnlineV7 {
             // Disconnect from current call
             await this.videoRoom.leaveRoom();
 
-            // Clear peers for fresh connection
+            // Fully reset VideoRoom state to force complete re-initialization
+            this.videoRoom.realtimeChannel = null;
+            this.videoRoom.roomCode = null;
             this.videoRoom.peers = {};
+            
+            // Stop old stream
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+            }
 
-            // Reconnect to same room with high resolution
+            // Reconnect to same room with high resolution - this will now fully re-initialize
             await this.videoRoom.initialize(
                 this.roomCode,
                 this.playerId,
@@ -621,6 +632,27 @@ class PlayOnlineV7 {
 
             this.mediaStream = this.videoRoom.localStream;
 
+            // Set up callbacks for peer events
+            this.videoRoom.onPeerJoined = (peerId, peerName) => {
+                console.log('✅ Peer rejoined after refresh:', peerId, peerName);
+                this.display.opponentName.textContent = peerName || 'Opponent';
+            };
+
+            this.videoRoom.onPeerVideoReady = (peerId, stream) => {
+                console.log('📹 Peer video ready after refresh:', peerId);
+                if (this.video.remote) {
+                    this.video.remote.srcObject = stream;
+                }
+            };
+
+            this.videoRoom.onPeerLeft = (peerId) => {
+                console.log('👋 Peer left after refresh:', peerId);
+                this.display.opponentName.textContent = 'Opponent (disconnected)';
+                if (this.video.remote) {
+                    this.video.remote.srcObject = null;
+                }
+            };
+
             // Reset media states
             this.micEnabled = true;
             this.cameraEnabled = true;
@@ -628,6 +660,7 @@ class PlayOnlineV7 {
             this.buttons.toggleCamera.textContent = '📷';
 
             this.showError('Video call refreshed successfully!');
+
             console.log('✅ Video call refreshed');
         } catch (err) {
             console.error('❌ Refresh failed:', err);
