@@ -23,6 +23,11 @@ class PlayOnlineV7 {
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
 
+        // Connection tracking
+        this.connectionStartTime = null;
+        this.connectionTimerInterval = null;
+        this.connectionAutoHideTimer = null;
+
         this.initializeElements();
         this.setupEventListeners();
         this.initializeModules();
@@ -77,6 +82,9 @@ class PlayOnlineV7 {
             error: document.getElementById('errorMessage'),
             opponentName: document.getElementById('opponentName'),
             youName: document.getElementById('youName'),
+            connectionBanner: document.getElementById('connectionBanner'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            connectionTimer: document.getElementById('connectionTimer'),
         };
     }
 
@@ -530,6 +538,8 @@ class PlayOnlineV7 {
             this.videoRoom.onPeerJoined = (peerId, peerName) => {
                 console.log('✅ Peer joined:', peerId, peerName);
                 this.display.opponentName.textContent = peerName || 'Opponent';
+                // Show connection successful banner
+                this.showConnectionSuccess();
             };
 
             this.videoRoom.onPeerVideoReady = (peerId, stream) => {
@@ -547,9 +557,12 @@ class PlayOnlineV7 {
                 }
             };
 
-            // Show video call screen
+            // Show video call screen and start connection tracking
             this.showScreen('videoCall');
             this.display.youName.textContent = this.playerName || 'You';
+            
+            // Start connection timer
+            this.startConnectionTracking();
 
             console.log('✅ Device confirmation successful - video call started');
         } catch (err) {
@@ -691,6 +704,9 @@ class PlayOnlineV7 {
             this.mediaStream.getTracks().forEach(track => track.stop());
         }
 
+        // Stop connection tracking
+        this.stopConnectionTracking();
+
         // Reset
         this.roomCode = null;
         this.playerId = this.generatePlayerId();
@@ -720,6 +736,76 @@ class PlayOnlineV7 {
 
     generatePlayerId() {
         return 'player_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    startConnectionTracking() {
+        // Start tracking connection time
+        this.connectionStartTime = Date.now();
+        
+        // Show the banner in connecting state
+        if (this.display.connectionBanner) {
+            this.display.connectionBanner.classList.remove('hidden', 'connected');
+            this.display.connectionBanner.classList.add('connecting');
+            this.display.connectionStatus.textContent = 'Connecting...';
+        }
+        
+        // Update timer every second
+        this.connectionTimerInterval = setInterval(() => {
+            this.updateConnectionTimer();
+        }, 1000);
+    }
+
+    updateConnectionTimer() {
+        if (!this.connectionStartTime || !this.display.connectionTimer) return;
+        
+        const elapsed = Math.floor((Date.now() - this.connectionStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        this.display.connectionTimer.textContent = 
+            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    showConnectionSuccess() {
+        if (!this.display.connectionBanner) return;
+        
+        // Clear the timer interval
+        if (this.connectionTimerInterval) {
+            clearInterval(this.connectionTimerInterval);
+            this.connectionTimerInterval = null;
+        }
+        
+        // Update banner to show connected
+        this.display.connectionBanner.classList.remove('connecting');
+        this.display.connectionBanner.classList.add('connected');
+        this.display.connectionStatus.textContent = 'Connected!';
+        
+        console.log('✅ Connection banner showing success');
+        
+        // Auto-hide after 5 seconds
+        if (this.connectionAutoHideTimer) {
+            clearTimeout(this.connectionAutoHideTimer);
+        }
+        
+        this.connectionAutoHideTimer = setTimeout(() => {
+            if (this.display.connectionBanner) {
+                this.display.connectionBanner.classList.add('hidden');
+            }
+        }, 5000);
+    }
+
+    stopConnectionTracking() {
+        if (this.connectionTimerInterval) {
+            clearInterval(this.connectionTimerInterval);
+            this.connectionTimerInterval = null;
+        }
+        
+        if (this.connectionAutoHideTimer) {
+            clearTimeout(this.connectionAutoHideTimer);
+            this.connectionAutoHideTimer = null;
+        }
+        
+        this.connectionStartTime = null;
     }
 }
 
