@@ -17,6 +17,11 @@ class PlayOnlineV7 {
         this.micEnabled = true;
         this.cameraEnabled = true;
         this.isSettingsMode = false;
+        
+        // Dragging state
+        this.isDragging = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
 
         this.initializeElements();
         this.setupEventListeners();
@@ -106,6 +111,58 @@ class PlayOnlineV7 {
         this.buttons.settings.addEventListener('click', () => this.showDeviceSettings());
         this.buttons.refreshCall.addEventListener('click', () => this.refreshCall());
         this.buttons.endCall.addEventListener('click', () => this.endCall());
+
+        // Local video dragging - set up after DOM is ready
+        setTimeout(() => this.setupLocalVideoDrag(), 100);
+    }
+
+    setupLocalVideoDrag() {
+        const localVideoContainer = document.querySelector('.local-video-container');
+        if (!localVideoContainer) return;
+
+        localVideoContainer.addEventListener('mousedown', (e) => this.onVideoDragStart(e, localVideoContainer));
+        localVideoContainer.addEventListener('touchstart', (e) => this.onVideoDragStart(e, localVideoContainer));
+        
+        document.addEventListener('mousemove', (e) => this.onVideoDrag(e, localVideoContainer));
+        document.addEventListener('touchmove', (e) => this.onVideoDrag(e, localVideoContainer), { passive: false });
+        
+        document.addEventListener('mouseup', () => this.onVideoDragEnd(localVideoContainer));
+        document.addEventListener('touchend', () => this.onVideoDragEnd(localVideoContainer));
+    }
+
+    onVideoDragStart(e, el) {
+        this.isDragging = true;
+        el.classList.add('dragging');
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const rect = el.getBoundingClientRect();
+        this.dragOffsetX = clientX - rect.left;
+        this.dragOffsetY = clientY - rect.top;
+        
+        e.preventDefault();
+    }
+
+    onVideoDrag(e, el) {
+        if (!this.isDragging) return;
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const x = clientX - this.dragOffsetX;
+        const y = clientY - this.dragOffsetY;
+        
+        el.style.left = Math.max(0, Math.min(x, window.innerWidth - el.offsetWidth)) + 'px';
+        el.style.top = Math.max(0, Math.min(y, window.innerHeight - el.offsetHeight)) + 'px';
+        el.style.right = 'auto';
+        
+        e.preventDefault();
+    }
+
+    onVideoDragEnd(el) {
+        this.isDragging = false;
+        el.classList.remove('dragging');
     }
 
     async initializeModules() {
@@ -201,9 +258,13 @@ class PlayOnlineV7 {
                 this.mediaStream.getTracks().forEach(track => track.stop());
             }
 
-            // Get preview stream
+            // Get preview stream with high resolution
             const constraints = {
-                video: { deviceId: { exact: this.selectedDevices.camera } },
+                video: {
+                    deviceId: { exact: this.selectedDevices.camera },
+                    width: { min: 1280, ideal: 1920, max: 3840 },
+                    height: { min: 720, ideal: 1080, max: 2160 }
+                },
                 audio: false,
             };
 
@@ -359,17 +420,22 @@ class PlayOnlineV7 {
         }
 
         try {
+            // High resolution constraints
+            const constraints = {
+                video: {
+                    deviceId: { exact: this.selectedDevices.camera },
+                    width: { min: 1280, ideal: 1920, max: 3840 },
+                    height: { min: 720, ideal: 1080, max: 2160 }
+                },
+                audio: { deviceId: { exact: this.selectedDevices.microphone } },
+            };
+
             // If we're in settings mode, update devices and reconnect to video call
             if (this.isSettingsMode) {
                 // Stop old stream
                 if (this.mediaStream) {
                     this.mediaStream.getTracks().forEach(track => track.stop());
                 }
-
-                const constraints = {
-                    video: { deviceId: { exact: this.selectedDevices.camera } },
-                    audio: { deviceId: { exact: this.selectedDevices.microphone } },
-                };
 
                 // Disconnect from current video room
                 if (this.videoRoom) {
@@ -424,11 +490,6 @@ class PlayOnlineV7 {
             }
 
             // Normal flow: Initialize video room with selected devices
-            const constraints = {
-                video: { deviceId: { exact: this.selectedDevices.camera } },
-                audio: { deviceId: { exact: this.selectedDevices.microphone } },
-            };
-
             // Clear preview
             if (this.mediaStream) {
                 this.mediaStream.getTracks().forEach(track => track.stop());
@@ -541,7 +602,7 @@ class PlayOnlineV7 {
             // Clear peers for fresh connection
             this.videoRoom.peers = {};
 
-            // Reconnect to same room
+            // Reconnect to same room with high resolution
             await this.videoRoom.initialize(
                 this.roomCode,
                 this.playerId,
@@ -549,7 +610,11 @@ class PlayOnlineV7 {
                 this.video.local,
                 null,  // Get fresh stream
                 {
-                    video: { deviceId: { exact: this.selectedDevices.camera } },
+                    video: {
+                        deviceId: { exact: this.selectedDevices.camera },
+                        width: { min: 1280, ideal: 1920, max: 3840 },
+                        height: { min: 720, ideal: 1080, max: 2160 }
+                    },
                     audio: { deviceId: { exact: this.selectedDevices.microphone } },
                 }
             );
