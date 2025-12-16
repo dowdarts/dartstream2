@@ -14,61 +14,10 @@
     <title>DartStream - Professional Dart Live Streaming Tools</title>
     <script src="browser-detect.js"></script>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Turn-based control styling */
-        .dart-btn.disabled, 
-        .num-btn.disabled,
-        .input-btn.disabled,
-        .special.disabled {
-            opacity: 0.4 !important;
-            cursor: not-allowed !important;
-            pointer-events: none !important;
-        }
-        
-        .control-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 215, 0, 0.9);
-            color: #000;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 12px;
-            z-index: 1000;
-        }
-        
-        .control-indicator.away {
-            background: rgba(100, 150, 255, 0.9);
-            color: white;
-        }
-    </style>
 </head>
 <body>
     
     <div id="app">
-        <!-- Waiting for Opponent Screen -->
-        <div id="waiting-for-opponent-screen" class="screen" style="display: none;">
-            <div class="modal-header">
-                <h1>Game Room Created</h1>
-            </div>
-            <div class="modal-content">
-                <div class="room-code-display">
-                    <p class="room-code-label">Share this code with your opponent:</p>
-                    <div class="room-code-box" id="connection-code-display">ABC123</div>
-                    <button class="copy-btn" id="copy-code-btn" style="cursor: pointer; padding: 10px 20px; background: rgba(100, 200, 100, 0.8); border: none; color: white; border-radius: 8px; font-weight: bold;">📋 Copy Code</button>
-                </div>
-                
-                <div class="connection-status">
-                    <h2>Waiting for opponent...</h2>
-                    <div class="status-indicator waiting">
-                        <div class="spinner"></div>
-                        <p id="waiting-opponent-text">Opponent will join when they enter your code</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Game Mode Selection Screen - Hidden -->
         <div id="game-mode-screen" class="screen" style="display: none;">
             <div class="modal-header">
@@ -366,9 +315,7 @@
                 </div>
                 <div class="timer-display">
                     <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
-                    <div class="version-text">v1.0.0</div>
-                </div>
-                <div class="player-header right">
+                    <div class="version-text">v2.1.1</div>
                     <div class="player-name-large" id="starting-player2-name-top">Moe C</div>
                     <div class="score-large" id="starting-player2-score-top">501</div>
                 </div>
@@ -386,10 +333,6 @@
                 <div class="game-info">
                     <button class="game-format-display" id="game-format-btn">501 SIDO</button>
                     <button class="legs-format-display" id="legs-format-btn">Best of 3 Legs</button>
-                </div>
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                    <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">Or join an existing match:</p>
-                    <button class="starting-player-btn" id="join-match-btn" style="background: rgba(100, 150, 255, 0.8); border: 2px solid rgba(100, 150, 255, 1);">🔗 Join Match with Code</button>
                 </div>
             </div>
 
@@ -420,9 +363,7 @@
                 </div>
                 <div class="timer-display">
                     <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
-                    <div class="version-text">v1.0.0</div>
-                </div>
-                <div class="player-header right active" id="player2-display">
+                    <div class="version-text">v2.1.1</div>
                     <div class="player-info">
                         <div class="player-name-large">Away</div>
                         <div class="score-large">501</div>
@@ -595,77 +536,6 @@
         </div>
     </div>
 
-    <!-- Join Match Modal -->
-    <div id="join-match-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-width: 400px; padding: 30px;">
-            <h2 style="text-align: center; margin-bottom: 10px;">Join Match with Code</h2>
-            <p style="color: #aaa; font-size: 14px; text-align: center; margin-bottom: 20px;">Enter the 6-character code from your opponent's screen</p>
-            <input type="text" id="join-code-input" placeholder="Enter code (e.g., AB12CD)" 
-                   maxlength="6" style="width: 100%; padding: 10px; text-transform: uppercase; text-align: center; letter-spacing: 4px; font-size: 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; margin-bottom: 10px;">
-            <div id="join-error-message" style="color: #ff6b6b; font-size: 12px; text-align: center; margin-bottom: 10px; height: 20px;"></div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button id="join-match-confirm-btn" class="continue-btn" style="flex: 1;">Join</button>
-                <button id="join-match-cancel-btn" class="reset-btn" style="flex: 1;">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
-        
-        // Initialize Supabase client
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    </script>
-    <script src="videostream-integrated.js"></script>
     <script src="app.js"></script>
-    <script>
-        // Join Match Modal Event Handlers
-        document.getElementById('join-match-btn')?.addEventListener('click', () => {
-            document.getElementById('join-match-modal').style.display = 'flex';
-            document.getElementById('join-code-input').focus();
-        });
-
-        document.getElementById('join-match-cancel-btn')?.addEventListener('click', () => {
-            document.getElementById('join-match-modal').style.display = 'none';
-            document.getElementById('join-code-input').value = '';
-            document.getElementById('join-error-message').textContent = '';
-        });
-
-        document.getElementById('join-match-confirm-btn')?.addEventListener('click', async () => {
-            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-            const errorMsg = document.getElementById('join-error-message');
-            
-            if (!code || code.length !== 6) {
-                errorMsg.textContent = 'Code must be 6 characters';
-                return;
-            }
-
-            try {
-                errorMsg.textContent = 'Joining...';
-                await window.VideoStreamIntegrated.joinAsGuest(code);
-                document.getElementById('join-match-modal').style.display = 'none';
-                document.getElementById('join-code-input').value = '';
-                errorMsg.textContent = '';
-            } catch (error) {
-                errorMsg.textContent = error.message || 'Invalid code or match not found';
-            }
-        });
-
-        document.getElementById('join-code-input')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('join-match-confirm-btn').click();
-            }
-        });
-
-        // Initialize VideoStream on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (window.VideoStreamIntegrated) {
-                await window.VideoStreamIntegrated.initialize();
-            }
-        });
-    </script>
 </body>
 </html>

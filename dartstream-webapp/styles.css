@@ -2547,3 +2547,319 @@ body {
     }
 }
 
+/* ===== ONLINE SCORER STYLES ===== */
+
+/* Online match header with Host vs Guest names */
+.online-match-header {
+    background: linear-gradient(135deg, #1a3a52 0%, #0d1f2d 100%);
+    padding: 12px;
+    border-bottom: 2px solid #ffd700;
+    margin-bottom: 8px;
+}
+
+.host-guest-names {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.player-name-online {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+}
+
+.vs-text {
+    padding: 0 16px;
+    color: #ffd700;
+    font-size: 14px;
+}
+
+/* Turn status bar */
+.turn-status-bar {
+    width: 100%;
+    padding: 12px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+.turn-status-bar.active-turn {
+    background-color: #28a745;
+}
+
+.turn-status-bar.waiting-turn {
+    background-color: #dc3545;
+}
+
+.status-text {
+    letter-spacing: 2px;
+}
+
+/* Form styling for online setup */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #ffd700;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.player-input {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    background-color: #1a1a1a;
+    border: 2px solid #ffd700;
+    color: #fff;
+    border-radius: 6px;
+    transition: border-color 0.3s ease;
+}
+
+.player-input:focus {
+    outline: none;
+    border-color: #ffed4e;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.player-input::placeholder {
+    color: #666;
+}
+
+/* Custom options row for game type selection */
+.custom-options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.option-btn {
+    padding: 12px 16px;
+    background-color: #1a1a1a;
+    border: 2px solid #666;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.option-btn:hover {
+    border-color: #ffd700;
+}
+
+.option-btn.selected {
+    background-color: #ffd700;
+    border-color: #ffd700;
+    color: #000;
+}
+
+/* Continue button styling */
+.continue-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.continue-btn.green {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.continue-btn.green:active {
+    background-color: #1e7e34;
+}
+
+.continue-btn.red {
+    background-color: #dc3545;
+    color: #fff;
+    margin-top: 10px;
+}
+
+.continue-btn.red:active {
+    background-color: #c82333;
+}
+
+/* Back button styling */
+.back-btn {
+    padding: 8px 16px;
+    background-color: #555;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.back-btn:active {
+    background-color: #444;
+}
+
+/* Waiting screen styling */
+#waiting-screen .modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+#room-code-display {
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+#waiting-message {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Keypad lock styling when it's not your turn */
+#number-pad[disabled] {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* Enhanced control bar for online play */
+.control-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: #0a0a0a;
+    border-bottom: 1px solid #333;
+    gap: 12px;
+}
+
+.control-btn {
+    padding: 10px 16px;
+    background-color: #555;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.control-btn:active {
+    background-color: #444;
+}
+
+.control-btn.gold {
+    background-color: #ffd700;
+    color: #000;
+}
+
+.set-score-inline {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+/* Input mode display styling */
+#input-mode {
+    padding: 8px 16px;
+    background-color: #2a3f4f;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Responsive adjustments for online scorer */
+@media (max-width: 480px) {
+    .host-guest-names {
+        font-size: 14px;
+    }
+
+    .vs-text {
+        padding: 0 8px;
+        font-size: 12px;
+    }
+
+    .player-input {
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .continue-btn {
+        padding: 14px;
+        font-size: 14px;
+    }
+
+    .custom-options-row {
+        gap: 8px;
+    }
+
+    .option-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    #room-code-display {
+        font-size: 36px;
+    }
+
+    .turn-status-bar {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    #input-mode {
+        min-width: 100px;
+        font-size: 12px;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) {
+    .custom-options-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .player-input {
+        padding: 16px;
+        font-size: 18px;
+    }
+
+    #room-code-display {
+        font-size: 64px;
+    }
+}
+
