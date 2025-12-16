@@ -5,6 +5,7 @@
   "css.lint.vendorPrefix": "ignore",
   "css.lint.compatibleVendorPrefixes": "ignore",
   "css.lint.unknownProperties": "ignore",
+  "css.lint.universalSelector": "ignore",
   "html-validate.enable": false,
   "htmlhint.enable": false,
   "webhint.enable": false,
@@ -27,5 +28,9 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "never"
   },
-  "problems.decorations.enabled": false
+  "problems.decorations.enabled": false,
+  "editor.lightbulb.enabled": false,
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  }
 }
