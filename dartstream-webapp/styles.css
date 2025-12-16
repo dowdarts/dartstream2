@@ -26,7 +26,6 @@ body {
     color: #fff;
     overflow: hidden;
     -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
     width: 100vw;
     height: 100vh;
     position: fixed;
@@ -2861,5 +2860,40 @@ body {
     #room-code-display {
         font-size: 64px;
     }
+}
+
+/* Online Scorer - Waiting Screen Styles */
+.waiting-screen-content {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.waiting-emoji {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.waiting-code-title {
+    margin-bottom: 30px;
+}
+
+.room-code-large {
+    font-size: 48px;
+    font-weight: bold;
+    letter-spacing: 8px;
+    color: #ffd700;
+    margin-bottom: 30px;
+}
+
+.waiting-message {
+    color: #ccc;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.room-code-input {
+    text-transform: uppercase;
+    font-size: 20px;
+    letter-spacing: 4px;
 }
 
