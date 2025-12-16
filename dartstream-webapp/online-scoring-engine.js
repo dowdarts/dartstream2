@@ -300,24 +300,8 @@ async function hostMatch() {
         onlineState.matchId = data.id;
         console.log('✅ Match created with room code:', onlineState.roomCode);
         
-        // Start listening for guest joining
+        // Start listening for guest joining (subscription will trigger startGame when guest joins)
         subscribeToMatchUpdates();
-        
-        // Wait for guest to join (poll every 1 second)
-        const waitForGuest = setInterval(async () => {
-            const { data: match } = await window.supabaseClient
-                .from('game_rooms')
-                .select('*')
-                .eq('room_code', onlineState.roomCode)
-                .single();
-            
-            if (match && match.game_state?.guest_name) {
-                clearInterval(waitForGuest);
-                onlineState.opponentName = match.game_state.guest_name;
-                onlineState.opponentPlayerId = match.game_state.guest_player_id;
-                startGame();
-            }
-        }, 1000);
         
     } catch (error) {
         console.error('Error in hostMatch:', error);
@@ -362,10 +346,11 @@ async function joinMatch() {
         }
         
         onlineState.matchId = match.id;
-        onlineState.opponentName = match.host_name;
-        onlineState.opponentPlayerId = match.host_player_id;
-        onlineState.gameType = match.game_type;
-        onlineState.startType = match.start_type;
+        const hostGameState = match.game_state || {};
+        onlineState.opponentName = hostGameState.host_name || 'Host';
+        onlineState.opponentPlayerId = hostGameState.host_player_id;
+        onlineState.gameType = hostGameState.game_type || '501';
+        onlineState.startType = hostGameState.start_type || 'SI';
         
         // Update the match with guest info
         const { error: updateError } = await window.supabaseClient
@@ -414,9 +399,25 @@ function subscribeToMatchUpdates() {
             (payload) => {
                 const roomData = payload.new;
                 
-                // If both players are now present and we're still on waiting screen, start game
-                if (roomData.game_state?.host_name && roomData.game_state?.guest_name && document.getElementById('waiting-screen').classList.contains('active')) {
-                    startGame();
+                // If both players are now present and we're NOT already on game screen, show player selection
+                if (roomData.game_state?.host_name && roomData.game_state?.guest_name) {
+                    // Get opponent info if we haven't yet
+                    if (!onlineState.opponentName) {
+                        if (onlineState.myRole === 'host') {
+                            onlineState.opponentName = roomData.game_state.guest_name;
+                            onlineState.opponentPlayerId = roomData.game_state.guest_player_id;
+                        } else {
+                            onlineState.opponentName = roomData.game_state.host_name;
+                            onlineState.opponentPlayerId = roomData.game_state.host_player_id;
+                        }
+                    }
+                    
+                    // Only trigger startGame once, when on waiting screen
+                    const waitingScreen = document.getElementById('waiting-screen');
+                    const playerSelectionScreen = document.getElementById('player-selection-screen');
+                    if (waitingScreen?.classList.contains('active')) {
+                        startGame();
+                    }
                 }
                 
                 // Update the game state from database
