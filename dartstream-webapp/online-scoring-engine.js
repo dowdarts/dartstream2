@@ -280,7 +280,13 @@ async function hostMatch() {
         
         if (error) {
             console.error('Error creating match:', error);
-            alert('Failed to create match. Please try again.');
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint
+            });
+            alert(`Failed to create match: ${error.message || 'Unknown error'}`);
             return;
         }
         
@@ -341,7 +347,9 @@ async function joinMatch() {
             .single();
         
         if (error || !match) {
-            alert('Room code not found. Please check and try again.');
+            console.error('Error finding match:', error);
+            console.error('Room code searched:', onlineState.roomCode);
+            alert(`Room code not found: ${error?.message || 'Please check and try again'}`);
             showLanding();
             return;
         }

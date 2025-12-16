@@ -3,7 +3,11 @@ CREATE TABLE IF NOT EXISTS public.live_matches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_code TEXT NOT NULL UNIQUE,
     host_name TEXT NOT NULL DEFAULT 'Home',
+    host_user_id UUID,
+    host_player_id UUID,
     guest_name TEXT,
+    guest_user_id UUID,
+    guest_player_id UUID,
     game_type TEXT NOT NULL DEFAULT '501',  -- '501' or '301'
     start_type TEXT NOT NULL DEFAULT 'SI',  -- 'SI' for Straight In, 'DI' for Double In
     current_turn TEXT NOT NULL DEFAULT 'host',  -- 'host' or 'guest'
