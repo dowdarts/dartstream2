@@ -18,7 +18,7 @@ let onlineState = {
     gameType: '501',  // '501' or '301'
     startType: 'SI',  // 'SI' or 'DI'
     currentTurn: 'host',
-    localInput: 0,  // Current dart input being built
+    localInput: [],  // Array of dart values (1-25)
     isSubscribed: false,
     supabaseChannel: null,
     authenticatedUser: null  // Holds auth info
@@ -456,6 +456,18 @@ function renderGameState(roomData) {
     document.getElementById('player1-name').textContent = matchData.host_name;
     document.getElementById('player2-name').textContent = matchData.guest_name;
     
+    // Highlight active player (white background on their score)
+    const player1Display = document.querySelector('[id="player1-score"]')?.parentElement;
+    const player2Display = document.querySelector('[id="player2-score"]')?.parentElement;
+    
+    if (roomData.current_turn === 'host') {
+        player1Display?.style.setProperty('background-color', 'rgba(255, 255, 255, 0.15)', 'important');
+        player2Display?.style.setProperty('background-color', 'transparent');
+    } else {
+        player1Display?.style.setProperty('background-color', 'transparent');
+        player2Display?.style.setProperty('background-color', 'rgba(255, 255, 255, 0.15)', 'important');
+    }
+    
     // Update leg score display
     document.getElementById('leg-score-display').textContent = 
         `${scores.host_legs_won} - ${scores.guest_legs_won}`;
@@ -506,25 +518,39 @@ function addToInput(value) {
         return;
     }
     
-    // Build the dart value (up to 2-3 darts per turn = 9 total limit)
-    if (onlineState.localInput.toString().length < 3) {
-        onlineState.localInput = onlineState.localInput * 100 + value;
+    // Store as array of darts instead of concatenated number
+    // Each dart value can be 1-20, 25 (bull), 50 (outer bull)
+    if (!Array.isArray(onlineState.localInput)) {
+        onlineState.localInput = [];
+    }
+    
+    // Max 3 darts per turn
+    if (onlineState.localInput.length < 3) {
+        // If current entry is incomplete (0-9), combine with next digit
+        // Otherwise start new dart
+        const lastDart = onlineState.localInput[onlineState.localInput.length - 1];
+        
+        if (lastDart !== undefined && lastDart < 20) {
+            // Combine: 2 + 5 = 25, or 1 + 0 = 10
+            const combined = lastDart * 10 + value;
+            if (combined <= 25) {  // Valid dart is 1-20, 25
+                onlineState.localInput[onlineState.localInput.length - 1] = combined;
+            }
+        } else {
+            // Start new dart
+            onlineState.localInput.push(value);
+        }
         updateInputDisplay();
     }
 }
 
 function updateInputDisplay() {
     const display = document.getElementById('input-mode');
-    if (onlineState.localInput === 0) {
+    if (!Array.isArray(onlineState.localInput) || onlineState.localInput.length === 0) {
         display.textContent = 'Enter Score';
     } else {
-        // Show the darts being entered
-        const dartStr = onlineState.localInput.toString();
-        let formatted = '';
-        for (let i = 0; i < dartStr.length; i += 2) {
-            if (i > 0) formatted += ' ';
-            formatted += dartStr.substr(i, 2);
-        }
+        // Show the darts being entered with proper formatting
+        const formatted = onlineState.localInput.join(' ');
         display.textContent = formatted;
     }
 }
@@ -538,7 +564,7 @@ function undoLastDart() {
  * ============ SUBMIT SCORE TO DATABASE ============
  */
 async function submitScore() {
-    if (!onlineState.matchId) return;
+    if (!onlineState.matchId || !Array.isArray(onlineState.localInput) || onlineState.localInput.length === 0) return;
     
     try {
         // Get current match state from DB
@@ -551,48 +577,71 @@ async function submitScore() {
         if (!match) return;
         
         const scores = match.game_state?.scores || {};
-        const scoreInput = onlineState.localInput || 0;
+        
+        // Calculate total from dart array
+        const scoreInput = onlineState.localInput.reduce((sum, dart) => sum + dart, 0);
         
         // Determine which score to update
         const isHost = onlineState.myRole === 'host';
         const playerKey = isHost ? 'host' : 'guest';
         const opponentKey = isHost ? 'guest' : 'host';
         
-        let newScore = scores[playerKey] - scoreInput;
+        const preTurnScore = scores[playerKey];
+        let newScore = preTurnScore - scoreInput;
+        let isBust = false;
         
-        // Bust detection
+        // Bust detection: score < 0 OR score = 1 (can't finish on 1)
         if (newScore < 0 || newScore === 1) {
-            newScore = scores[playerKey];  // Restore original score
+            isBust = true;
+            newScore = preTurnScore;  // Restore original score on bust
+            console.log('🎯 BUST! Score would be', newScore - preTurnScore + scoreInput, '. Restored to', preTurnScore);
         }
         
-        // Update darts thrown
+        // Update darts thrown (add 3 for this turn)
         const dartsKey = playerKey + '_darts_thrown';
         scores[dartsKey] = (scores[dartsKey] || 0) + 3;
         
         // Update the score
         scores[playerKey] = newScore;
         
+        // Check for winner (reached exactly 0)
+        let matchWinner = null;
+        if (newScore === 0) {
+            matchWinner = playerKey;
+        }
+        
         // Add to score history
         if (!scores.score_history) scores.score_history = [];
         scores.score_history.push({
             player: playerKey,
+            darts: onlineState.localInput,
             input: scoreInput,
             newScore: newScore,
+            isBust: isBust,
             timestamp: new Date().toISOString()
         });
         
-        // Switch turn
-        const nextTurn = isHost ? 'guest' : 'host';
+        // Switch turn (unless match is won)
+        let nextTurn = isHost ? 'guest' : 'host';
+        let gameStatus = 'playing';
         
-        // Update database - update game_state JSONB and current_turn
+        if (matchWinner) {
+            gameStatus = 'complete';
+            // Prompt for dartout (will handle separately)
+            promptForDartOut(playerKey);
+        }
+        
+        // Update database
         const { error } = await window.supabaseClient
             .from('game_rooms')
             .update({
                 game_state: {
                     ...match.game_state,
-                    scores: scores
+                    scores: scores,
+                    match_winner: matchWinner
                 },
-                current_turn: nextTurn
+                current_turn: nextTurn,
+                status: gameStatus
             })
             .eq('id', onlineState.matchId);
         
@@ -602,14 +651,20 @@ async function submitScore() {
         }
         
         // Clear local input
-        onlineState.localInput = 0;
+        onlineState.localInput = [];
         updateInputDisplay();
-        
-        // The database subscription will trigger renderGameState
         
     } catch (error) {
         console.error('Error in submitScore:', error);
     }
+}
+
+function promptForDartOut(winnerKey) {
+    // TODO: Show dialog asking which dart was used for checkout (double, single, outer bull)
+    // This will affect average calculation
+    const message = `Player ${winnerKey === 'host' ? onlineState.myName : onlineState.opponentName} won! What dart was used?\n\n1: Single\n2: Double\n3: Outer Bull`;
+    const choice = prompt(message);
+    // TODO: Update scores with dart out type
 }
 
 /**
@@ -663,20 +718,27 @@ function resetOnlineState() {
 }
 
 function startGame() {
-    // Show player selection screen first
-    showScreen('player-selection-screen');
-    
-    // Display player names in selection buttons
-    document.getElementById('host-name-for-selection').textContent = onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName;
-    document.getElementById('guest-name-for-selection').textContent = onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName;
-    
-    // Setup player selection handlers
-    const hostSelectBtn = document.getElementById('host-player-select-btn');
-    const guestSelectBtn = document.getElementById('guest-player-select-btn');
-    
-    // Only listen once
-    hostSelectBtn.onclick = () => startActualGame('host');
-    guestSelectBtn.onclick = () => startActualGame('guest');
+    // Only host sees player selection screen
+    if (onlineState.myRole === 'host') {
+        showScreen('player-selection-screen');
+        
+        // Display player names in selection buttons
+        document.getElementById('host-name-for-selection').textContent = onlineState.myName;
+        document.getElementById('guest-name-for-selection').textContent = onlineState.opponentName;
+        
+        // Setup player selection handlers
+        const hostSelectBtn = document.getElementById('host-player-select-btn');
+        const guestSelectBtn = document.getElementById('guest-player-select-btn');
+        
+        hostSelectBtn.onclick = () => startActualGame('host');
+        guestSelectBtn.onclick = () => startActualGame('guest');
+    } else {
+        // Guest goes directly to waiting for host to select
+        showScreen('game-screen');
+        document.getElementById('room-code-display-game').textContent = onlineState.roomCode;
+        document.getElementById('status-text').textContent = '⏳ HOST IS SELECTING STARTING PLAYER';
+        fetchAndRenderMatchState();
+    }
 }
 
 async function startActualGame(startingPlayer) {
