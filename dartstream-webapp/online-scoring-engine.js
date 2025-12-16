@@ -247,33 +247,34 @@ async function hostMatch() {
     document.getElementById('room-code-display').textContent = onlineState.roomCode;
     
     try {
-        // Create match in Supabase
-        const startScore = onlineState.gameType === '501' ? 501 : 301;
-        
-        const { data, error } = await window.supabaseClient
-            .from('live_matches')
-            .insert([{
-                room_code: onlineState.roomCode,
-                host_name: onlineState.myName,
-                host_user_id: onlineState.authenticatedUser.id,
-                host_player_id: onlineState.myPlayerId,
-                game_type: onlineState.gameType,
-                start_type: onlineState.startType,
-                current_turn: 'host',
-                is_active: true,
-                scores: {
-                    host: startScore,
-                    guest: startScore,
-                    host_leg_avg: 0,
-                    guest_leg_avg: 0,
-                    host_match_avg: 0,
-                    guest_match_avg: 0,
-                    host_legs_won: 0,
-                    guest_legs_won: 0,
-                    host_darts_thrown: 0,
-                    guest_darts_thrown: 0,
-                    score_history: []
-                }
+            // Create match in Supabase using game_rooms table
+            const startScore = onlineState.gameType === '501' ? 501 : 301;
+            
+            const { data, error } = await window.supabaseClient
+                .from('game_rooms')
+                .insert([{
+                    room_code: onlineState.roomCode,
+                    host_id: onlineState.authenticatedUser.id,
+                    status: 'waiting',
+                    current_turn: 'host',
+                    game_state: {
+                        game_type: onlineState.gameType,
+                        start_type: onlineState.startType,
+                        host_name: onlineState.myName,
+                        host_player_id: onlineState.myPlayerId,
+                        scores: {
+                            host: startScore,
+                            guest: startScore,
+                            host_leg_avg: 0,
+                            guest_leg_avg: 0,
+                            host_match_avg: 0,
+                            guest_match_avg: 0,
+                            host_legs_won: 0,
+                            guest_legs_won: 0,
+                            host_darts_thrown: 0,
+                            guest_darts_thrown: 0,
+                            score_history: []
+                        }
             }])
             .select()
             .single();
@@ -336,10 +337,10 @@ async function joinMatch() {
     try {
         // Find the match
         const { data: match, error } = await window.supabaseClient
-            .from('live_matches')
+            .from('game_rooms')
             .select('*')
             .eq('room_code', onlineState.roomCode)
-            .eq('is_active', true)
+            .eq('status', 'waiting')
             .single();
         
         if (error || !match) {
@@ -358,11 +359,14 @@ async function joinMatch() {
         
         // Update the match with guest info
         const { error: updateError } = await window.supabaseClient
-            .from('live_matches')
+            .from('game_rooms')
             .update({ 
-                guest_name: onlineState.myName,
-                guest_user_id: onlineState.authenticatedUser.id,
-                guest_player_id: onlineState.myPlayerId
+                guest_id: onlineState.authenticatedUser.id,
+                game_state: {
+                    ...match.game_state,
+                    guest_name: onlineState.myName,
+                    guest_player_id: onlineState.myPlayerId
+                }
             })
             .eq('id', onlineState.matchId);
         
@@ -394,20 +398,20 @@ function subscribeToMatchUpdates() {
             {
                 event: 'UPDATE',
                 schema: 'public',
-                table: 'live_matches',
+                table: 'game_rooms',
                 filter: `room_code=eq.${onlineState.roomCode}`
             },
             (payload) => {
-                const matchData = payload.new;
+                const roomData = payload.new;
                 
                 // If both players are now present and we're still on waiting screen, start game
-                if (matchData.host_name && matchData.guest_name && document.getElementById('waiting-screen').classList.contains('active')) {
+                if (roomData.game_state?.host_name && roomData.game_state?.guest_name && document.getElementById('waiting-screen').classList.contains('active')) {
                     startGame();
                 }
                 
                 // Update the game state from database
                 if (document.getElementById('game-screen').classList.contains('active')) {
-                    renderGameState(matchData);
+                    renderGameState(roomData);
                 }
             }
         )
@@ -419,10 +423,12 @@ function subscribeToMatchUpdates() {
 /**
  * ============ GAME STATE RENDERING ============
  */
-function renderGameState(matchData) {
+function renderGameState(roomData) {
+    const matchData = roomData.game_state || {};
+    
     // Update player names
-    document.getElementById('host-name-display').textContent = matchData.host_name;
-    document.getElementById('guest-name-display').textContent = matchData.guest_name;
+    document.getElementById('host-name-display').textContent = matchData.host_name || 'Host';
+    document.getElementById('guest-name-display').textContent = matchData.guest_name || 'Guest';
     
     const scores = matchData.scores;
     
