@@ -662,7 +662,24 @@ function resetOnlineState() {
 }
 
 function startGame() {
-    onlineState.currentTurn = 'host';  // Host always starts
+    // Show player selection screen first
+    showScreen('player-selection-screen');
+    
+    // Display player names in selection buttons
+    document.getElementById('host-name-for-selection').textContent = onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName;
+    document.getElementById('guest-name-for-selection').textContent = onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName;
+    
+    // Setup player selection handlers
+    const hostSelectBtn = document.getElementById('host-player-select-btn');
+    const guestSelectBtn = document.getElementById('guest-player-select-btn');
+    
+    // Only listen once
+    hostSelectBtn.onclick = () => startActualGame('host');
+    guestSelectBtn.onclick = () => startActualGame('guest');
+}
+
+function startActualGame(startingPlayer) {
+    onlineState.currentTurn = startingPlayer;  // Set who starts
     showScreen('game-screen');
     
     // Display room code
