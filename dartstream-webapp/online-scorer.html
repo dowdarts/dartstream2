@@ -37,17 +37,18 @@
                 <button class="back-btn" id="back-to-landing">← Back</button>
             </div>
             <div class="modal-content">
+                <!-- Auth Check Screen -->
+                <div id="auth-check-screen" style="display: none; text-align: center;">
+                    <h2 class="yellow-text">Checking authentication...</h2>
+                    <p style="color: #ccc; margin-top: 20px;">Please sign in to the main app first to use online scorer.</p>
+                    <button class="continue-btn red" id="back-to-main-app" style="margin-top: 20px;">Return to Main App</button>
+                </div>
+
                 <div id="host-setup-form" style="display: none;">
-                    <h2 class="yellow-text">Host Match Setup</h2>
+                    <h2 class="yellow-text">Host Match</h2>
                     <div class="form-group">
-                        <label>Your Name</label>
-                        <input 
-                            type="text" 
-                            id="host-name-input" 
-                            class="player-input" 
-                            placeholder="Enter your name (or leave blank for 'Home')"
-                            autocomplete="off"
-                            autocapitalize="words">
+                        <label>Playing As</label>
+                        <div class="player-name-display" id="host-player-name-display">Loading...</div>
                     </div>
                     <div class="form-group">
                         <label>Game Type</label>
@@ -62,14 +63,8 @@
                 <div id="join-setup-form" style="display: none;">
                     <h2 class="yellow-text">Join Match</h2>
                     <div class="form-group">
-                        <label>Your Name</label>
-                        <input 
-                            type="text" 
-                            id="guest-name-input" 
-                            class="player-input" 
-                            placeholder="Enter your name (or leave blank for 'Away')"
-                            autocomplete="off"
-                            autocapitalize="words">
+                        <label>Playing As</label>
+                        <div class="player-name-display" id="guest-player-name-display">Loading...</div>
                     </div>
                     <div class="form-group">
                         <label>Room Code</label>
@@ -125,7 +120,7 @@
                 </div>
                 <div class="timer-display">
                     <img src="dartstream-logo.png" alt="DartStream" class="game-logo">
-                    <div class="version-text">v2.0.0</div>
+                    <div class="version-text">v2.1.0</div>
                 </div>
                 <div class="player-header right active" id="player2-display">
                     <div class="player-info">

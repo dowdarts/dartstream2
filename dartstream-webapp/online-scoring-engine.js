@@ -1,6 +1,9 @@
 /**
  * Online Scoring Engine
  * Real-time synchronized darts scoring for multi-device play
+ * 
+ * Requires: Supabase authentication (via player-account.js or similar)
+ * If user is not authenticated, redirects to login
  */
 
 // Global state
@@ -9,19 +12,108 @@ let onlineState = {
     roomCode: null,
     matchId: null,
     myName: null,
+    myPlayerId: null,
     opponentName: null,
+    opponentPlayerId: null,
     gameType: '501',  // '501' or '301'
     startType: 'SI',  // 'SI' or 'DI'
     currentTurn: 'host',
     localInput: 0,  // Current dart input being built
     isSubscribed: false,
-    supabaseChannel: null
+    supabaseChannel: null,
+    authenticatedUser: null  // Holds auth info
 };
 
+// Authentication helper
+async function checkAuthentication() {
+    if (!window.supabaseClient) {
+        console.error('Supabase client not available');
+        showAuthError('Supabase not configured. Redirecting...');
+        setTimeout(() => window.location.href = './player-account.html', 3000);
+        return null;
+    }
+    
+    try {
+        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (session && session.user) {
+            console.log('✅ User authenticated:', session.user.email);
+            onlineState.authenticatedUser = session.user;
+            return session.user;
+        } else {
+            console.warn('⚠️ No active session. Redirecting to login...');
+            showAuthError('Please log in to play online');
+            setTimeout(() => window.location.href = './player-account.html', 3000);
+            return null;
+        }
+    } catch (error) {
+        console.error('Authentication error:', error);
+        showAuthError('Authentication failed');
+        return null;
+    }
+}
+
+function showAuthError(message) {
+    const landingScreen = document.getElementById('landing-screen');
+    if (landingScreen) {
+        landingScreen.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #d32f2f;">
+                <h2>Authentication Required</h2>
+                <p>${message}</p>
+                <p>Redirecting to login...</p>
+            </div>
+        `;
+    }
+}
+
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    setupEventListeners();
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = await checkAuthentication();
+    if (user) {
+        await initializePlayerData(user);
+        setupEventListeners();
+    }
 });
+
+/**
+ * Get authenticated player's name and ID
+ */
+async function initializePlayerData(user) {
+    try {
+        // Get player_accounts to find linked player
+        const { data: accounts, error } = await window.supabaseClient
+            .from('player_accounts')
+            .select('account_linked_player_id, first_name, last_name')
+            .eq('user_id', user.id)
+            .single();
+        
+        if (error && error.code !== 'PGRST116') throw error;  // PGRST116 = no rows found
+        
+        if (accounts && accounts.account_linked_player_id) {
+            // Get the linked player's full name
+            const { data: player, error: playerError } = await window.supabaseClient
+                .from('players')
+                .select('id, first_name, last_name')
+                .eq('id', accounts.account_linked_player_id)
+                .single();
+            
+            if (playerError) throw playerError;
+            
+            onlineState.myPlayerId = player.id;
+            onlineState.myName = `${player.first_name} ${player.last_name}`;
+            console.log('📊 Player data loaded:', onlineState.myName, onlineState.myPlayerId);
+        } else {
+            // Use email as fallback
+            onlineState.myName = user.email.split('@')[0];
+            console.warn('⚠️ No linked player found, using email:', onlineState.myName);
+        }
+    } catch (error) {
+        console.error('Error loading player data:', error);
+        onlineState.myName = user.email.split('@')[0];
+    }
+}
 
 /**
  * Setup all event listeners
@@ -73,22 +165,34 @@ function showLanding() {
 }
 
 function showHostSetup() {
-    document.getElementById('setup-title').textContent = 'Host Match';
+    document.getElementById('setup-title').textContent = `Host Match - ${onlineState.myName}`;
     document.getElementById('host-setup-form').style.display = 'block';
     document.getElementById('join-setup-form').style.display = 'none';
     showScreen('setup-screen');
     
+    // Remove name input if exists, since we use authenticated name
+    const nameInput = document.getElementById('host-name-input');
+    if (nameInput) nameInput.style.display = 'none';
+    
     // Setup game type selection
-    document.getElementById('host-game-501').addEventListener('click', () => {
-        onlineState.gameType = '501';
-        document.getElementById('host-game-501').classList.add('selected');
-        document.getElementById('host-game-301').classList.remove('selected');
-    });
-    document.getElementById('host-game-301').addEventListener('click', () => {
-        onlineState.gameType = '301';
-        document.getElementById('host-game-301').classList.add('selected');
-        document.getElementById('host-game-501').classList.remove('selected');
-    });
+    const game501 = document.getElementById('host-game-501');
+    const game301 = document.getElementById('host-game-301');
+    
+    if (game501) {
+        game501.addEventListener('click', () => {
+            onlineState.gameType = '501';
+            game501.classList.add('selected');
+            game301.classList.remove('selected');
+        });
+    }
+    
+    if (game301) {
+        game301.addEventListener('click', () => {
+            onlineState.gameType = '301';
+            game301.classList.add('selected');
+            game501.classList.remove('selected');
+        });
+    }
 }
 
 function showJoinSetup() {
@@ -97,21 +201,25 @@ function showJoinSetup() {
     document.getElementById('join-setup-form').style.display = 'block';
     showScreen('setup-screen');
     
+    // Remove guest name input if exists
+    const nameInput = document.getElementById('guest-name-input');
+    if (nameInput) nameInput.style.display = 'none';
+    
     // Auto-format room code to uppercase
-    document.getElementById('room-code-input').addEventListener('input', (e) => {
-        e.target.value = e.target.value.toUpperCase();
-    });
+    const roomCodeInput = document.getElementById('room-code-input');
+    if (roomCodeInput) {
+        roomCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    }
 }
 
 /**
  * ============ HOST MATCH ============
  */
 async function hostMatch() {
-    const nameInput = document.getElementById('host-name-input').value.trim();
-    onlineState.myName = nameInput || 'Home';
+    // Use authenticated user name
     onlineState.myRole = 'host';
-    
-    // Generate random room code
     onlineState.roomCode = generateRoomCode();
     
     showScreen('waiting-screen');
@@ -121,14 +229,17 @@ async function hostMatch() {
         // Create match in Supabase
         const startScore = onlineState.gameType === '501' ? 501 : 301;
         
-        const { data, error } = await window.supabase
+        const { data, error } = await window.supabaseClient
             .from('live_matches')
             .insert([{
                 room_code: onlineState.roomCode,
                 host_name: onlineState.myName,
+                host_user_id: onlineState.authenticatedUser.id,
+                host_player_id: onlineState.myPlayerId,
                 game_type: onlineState.gameType,
                 start_type: onlineState.startType,
                 current_turn: 'host',
+                is_active: true,
                 scores: {
                     host: startScore,
                     guest: startScore,
@@ -153,13 +264,14 @@ async function hostMatch() {
         }
         
         onlineState.matchId = data.id;
+        console.log('✅ Match created with room code:', onlineState.roomCode);
         
         // Start listening for guest joining
         subscribeToMatchUpdates();
         
         // Wait for guest to join (poll every 1 second)
         const waitForGuest = setInterval(async () => {
-            const { data: match } = await window.supabase
+            const { data: match } = await window.supabaseClient
                 .from('live_matches')
                 .select('*')
                 .eq('room_code', onlineState.roomCode)
@@ -168,6 +280,7 @@ async function hostMatch() {
             if (match && match.guest_name) {
                 clearInterval(waitForGuest);
                 onlineState.opponentName = match.guest_name;
+                onlineState.opponentPlayerId = match.guest_player_id;
                 startGame();
             }
         }, 1000);
@@ -182,7 +295,6 @@ async function hostMatch() {
  * ============ JOIN MATCH ============
  */
 async function joinMatch() {
-    const nameInput = document.getElementById('guest-name-input').value.trim();
     const roomCodeInput = document.getElementById('room-code-input').value.trim();
     
     if (!roomCodeInput) {
@@ -190,7 +302,7 @@ async function joinMatch() {
         return;
     }
     
-    onlineState.myName = nameInput || 'Away';
+    // Use authenticated user name
     onlineState.myRole = 'guest';
     onlineState.roomCode = roomCodeInput;
     
@@ -200,7 +312,7 @@ async function joinMatch() {
     
     try {
         // Find the match
-        const { data: match, error } = await window.supabase
+        const { data: match, error } = await window.supabaseClient
             .from('live_matches')
             .select('*')
             .eq('room_code', onlineState.roomCode)
@@ -215,13 +327,18 @@ async function joinMatch() {
         
         onlineState.matchId = match.id;
         onlineState.opponentName = match.host_name;
+        onlineState.opponentPlayerId = match.host_player_id;
         onlineState.gameType = match.game_type;
         onlineState.startType = match.start_type;
         
-        // Update the match with guest name
-        const { error: updateError } = await window.supabase
+        // Update the match with guest info
+        const { error: updateError } = await window.supabaseClient
             .from('live_matches')
-            .update({ guest_name: onlineState.myName })
+            .update({ 
+                guest_name: onlineState.myName,
+                guest_user_id: onlineState.authenticatedUser.id,
+                guest_player_id: onlineState.myPlayerId
+            })
             .eq('id', onlineState.matchId);
         
         if (updateError) {
@@ -245,7 +362,7 @@ async function joinMatch() {
 function subscribeToMatchUpdates() {
     if (onlineState.isSubscribed) return;
     
-    onlineState.supabaseChannel = window.supabase
+    onlineState.supabaseChannel = window.supabaseClient
         .channel(`match-${onlineState.roomCode}`)
         .on(
             'postgres_changes',
@@ -383,7 +500,7 @@ async function submitScore() {
     
     try {
         // Get current match state from DB
-        const { data: match } = await window.supabase
+        const { data: match } = await window.supabaseClient
             .from('live_matches')
             .select('*')
             .eq('id', onlineState.matchId)
@@ -426,7 +543,7 @@ async function submitScore() {
         const nextTurn = isHost ? 'guest' : 'host';
         
         // Update database
-        const { error } = await window.supabase
+        const { error } = await window.supabaseClient
             .from('live_matches')
             .update({
                 scores: scores,
@@ -478,18 +595,26 @@ function resetOnlineState() {
         onlineState.supabaseChannel.unsubscribe();
     }
     
+    // Preserve auth data, reset only match data
+    const auth = {
+        authenticatedUser: onlineState.authenticatedUser,
+        myName: onlineState.myName,
+        myPlayerId: onlineState.myPlayerId
+    };
+    
     onlineState = {
         myRole: null,
         roomCode: null,
         matchId: null,
-        myName: null,
         opponentName: null,
+        opponentPlayerId: null,
         gameType: '501',
         startType: 'SI',
         currentTurn: 'host',
         localInput: 0,
         isSubscribed: false,
-        supabaseChannel: null
+        supabaseChannel: null,
+        ...auth
     };
 }
 
@@ -506,7 +631,7 @@ function startGame() {
 
 async function fetchAndRenderMatchState() {
     try {
-        const { data: match } = await window.supabase
+        const { data: match } = await window.supabaseClient
             .from('live_matches')
             .select('*')
             .eq('id', onlineState.matchId)
@@ -534,6 +659,3 @@ function exitMatch() {
     resetOnlineState();
     showLanding();
 }
-
-// Make supabase client globally available
-window.supabase = window.supabaseClient || supabase;

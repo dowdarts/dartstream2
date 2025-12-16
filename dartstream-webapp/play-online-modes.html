@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DartStream - Play Online</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .play-mode-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .play-mode-selector.hidden {
+            display: none;
+        }
+
+        .mode-selector-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .mode-selector-header h1 {
+            color: #FFD700;
+            font-size: 32px;
+            margin: 0;
+            margin-bottom: 10px;
+        }
+
+        .mode-selector-header p {
+            color: #aaa;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .play-modes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .play-mode-card {
+            background: rgba(255, 215, 0, 0.05);
+            border: 2px solid #FFD700;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .play-mode-card:hover {
+            background: rgba(255, 215, 0, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+        }
+
+        .play-mode-card.active {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .mode-icon {
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .play-mode-card h2 {
+            color: #FFD700;
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .play-mode-card p {
+            color: #ccc;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .play-mode-card .features {
+            text-align: left;
+            width: 100%;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .play-mode-card .features li {
+            margin: 5px 0;
+            margin-left: 20px;
+        }
+
+        .play-mode-card .features li:before {
+            content: "✓ ";
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .confirm-button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #FFD700;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-button:hover {
+            background: #FFC700;
+            transform: scale(1.05);
+        }
+
+        .confirm-button:disabled {
+            background: #888;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 8px 15px;
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+            border: 1px solid #FFD700;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 215, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .play-modes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .mode-selector-header h1 {
+                font-size: 24px;
+            }
+
+            .play-mode-card {
+                padding: 20px;
+            }
+
+            .mode-icon {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="play-mode-selector" class="play-mode-selector">
+        <button class="back-button" onclick="window.location.href='./index.html'">← Back</button>
+
+        <div class="mode-selector-header">
+            <h1>🎯 How Do You Want to Play?</h1>
+            <p>Choose your preferred online scoring experience</p>
+        </div>
+
+        <div class="play-modes-grid">
+            <!-- Standard Online Scorer -->
+            <div class="play-mode-card" onclick="selectMode('online-scorer')">
+                <div class="mode-icon">📊</div>
+                <h2>Online Scorer</h2>
+                <p>Classic online dart scoring with full-screen interface</p>
+                <ul class="features">
+                    <li>Full screen scoring display</li>
+                    <li>Real-time synchronization</li>
+                    <li>Host/Guest mode</li>
+                    <li>Complete match statistics</li>
+                </ul>
+                <button class="confirm-button" onclick="launchOnlineScorer(event)">Play Now</button>
+            </div>
+
+            <!-- Video Chat + Scorer Split Screen -->
+            <div class="play-mode-card" onclick="selectMode('split-screen')">
+                <div class="mode-icon">🎬📊</div>
+                <h2>Video + Scoring</h2>
+                <p>See your opponent while keeping score side-by-side</p>
+                <ul class="features">
+                    <li>Video chat on one half</li>
+                    <li>Scorer on the other half</li>
+                    <li>Watch and play simultaneously</li>
+                    <li>Perfect for remote matches</li>
+                </ul>
+                <button class="confirm-button" onclick="launchSplitScreen(event)">Play Now</button>
+            </div>
+
+            <!-- Traditional VideoStream App -->
+            <div class="play-mode-card" onclick="selectMode('videostream')">
+                <div class="mode-icon">🎥</div>
+                <h2>Traditional VideoStream</h2>
+                <p>Original VideoStream app with built-in scoring</p>
+                <ul class="features">
+                    <li>Turn-based control system</li>
+                    <li>Built-in scoring engine</li>
+                    <li>Professional dashboard</li>
+                    <li>Advanced match settings</li>
+                </ul>
+                <button class="confirm-button" onclick="launchVideoStream(event)">Play Now</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectMode(mode) {
+            console.log('Selected mode:', mode);
+        }
+
+        function launchOnlineScorer(event) {
+            event.stopPropagation();
+            console.log('Launching online scorer...');
+            window.location.href = './online-scorer.html';
+        }
+
+        function launchSplitScreen(event) {
+            event.stopPropagation();
+            console.log('Launching split screen...');
+            window.location.href = './videostream-online-split.html';
+        }
+
+        function launchVideoStream(event) {
+            event.stopPropagation();
+            console.log('Launching videostream...');
+            // Go back one level to root and launch videostreamscoringapp.html
+            window.location.href = '../videostreamscoringapp.html';
+        }
+    </script>
+</body>
+</html>
