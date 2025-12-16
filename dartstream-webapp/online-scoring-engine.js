@@ -460,8 +460,8 @@ function renderGameState(roomData) {
     document.getElementById('leg-score-display').textContent = 
         `${scores.host_legs_won} - ${scores.guest_legs_won}`;
     
-    // Update turn status and keypad lock
-    updateTurnStatus(matchData.current_turn);
+    // Update turn status based on current_turn from roomData (not game_state)
+    updateTurnStatus(roomData.current_turn);
     
     // Update score history if it exists
     if (scores.score_history && scores.score_history.length > 0) {
@@ -679,8 +679,24 @@ function startGame() {
     guestSelectBtn.onclick = () => startActualGame('guest');
 }
 
-function startActualGame(startingPlayer) {
-    onlineState.currentTurn = startingPlayer;  // Set who starts
+async function startActualGame(startingPlayer) {
+    onlineState.currentTurn = startingPlayer;  // Set who starts locally
+    
+    // Update database with selected starting player
+    const { error } = await window.supabaseClient
+        .from('game_rooms')
+        .update({
+            current_turn: startingPlayer,
+            status: 'playing'
+        })
+        .eq('id', onlineState.matchId);
+    
+    if (error) {
+        console.error('Error updating game start:', error);
+        alert('Failed to start game');
+        return;
+    }
+    
     showScreen('game-screen');
     
     // Display room code
