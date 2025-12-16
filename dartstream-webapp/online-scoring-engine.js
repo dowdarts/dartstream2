@@ -280,13 +280,9 @@ async function hostMatch() {
         
         if (error) {
             console.error('Error creating match:', error);
-            console.error('Error details:', {
-                message: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint
-            });
-            alert(`Failed to create match: ${error.message || 'Unknown error'}`);
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            console.error('Error keys:', Object.keys(error));
+            alert(`Failed to create match: ${error?.message || JSON.stringify(error)}`);
             return;
         }
         
