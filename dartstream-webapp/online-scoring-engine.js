@@ -26,6 +26,21 @@ let onlineState = {
 
 // Authentication helper
 async function checkAuthentication() {
+    // DEBUG MODE: Check if we're in local testing (URL contains 'localhost' or 'file://')
+    const isLocalTesting = window.location.hostname === 'localhost' || window.location.protocol === 'file:';
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugMode = urlParams.get('debug') === 'true' || isLocalTesting;
+    
+    if (debugMode) {
+        console.log('🔧 DEBUG MODE: Skipping auth for local testing');
+        onlineState.authenticatedUser = {
+            id: 'debug-user-' + Math.random().toString(36).substr(2, 9),
+            email: 'debug@localhost'
+        };
+        onlineState.myName = 'Test Player';
+        return onlineState.authenticatedUser;
+    }
+    
     if (!window.supabaseClient) {
         console.error('Supabase client not available');
         showAuthError('Supabase not configured. Redirecting...');
@@ -81,6 +96,12 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Get authenticated player's name and ID
  */
 async function initializePlayerData(user) {
+    // If we're already in debug mode with a name set, skip DB fetch
+    if (onlineState.myName === 'Test Player') {
+        console.log('🔧 DEBUG MODE: Using test player data');
+        return;
+    }
+    
     try {
         // Get player_accounts to find linked player
         const { data: accounts, error } = await window.supabaseClient
