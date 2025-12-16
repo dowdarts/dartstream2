@@ -1,10 +1,9 @@
-<!-- DartStream Play Online Combined Split-Screen v2.1.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DartStream - Combined Scoring & Video Stream</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DartStream - Video + Online Scoring</title>
     <style>
         * {
             margin: 0;
@@ -12,264 +11,498 @@
             box-sizing: border-box;
         }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        body {
             background: #000;
             color: #fff;
+            font-family: Arial, sans-serif;
             overflow: hidden;
+            height: 100vh;
         }
 
-        .split-container {
+        .split-screen-container {
             display: flex;
-            width: 100%;
             height: 100vh;
+            width: 100vw;
             gap: 0;
         }
 
-        /* Left Side: Scoring App */
-        .left-panel {
+        .video-section {
             flex: 1;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-right: 3px solid #FF6B35;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-            z-index: 1;
-        }
-
-        .scoring-frame {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        }
-
-        /* Right Side: Video Stream */
-        .right-panel {
-            flex: 1;
             background: #000;
+            position: relative;
+            border-right: 2px solid #FFD700;
             overflow: hidden;
+        }
+
+        .scorer-section {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            background: #1a1a1a;
+            overflow: hidden;
             position: relative;
         }
 
-        .video-frame {
+        /* Video Section Styling */
+        .video-header {
+            padding: 12px;
+            background: rgba(255, 215, 0, 0.1);
+            border-bottom: 2px solid #FFD700;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .video-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-placeholder {
             width: 100%;
             height: 100%;
-            border: none;
             background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #999;
         }
 
-        /* Loading indicator */
-        .loading-indicator {
+        .video-placeholder-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        /* Scorer Section Styling - Embedded */
+        .scorer-app {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+            position: relative;
+        }
+
+        .scorer-app #app {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scorer-app .screen {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            text-align: center;
-            color: #FF6B35;
-            font-size: 1.2rem;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            background: #1a1a1a;
         }
 
-        .loading-spinner {
-            border: 3px solid rgba(255, 107, 53, 0.2);
-            border-top: 3px solid #FF6B35;
-            border-radius: 50%;
+        .scorer-app .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            position: static;
+            background: #1a1a1a;
+        }
+
+        /* Adjust modal styling for split screen */
+        .scorer-app .modal-header {
+            padding: 12px;
+            background: rgba(255, 215, 0, 0.1);
+            border-bottom: 2px solid #FFD700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .scorer-app .modal-header h1 {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .scorer-app .modal-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scorer-app .game-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .scorer-app .game-option-btn {
+            padding: 12px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+
+        .scorer-app .game-option-btn strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .scorer-app .game-option-btn em {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .scorer-app .game-option-btn span {
+            display: block;
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+
+        /* Scoreboard - Horizontal layout for split screen */
+        .scorer-app .scoreboard-header {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(255, 215, 0, 0.05);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .scorer-app .player-header {
+            padding: 8px;
+            background: rgba(100, 100, 100, 0.2);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .scorer-app .player-name-large {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .scorer-app .score-large {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 4px;
+        }
+
+        .scorer-app .timer-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scorer-app .game-logo {
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            border-radius: 4px;
+            margin-bottom: 4px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .scorer-app .version-text {
+            font-size: 11px;
+            color: #999;
         }
 
-        /* Header bar for quick actions */
-        .header-bar {
-            background: rgba(0, 0, 0, 0.8);
-            border-bottom: 2px solid #FF6B35;
-            padding: 12px 20px;
+        /* Compact control bar */
+        .scorer-app .control-bar {
+            padding: 8px;
+            background: rgba(100, 100, 100, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+            font-size: 12px;
         }
 
-        .header-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #FF6B35;
+        .scorer-app .control-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            white-space: nowrap;
         }
 
-        .header-actions {
+        /* Input area - vertical layout */
+        .scorer-app .scoring-area {
+            flex: 1;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 8px;
+            gap: 8px;
         }
 
-        .header-button {
-            background: rgba(255, 107, 53, 0.2);
-            color: #FF6B35;
-            border: 1px solid #FF6B35;
-            padding: 6px 14px;
+        .scorer-app .number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .scorer-app .num-btn,
+        .scorer-app .dart-btn {
+            padding: 10px;
+            font-size: 12px;
             border-radius: 4px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
         }
 
-        .header-button:hover {
-            background: #FF6B35;
-            color: white;
+        .scorer-app .buttons-row {
+            display: flex;
+            gap: 4px;
         }
 
-        .header-button:active {
-            transform: scale(0.95);
-        }
-
-        /* Responsive design for smaller screens */
-        @media (max-width: 1200px) {
-            .split-container {
-                flex-direction: column;
-            }
-
-            .left-panel {
-                border-right: none;
-                border-bottom: 3px solid #FF6B35;
-                flex: 1;
-                min-height: 50%;
-            }
-
-            .right-panel {
-                flex: 1;
-                min-height: 50%;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header-bar {
-                padding: 8px 12px;
-            }
-
-            .header-title {
-                font-size: 0.95rem;
-            }
-
-            .header-button {
-                padding: 4px 10px;
-                font-size: 0.75rem;
-            }
+        .scorer-app .buttons-row button {
+            flex: 1;
+            padding: 10px;
+            font-size: 12px;
+            border-radius: 4px;
         }
 
         /* Version badge */
         .version-badge {
             position: fixed;
-            top: 10px;
+            bottom: 10px;
             right: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #FF6B35;
-            z-index: 9999;
-            font-family: monospace;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 10px;
-            border-radius: 4px;
-            border: 2px solid #FF6B35;
-        }
-
-        /* Panel labels */
-        .panel-label {
-            position: absolute;
-            top: 60px;
-            left: 10px;
-            background: rgba(255, 107, 53, 0.2);
-            border: 1px solid #FF6B35;
-            color: #FF6B35;
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #FFD700;
+            color: #FFD700;
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 5;
+            font-size: 11px;
+            z-index: 999;
         }
 
-        .video-label {
+        /* Mobile responsiveness */
+        @media (max-width: 1024px) {
+            .split-screen-container {
+                flex-direction: column;
+            }
+
+            .video-section,
+            .scorer-section {
+                border-right: none;
+                border-bottom: 2px solid #FFD700;
+            }
+
+            .scorer-section {
+                border-bottom: none;
+            }
+
+            .video-section {
+                flex: 0 0 40%;
+            }
+
+            .scorer-section {
+                flex: 0 0 60%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .video-section {
+                flex: 0 0 35%;
+            }
+
+            .scorer-section {
+                flex: 0 0 65%;
+            }
+
+            .scorer-app .scoreboard-header {
+                grid-template-columns: 1fr auto 1fr;
+                gap: 6px;
+                padding: 8px;
+            }
+
+            .scorer-app .score-large {
+                font-size: 24px;
+            }
+
+            .scorer-app .player-name-large {
+                font-size: 12px;
+            }
+
+            .scorer-app .game-logo {
+                width: 30px;
+                height: 30px;
+            }
+        }
+
+        /* Loading screen */
+        .loading-screen {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 107, 53, 0.2);
-            border: 1px solid #FF6B35;
-            color: #FF6B35;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 5;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a1a;
+            flex-direction: column;
+            z-index: 1000;
+            color: #FFD700;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 215, 0, 0.2);
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hide scrollbars */
+        .scorer-app .modal-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .scorer-app .modal-content::-webkit-scrollbar-track {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .scorer-app .modal-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 2px;
         }
     </style>
 </head>
 <body>
-    <div class="version-badge">v1.0.0</div>
-
-    <div class="split-container">
-        <!-- Left Panel: Scoring App -->
-        <div class="left-panel">
-            <div class="header-bar">
-                <div class="header-title">📊 Live Scoring</div>
-                <div class="header-actions">
-                    <button class="header-button" onclick="goBackToSetup()">Exit</button>
+    <div class="split-screen-container">
+        <!-- Video Section -->
+        <div class="video-section">
+            <div class="video-header">📹 Video Chat</div>
+            <div class="video-content">
+                <div class="video-placeholder">
+                    <div class="video-placeholder-icon">📹</div>
+                    <div>Video Stream Loading...</div>
                 </div>
+                <div id="video-container" style="display: none; width: 100%; height: 100%;"></div>
             </div>
-            <div class="panel-label">Scoring App</div>
-            <iframe
-                id="scoringFrame"
-                class="scoring-frame"
-                src="../videostreamscoringapp/videostreamscoringapp.html"
-                title="DartStream Scoring App"
-            ></iframe>
         </div>
 
-        <!-- Right Panel: Video Stream -->
-        <div class="right-panel">
-            <div class="video-label">Video Stream</div>
-            <div class="loading-indicator" id="loadingIndicator">
-                <div class="loading-spinner"></div>
-                Loading video stream...
-            </div>
-            <iframe
-                id="videoFrame"
-                class="video-frame"
-                src="./play-online.html"
-                title="DartStream Video Stream"
-                onload="hideLoadingIndicator()"
-            ></iframe>
+        <!-- Scorer Section -->
+        <div class="scorer-section">
+            <div id="scorer-app"></div>
         </div>
     </div>
 
+    <div class="version-badge">v2.1.0</div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        function goBackToSetup() {
-            if (confirm('Exit combined mode and return to setup menu?')) {
-                window.location.href = './play-online-setup.html';
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://kswwbqumgsdissnwuiab.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+        
+        // Initialize Supabase client
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+
+    <script>
+        /**
+         * Split Screen Integration - v2.1.0
+         * Combines video chat with online scoring
+         */
+
+        const SplitScreenIntegration = {
+            videoLoaded: false,
+            scorerLoaded: false,
+
+            async initialize() {
+                console.log('🎬 Initializing Split Screen (v2.1.0)...');
+                
+                // Load online scorer HTML
+                await this.loadScorerApp();
+                
+                console.log('✅ Split Screen initialized');
+            },
+
+            async loadScorerApp() {
+                try {
+                    // Try to load from the same directory first
+                    let response;
+                    try {
+                        response = await fetch('../online-scorer/online-scorer.html');
+                    } catch (e) {
+                        // Fallback to alternative path
+                        response = await fetch('../../dartstream-webapp/online-scorer.html');
+                    }
+
+                    if (!response.ok) throw new Error('Failed to fetch online-scorer.html');
+
+                    const html = await response.text();
+                    
+                    // Extract just the app content (remove html/head/body tags)
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const appContent = doc.getElementById('app');
+                    
+                    if (appContent) {
+                        const container = document.getElementById('scorer-app');
+                        container.innerHTML = appContent.innerHTML;
+                        
+                        // Load the online-scoring-engine script
+                        const scriptPath = response.url.includes('dartstream-webapp') 
+                            ? '../../dartstream-webapp/online-scoring-engine.js'
+                            : '../online-scoring-engine.js';
+
+                        const script = document.createElement('script');
+                        script.src = scriptPath;
+                        script.type = 'module';
+                        document.body.appendChild(script);
+                        
+                        console.log('✅ Scorer app loaded from:', response.url);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading scorer app:', error);
+                    const container = document.getElementById('scorer-app');
+                    container.innerHTML = `
+                        <div class="loading-screen">
+                            <div style="text-align: center; color: #ff6b6b;">
+                                <h2>Error Loading Scorer</h2>
+                                <p style="font-size: 14px; margin-top: 10px;">${error.message}</p>
+                                <p style="font-size: 12px; margin-top: 20px; color: #999;">Check console for details</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+
+            switchToVideoStream(videoElement) {
+                // Hide placeholder, show actual video
+                const placeholder = document.querySelector('.video-placeholder');
+                const container = document.getElementById('video-container');
+                
+                placeholder.style.display = 'none';
+                container.style.display = 'block';
+                container.appendChild(videoElement);
+                
+                this.videoLoaded = true;
             }
-        }
+        };
 
-        function hideLoadingIndicator() {
-            const indicator = document.getElementById('loadingIndicator');
-            if (indicator) {
-                indicator.style.display = 'none';
-            }
-        }
-
-        // Set a timeout to hide loading indicator even if iframe doesn't load
-        setTimeout(() => {
-            hideLoadingIndicator();
-        }, 5000);
-
-        console.log('🎬 Combined Split-Screen Mode Loaded (v1.0.0)');
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            SplitScreenIntegration.initialize();
+        });
     </script>
 </body>
 </html>
