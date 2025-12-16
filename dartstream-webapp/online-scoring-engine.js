@@ -542,14 +542,14 @@ async function submitScore() {
     try {
         // Get current match state from DB
         const { data: match } = await window.supabaseClient
-            .from('live_matches')
+            .from('game_rooms')
             .select('*')
             .eq('id', onlineState.matchId)
             .single();
         
         if (!match) return;
         
-        const scores = match.scores;
+        const scores = match.game_state?.scores || {};
         const scoreInput = onlineState.localInput || 0;
         
         // Determine which score to update
@@ -583,13 +583,15 @@ async function submitScore() {
         // Switch turn
         const nextTurn = isHost ? 'guest' : 'host';
         
-        // Update database
+        // Update database - update game_state JSONB and current_turn
         const { error } = await window.supabaseClient
-            .from('live_matches')
+            .from('game_rooms')
             .update({
-                scores: scores,
-                current_turn: nextTurn,
-                updated_by: playerKey
+                game_state: {
+                    ...match.game_state,
+                    scores: scores
+                },
+                current_turn: nextTurn
             })
             .eq('id', onlineState.matchId);
         
@@ -673,7 +675,7 @@ function startGame() {
 async function fetchAndRenderMatchState() {
     try {
         const { data: match } = await window.supabaseClient
-            .from('live_matches')
+            .from('game_rooms')
             .select('*')
             .eq('id', onlineState.matchId)
             .single();
