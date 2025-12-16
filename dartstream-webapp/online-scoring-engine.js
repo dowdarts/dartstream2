@@ -31,6 +31,8 @@ async function checkAuthentication() {
     const urlParams = new URLSearchParams(window.location.search);
     const debugMode = urlParams.get('debug') === 'true' || isLocalTesting;
     
+    console.log('[AUTH] Auth check - Protocol:', window.location.protocol, 'Hostname:', window.location.hostname, 'IsLocalTesting:', isLocalTesting, 'DebugMode:', debugMode);
+    
     if (debugMode) {
         console.log('🔧 DEBUG MODE: Skipping auth for local testing');
         onlineState.authenticatedUser = {
@@ -85,10 +87,17 @@ function showAuthError(message) {
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[INIT] DOMContentLoaded fired');
     const user = await checkAuthentication();
+    console.log('[AUTH] checkAuthentication returned:', user ? user.email : 'null/undefined');
     if (user) {
+        console.log('[INIT] Initializing player data...');
         await initializePlayerData(user);
+        console.log('[INIT] Setting up event listeners...');
         setupEventListeners();
+        console.log('[OK] Event listeners setup complete');
+    } else {
+        console.error('[ERROR] Authentication failed, event listeners NOT set up');
     }
 });
 
@@ -247,34 +256,35 @@ async function hostMatch() {
     document.getElementById('room-code-display').textContent = onlineState.roomCode;
     
     try {
-            // Create match in Supabase using game_rooms table
-            const startScore = onlineState.gameType === '501' ? 501 : 301;
-            
-            const { data, error } = await window.supabaseClient
-                .from('game_rooms')
-                .insert([{
-                    room_code: onlineState.roomCode,
-                    host_id: onlineState.authenticatedUser.id,
-                    status: 'waiting',
-                    current_turn: 'host',
-                    game_state: {
-                        game_type: onlineState.gameType,
-                        start_type: onlineState.startType,
-                        host_name: onlineState.myName,
-                        host_player_id: onlineState.myPlayerId,
-                        scores: {
-                            host: startScore,
-                            guest: startScore,
-                            host_leg_avg: 0,
-                            guest_leg_avg: 0,
-                            host_match_avg: 0,
-                            guest_match_avg: 0,
-                            host_legs_won: 0,
-                            guest_legs_won: 0,
-                            host_darts_thrown: 0,
-                            guest_darts_thrown: 0,
-                            score_history: []
-                        }
+        // Create match in Supabase using game_rooms table
+        const startScore = onlineState.gameType === '501' ? 501 : 301;
+        
+        const { data, error } = await window.supabaseClient
+            .from('game_rooms')
+            .insert([{
+                room_code: onlineState.roomCode,
+                host_id: onlineState.authenticatedUser.id,
+                status: 'waiting',
+                current_turn: 'host',
+                game_state: {
+                    game_type: onlineState.gameType,
+                    start_type: onlineState.startType,
+                    host_name: onlineState.myName,
+                    host_player_id: onlineState.myPlayerId,
+                    scores: {
+                        host: startScore,
+                        guest: startScore,
+                        host_leg_avg: 0,
+                        guest_leg_avg: 0,
+                        host_match_avg: 0,
+                        guest_match_avg: 0,
+                        host_legs_won: 0,
+                        guest_legs_won: 0,
+                        host_darts_thrown: 0,
+                        guest_darts_thrown: 0,
+                        score_history: []
+                    }
+                }
             }])
             .select()
             .single();
@@ -296,15 +306,15 @@ async function hostMatch() {
         // Wait for guest to join (poll every 1 second)
         const waitForGuest = setInterval(async () => {
             const { data: match } = await window.supabaseClient
-                .from('live_matches')
+                .from('game_rooms')
                 .select('*')
                 .eq('room_code', onlineState.roomCode)
                 .single();
             
-            if (match && match.guest_name) {
+            if (match && match.game_state?.guest_name) {
                 clearInterval(waitForGuest);
-                onlineState.opponentName = match.guest_name;
-                onlineState.opponentPlayerId = match.guest_player_id;
+                onlineState.opponentName = match.game_state.guest_name;
+                onlineState.opponentPlayerId = match.game_state.guest_player_id;
                 startGame();
             }
         }, 1000);
