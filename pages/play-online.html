@@ -1,0 +1,673 @@
+<!-- DartStream Play Online v2.1.1 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DartStream - Video Calling</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 90%;
+            height: 80vh;
+            display: flex;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== START SCREEN ===== */
+        #startScreen {
+            gap: 40px;
+            text-align: center;
+        }
+
+        #startScreen .logo {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+            opacity: 0.95;
+        }
+
+        #startScreen h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        #startScreen p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 14px 40px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            min-width: 180px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35 0%, #E55A24 100%);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #FF7B4A 0%, #D54A14 100%);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #004E89 0%, #003d6b 100%);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #1a6fa0 0%, #004E89 100%);
+            box-shadow: 0 8px 25px rgba(0, 78, 137, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ===== ROOM CODE SCREEN ===== */
+        #roomCodeScreen {
+            gap: 40px;
+            text-align: center;
+        }
+
+        #roomCodeScreen h2 {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 20px;
+        }
+
+        #roomCodeDisplay {
+            font-size: 5rem;
+            font-weight: 700;
+            letter-spacing: 30px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+            padding: 50px 60px;
+            border-radius: 16px;
+            border: 2px solid #3b82f6;
+            font-family: 'Monaco', 'Courier New', monospace;
+            min-width: 450px;
+            color: #3b82f6;
+        }
+
+        #roomCountdown {
+            font-size: 1.8rem;
+            color: #f59e0b;
+            font-weight: 600;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .info-text {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 500px;
+        }
+
+        /* ===== JOIN ROOM SCREEN ===== */
+        #joinScreen {
+            gap: 30px;
+        }
+
+        #joinScreen h2 {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        input[type="text"],
+        select {
+            padding: 15px 18px;
+            font-size: 1.05rem;
+            border: 2px solid #475569;
+            border-radius: 10px;
+            background: #1e293b;
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            background: #0f172a;
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+            padding-right: 45px;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%233b82f6" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 24px;
+            padding-right: 45px;
+        }
+
+        /* ===== DEVICE CONFIG SCREEN ===== */
+        #deviceConfigScreen {
+            gap: 30px;
+        }
+
+        #deviceConfigScreen h2 {
+            font-size: 2.5rem;
+            color: #3b82f6;
+        }
+
+        .device-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .device-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .device-group label {
+            font-size: 1rem;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        #cameraPreview {
+            width: 100%;
+            max-width: 550px;
+            height: 350px;
+            background: #0f172a;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        /* ===== VIDEO CALL SCREEN ===== */
+        #videoCallScreen {
+            padding: 0;
+            gap: 0;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 0;
+            padding: 0;
+            background: #0f172a;
+            position: relative;
+        }
+
+        #remoteVideo {
+            flex: 1;
+            background: #000;
+            border-radius: 0;
+            object-fit: cover;
+        }
+
+        .video-side-panel {
+            width: 120px;
+            height: 100%;
+            background: #1a1a2e;
+            border-left: 2px solid #3b82f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 16px 12px;
+            align-items: center;
+        }
+
+        .local-video-container {
+            position: absolute;
+            top: 20px;
+            right: 150px;
+            width: 220px;
+            height: 170px;
+            background: #1e293b;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
+            z-index: 10;
+            cursor: move;
+            touch-action: none;
+            user-select: none;
+            transition: box-shadow 0.2s;
+        }
+
+        .local-video-container:hover {
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.4);
+        }
+
+        .local-video-container.dragging {
+            box-shadow: 0 16px 50px rgba(59, 130, 246, 0.6);
+            opacity: 0.95;
+        }
+
+        #localVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-info {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #3b82f6;
+            z-index: 10;
+            font-weight: 600;
+        }
+
+        /* Connection Banner */
+        .connection-banner {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+
+        .connection-banner.connecting {
+            background: rgba(239, 68, 68, 0.9);
+            color: #fecaca;
+            border: 2px solid #ef4444;
+        }
+
+        .connection-banner.connected {
+            background: rgba(16, 185, 129, 0.9);
+            color: #d1fae5;
+            border: 2px solid #10b981;
+        }
+
+        .connection-banner.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #connectionStatus {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #connectionTimer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .video-controls {
+            display: none;
+        }
+
+        .side-control-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .side-control-btn:hover {
+            background: rgba(59, 130, 246, 0.6);
+            transform: scale(1.08);
+        }
+
+        .side-control-btn.off {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .side-control-btn.off:hover {
+            background: rgba(239, 68, 68, 0.6);
+        }
+
+        .participants {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 16px 22px;
+            border-radius: 10px;
+            font-size: 1rem;
+            z-index: 10;
+            border: 1px solid #3b82f6;
+        }
+
+        .participant {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: blink 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #6b7280;
+            animation: none;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ===== ERROR MESSAGE ===== */
+        #errorMessage {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            padding: 18px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
+            max-width: 450px;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(500px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #errorMessage.hidden {
+            display: none;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .video-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+            }
+
+            .local-video-container {
+                width: 100%;
+                height: 150px;
+            }
+
+            #startScreen h1 {
+                font-size: 2.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                min-width: unset;
+            }
+
+            #roomCodeDisplay {
+                font-size: 3rem;
+                letter-spacing: 15px;
+                min-width: auto;
+                padding: 30px 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- START SCREEN -->
+        <div id="startScreen" class="screen active">
+            <img src="assets/images/Video Stream Logo.png" alt="DartStream Video Stream" class="logo">
+            <h1>DartStream</h1>
+            <p>Live Video Calling for Darts Matches</p>
+            <div class="button-group">
+                <button class="btn-primary" id="createRoomBtn">Create & Join Room</button>
+                <button class="btn-secondary" id="joinRoomBtn">Join Existing Room</button>
+            </div>
+        </div>
+
+        <!-- ROOM CODE SCREEN -->
+        <div id="roomCodeScreen" class="screen">
+            <h2>Room Created</h2>
+            <div id="roomCodeDisplay">----</div>
+            <div id="roomCountdown">Expires in 60 seconds</div>
+            <p class="info-text">Share this code with your opponent<br>They have 60 seconds to join</p>
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button class="btn-primary" id="copyCodeBtn" style="flex: 1; min-width: unset;">📋 Copy Code</button>
+                <button class="btn-primary" id="joinRoomCodeBtn" style="flex: 1; min-width: unset;">✓ Join Room</button>
+            </div>
+            <button class="btn-secondary" id="cancelRoomBtn" style="margin-top: 15px; width: 100%;">Cancel</button>
+        </div>
+
+        <!-- JOIN ROOM SCREEN -->
+        <div id="joinScreen" class="screen">
+            <h2>Join a Room</h2>
+            <div class="input-group">
+                <input type="text" id="roomCodeInput" placeholder="Enter 4-digit code" maxlength="4">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="joinGameBtn" style="flex: 1; min-width: unset;">Join</button>
+                    <button class="btn-secondary" id="backToStartBtn" style="flex: 1; min-width: unset;">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEVICE CONFIG SCREEN -->
+        <div id="deviceConfigScreen" class="screen">
+            <h2>Select Your Devices</h2>
+            <div class="device-selection">
+                <div class="device-group">
+                    <label>📷 Camera:</label>
+                    <select id="cameraSelect"></select>
+                </div>
+                <div class="device-group">
+                    <label>🎤 Microphone:</label>
+                    <select id="microphoneSelect"></select>
+                </div>
+                <video id="cameraPreview" autoplay playsinline muted></video>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="confirmDevicesBtn" style="flex: 1; min-width: unset;">Start Video Call</button>
+                    <button class="btn-secondary" id="cancelDevicesBtn" style="flex: 1; min-width: unset;">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIDEO CALL SCREEN -->
+        <div id="videoCallScreen" class="screen">
+            <div class="video-container">
+                <video id="remoteVideo" autoplay playsinline></video>
+                
+                <!-- Connection Status Banner -->
+                <div id="connectionBanner" class="connection-banner connecting">
+                    <div class="banner-content">
+                        <span id="connectionStatus">Connecting...</span>
+                        <span id="connectionTimer">00:00</span>
+                    </div>
+                </div>
+                
+                <div class="local-video-container">
+                    <video id="localVideo" autoplay playsinline muted></video>
+                    <div class="video-info">You</div>
+                </div>
+                <div class="video-side-panel">
+                    <button class="side-control-btn" id="toggleMicBtn" title="Mute/Unmute microphone">🎤</button>
+                    <button class="side-control-btn" id="toggleCameraBtn" title="Turn camera on/off">📷</button>
+                    <button class="side-control-btn" id="settingsBtn" title="Camera and microphone settings">⚙️</button>
+                    <button class="side-control-btn" id="refreshCallBtn" title="Refresh video call">🔄</button>
+                    <button class="side-control-btn" id="endCallBtn" title="End call and return to start">❌</button>
+                </div>
+            </div>
+            <div class="participants">
+                <div class="participant">
+                    <div class="status-dot"></div>
+                    <span id="opponentName">Opponent</span>
+                </div>
+                <div class="participant">
+                    <div class="status-dot"></div>
+                    <span id="youName">You</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR MESSAGE -->
+    <div id="errorMessage" class="hidden"></div>
+
+    <!-- SCRIPTS -->
+    <!-- Supabase library MUST load first -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Then our config that depends on Supabase -->
+    <script src="../js/js/supabase-config.js"></script>
+    <script src="video-room.js?v=13"></script>
+    <script src="room-manager.js?v=13"></script>
+    <script src="play-online.js?v=3"></script>
+    
+    <div style="position: fixed; top: 10px; right: 10px; font-size: 18px; font-weight: bold; color: #FF6B35; z-index: 9999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; border: 2px solid #FF6B35;">v2.1.1</div>
+</body>
+</html>

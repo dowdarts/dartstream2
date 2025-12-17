@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="icon" type="image/png" href="assets/images/dartstream-logo.png">
+    <title>DartStream - Online Scoring v2.5.0</title>
+    <link rel="stylesheet" href="css/styles.css?v=2.5.0">
+</head>
+<body>
+    
+    <div id="app">
+        <!-- Landing Screen: Host vs Join -->
+        <div id="landing-screen" class="screen active">
+            <div class="modal-header">
+                <h1>DartStream Online Scoring</h1>
+                <p class="yellow-text">Professional Dart Live Streaming Tools</p>
+                <p style="font-size: 12px; color: #888; margin-top: 8px;">v2.2.1</p>
+            </div>
+            <div class="modal-content">
+                <div class="game-options">
+                    <button class="game-option-btn" id="host-match-btn">
+                        <strong>Host Match</strong><br>
+                        <span>Create a new online match</span>
+                    </button>
+                    <button class="game-option-btn" id="join-match-btn">
+                        <strong>Join Match</strong><br>
+                        <span>Connect to an existing match</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Host/Join Setup Screen -->
+        <div id="setup-screen" class="screen">
+            <div class="modal-header">
+                <h1 id="setup-title">Setup</h1>
+                <button class="back-btn" id="back-to-landing">← Back</button>
+            </div>
+            <div class="modal-content">
+                <!-- Auth Check Screen -->
+                <div id="auth-check-screen" style="display: none; text-align: center;">
+                    <h2 class="yellow-text">Checking authentication...</h2>
+                    <p style="color: #ccc; margin-top: 20px;">Please sign in to the main app first to use online scorer.</p>
+                    <button class="continue-btn red" id="back-to-main-app" style="margin-top: 20px;">Return to Main App</button>
+                </div>
+
+
+                <div id="host-setup-form" style="display: none;">
+                    <h2 class="yellow-text">Host Match</h2>
+                    <div class="form-group">
+                        <label>Playing As</label>
+                        <div class="player-name-display" id="host-player-name-display">Loading...</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Game Type</label>
+                        <div class="custom-options-row">
+                            <button class="option-btn selected" id="host-game-501">501 SIDO</button>
+                            <button class="option-btn" id="host-game-301">301 DIDO</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Match Format</label>
+                        <div class="custom-options-row" id="host-match-format-row">
+                            <button class="option-btn selected" data-format="single">Single Leg</button>
+                            <button class="option-btn" data-format="playall3">Play All 3 Legs</button>
+                            <button class="option-btn" data-format="bo3">Best of 3 Legs</button>
+                            <button class="option-btn" data-format="bo5">Best of 5 Legs</button>
+                            <button class="option-btn" data-format="bo7">Best of 7 Legs</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Set Format</label>
+                        <div class="custom-options-row" id="host-set-format-row">
+                            <button class="option-btn selected" data-set="none">No Sets</button>
+                            <button class="option-btn" data-set="bo3">Best of 3 Sets</button>
+                            <button class="option-btn" data-set="bo5">Best of 5 Sets</button>
+                            <button class="option-btn" data-set="playall">Play All Sets</button>
+                        </div>
+                    </div>
+                    <button class="continue-btn green" id="create-match-btn">Create Match</button>
+                </div>
+
+                <div id="join-setup-form" style="display: none;">
+                    <h2 class="yellow-text">Join Match</h2>
+                    <div class="form-group">
+                        <label>Playing As</label>
+                        <div class="player-name-display" id="guest-player-name-display">Loading...</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Room Code</label>
+                        <input 
+                            type="text" 
+                            id="room-code-input" 
+                            class="player-input room-code-input" 
+                            placeholder="Enter the 4-letter room code"
+                            autocomplete="off">
+                    </div>
+                    <button class="continue-btn green" id="join-match-submit-btn">Join Match</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting for Opponent Screen -->
+        <div id="waiting-screen" class="screen">
+            <div class="modal-header">
+                <h1>Waiting for Opponent</h1>
+            </div>
+            <div class="modal-content">
+                <div class="waiting-screen-content">
+                    <div class="waiting-emoji">⏳</div>
+                    <h2 class="yellow-text waiting-code-title">Room Code:</h2>
+                    <div id="room-code-display" class="room-code-large">----</div>
+                    <p id="waiting-message" class="waiting-message">Waiting for opponent to join...</p>
+                    <button class="continue-btn red" id="cancel-wait-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Selection Screen -->
+        <div id="player-selection-screen" class="screen">
+            <div class="modal-header">
+                <h1>Select Starting Player</h1>
+                <div style="position: absolute; top: 10px; right: 15px; font-size: 18px; color: #888;">V 2.6.0</div>
+            </div>
+            <div class="modal-content">
+                <div class="game-options">
+                    <button class="game-option-btn" id="host-player-select-btn">
+                        <strong id="host-name-for-selection">Host</strong><br>
+                        <span>Starts the match</span>
+                    </button>
+                    <button class="game-option-btn" id="guest-player-select-btn">
+                        <strong id="guest-name-for-selection">Guest</strong><br>
+                        <span>Starts the match</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game Screen -->
+        <div id="game-screen" class="screen">
+            <!-- Online Match Header -->
+            <div class="online-match-header">
+                <div class="host-guest-names">
+                    <span id="host-name-display" class="player-name-online">Host</span>
+                    <span class="vs-text">vs</span>
+                    <span id="guest-name-display" class="player-name-online">Guest</span>
+                </div>
+            </div>
+
+            <div class="scoreboard-header">
+                <div class="player-header left" id="player1-display">
+                    <div class="player-info">
+                        <div class="player-name-large" id="player1-name">Home</div>
+                        <div class="score-large" id="player1-score">501</div>
+                        <div class="averages-display">
+                            <div class="avg-label red" id="player1-leg-avg">0.00</div>
+                            <div class="avg-label red" id="player1-match-avg">0.00</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timer-display">
+                    <img src="assets/images/dartstream-logo.png" alt="DartStream" class="game-logo">
+                    <div class="version-text">v2.5.0</div>
+                </div>
+                <div class="player-header right active" id="player2-display">
+                    <div class="player-info">
+                        <div class="player-name-large" id="player2-name">Away</div>
+                        <div class="score-large" id="player2-score">501</div>
+                        <div class="averages-display">
+                            <div class="avg-label red" id="player2-leg-avg">0.00</div>
+                            <div class="avg-label red" id="player2-match-avg">0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Turn Status Bar -->
+            <div class="turn-status-bar" id="turn-status-bar" style="cursor: pointer;">
+                <div class="status-text" id="status-text">Connecting...</div>
+            </div>
+
+            <div class="control-bar">
+                <button class="control-btn" id="back-to-landing-game">Exit Match</button>
+                <h2 class="set-score-inline">Leg <span class="score-display" id="leg-score-display">0 - 0</span></h2>
+                <div class="control-btn gold" id="room-code-display-game" style="cursor: default; font-size: clamp(18px, 3vw, 20px); font-weight: bold; letter-spacing: 3px;">----</div>
+            </div>
+
+            <div class="scoring-area">
+                <div class="score-history" id="score-history">
+                    <!-- Score entries will be added here dynamically -->
+                </div>
+                
+                <!-- Good Shot Display -->
+                <div id="good-shot-display" class="good-shot-display" style="display: none;">
+                    <div class="good-shot-text" id="good-shot-text"></div>
+                </div>
+            </div>
+
+            <div class="bottom-controls">
+                <div class="input-bar">
+                    <button class="input-btn yellow" id="action-btn">UNDO</button>
+                    <div class="input-mode" id="input-mode">Enter Score</div>
+                    <button class="input-btn red" id="submit-btn">MISS</button>
+                </div>
+
+                <div class="number-pad" id="number-pad">
+                    <button class="num-btn edge" data-score="26">26</button>
+                    <button class="num-btn" data-score="1">1</button>
+                    <button class="num-btn" data-score="2">2</button>
+                    <button class="num-btn" data-score="3">3</button>
+                    <button class="num-btn edge" data-score="45">45</button>
+                    
+                    <button class="num-btn edge" data-score="40">40</button>
+                    <button class="num-btn" data-score="4">4</button>
+                    <button class="num-btn" data-score="5">5</button>
+                    <button class="num-btn" data-score="6">6</button>
+                    <button class="num-btn edge" data-score="60">60</button>
+                    
+                    <button class="num-btn edge" data-score="41">41</button>
+                    <button class="num-btn" data-score="7">7</button>
+                    <button class="num-btn" data-score="8">8</button>
+                    <button class="num-btn" data-score="9">9</button>
+                    <button class="num-btn edge" data-score="81">81</button>
+                    
+                    <button class="num-btn edge" data-score="43">43</button>
+                    <button class="num-btn special green dual-function" id="btn-100-multiply" data-score="100" data-operation="multiply" data-default="100" data-alt="×">100</button>
+                    <button class="num-btn special red dual-function" id="btn-180-zero" data-score="180" data-operation="zero" data-default="180" data-alt="0">180</button>
+                    <button class="num-btn special green dual-function" id="btn-140-plus" data-score="140" data-operation="plus" data-default="140" data-alt="+">140</button>
+                    <button class="num-btn edge" data-score="85">85</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Match Complete Modal -->
+        <div id="match-complete-modal" class="modal-overlay">
+            <div class="modal-content set-complete-modal">
+                <div class="set-complete-header">
+                    <div class="player-score-display" id="match-winner-display">
+                        <div class="player-label" id="match-winner-name">Winner</div>
+                        <div class="score-value" style="font-size: 72px;">🏆</div>
+                    </div>
+                </div>
+                <h3 class="next-set-text" id="match-complete-text">Match Complete!</h3>
+                <div class="match-stats-summary" id="match-stats-summary" style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 16px;">
+                        <div id="player1-final-stats"></div>
+                        <div id="player2-final-stats"></div>
+                    </div>
+                </div>
+                <div class="set-complete-buttons">
+                    <button class="set-btn green" id="continue-match-btn">Continue Match (Next Leg)</button>
+                    <button class="set-btn blue" id="change-game-mode-btn">Change Game Mode</button>
+                    <button class="set-btn red" id="end-match-btn">End Match & Save Stats</button>
+                    <button class="set-btn yellow" id="return-to-landing-btn">Return to Main Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finish Darts Modal -->
+        <div id="finish-darts-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 class="modal-title">How many darts to finish?</h2>
+                <div class="finish-darts-buttons">
+                    <button class="finish-dart-btn" data-darts="1">
+                        <img src="assets/images/button 1.png" alt="1 Dart" style="width: 100%; height: auto;">
+                    </button>
+                    <button class="finish-dart-btn" data-darts="2">
+                        <img src="assets/images/button 2.png" alt="2 Darts" style="width: 100%; height: auto;">
+                    </button>
+                    <button class="finish-dart-btn" data-darts="3">
+                        <img src="assets/images/button 3.png" alt="3 Darts" style="width: 100%; height: auto;">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js?v=2.5.0"></script>
+    <script src="online-scoring-engine.js?v=2.5.0"></script>
+</body>
+</html>

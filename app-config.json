@@ -1,0 +1,38 @@
+{
+  "name": "DartStream Professional",
+  "version": "2.6.0",
+  "description": "Professional dart live streaming and scoring application",
+  "homepage": "https://dowdarts.github.io/dartstream2/",
+  "repository": "https://github.com/dowdarts/dartstream2",
+  "structure": {
+    "pages": "Application pages (scoring, online scorer, controller, etc.)",
+    "js": "JavaScript modules and logic",
+    "css": "Stylesheets",
+    "assets": "Images, flags, logos, and other media"
+  },
+  "features": [
+    "X01 Scoring (301/501 SIDO/DIDO)",
+    "Online Multiplayer Scoring",
+    "Video Calling (WebRTC)",
+    "Remote Control",
+    "Player Management",
+    "Statistics Tracking",
+    "Match Management"
+  ],
+  "requirements": {
+    "browser": "Modern browser (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
+    "internet": "Required for Supabase backend and online features",
+    "camera": "Optional for video calling"
+  },
+  "backend": {
+    "service": "Supabase",
+    "database": "PostgreSQL",
+    "realtime": "WebSocket subscriptions",
+    "project": "kswwbqumgsdissnwuiab"
+  },
+  "deployment": {
+    "type": "Static site",
+    "hosting": "GitHub Pages, Netlify, Vercel, or any static host",
+    "notes": "No server-side code required - runs entirely client-side"
+  }
+}

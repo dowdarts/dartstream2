@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/images/dartstream-logo.png">
+    <title>DartStream - Live Stream Broadcasting Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: clamp(1rem, 3vh, 2rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            max-height: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+        }
+
+        .header .logo-container {
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .header .logo-container img {
+            max-width: clamp(180px, 30vw, 300px);
+            height: auto;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 7vw, 4rem);
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .header .slogan {
+            font-size: clamp(1.1rem, 3vw, 1.8rem);
+            color: #facc15;
+            font-style: italic;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #94a3b8;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto clamp(1.5rem, 3vh, 2rem);
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #1a1a2e;
+            padding: clamp(0.8rem, 2vh, 1.2rem) clamp(2rem, 4vw, 3rem);
+            border-radius: 8px;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(250, 204, 21, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(250, 204, 21, 0.5);
+        }
+
+        .features-section {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: clamp(1.5rem, 3vh, 2.5rem);
+            margin-bottom: clamp(2rem, 4vh, 3rem);
+        }
+
+        .features-section h2 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            color: #facc15;
+            text-align: center;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1.5rem, 3vh, 2rem);
+            margin-top: clamp(1rem, 2vh, 1.5rem);
+        }
+
+        .feature-item {
+            background: rgba(0,0,0,0.3);
+            padding: clamp(1rem, 2vh, 1.5rem);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .feature-item h3 {
+            color: #facc15;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
+        }
+
+        .feature-item p {
+            color: #94a3b8;
+            line-height: 1.5;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+
+        .section-divider {
+            text-align: center;
+            margin: clamp(2rem, 4vh, 3rem) 0;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #facc15;
+        }
+
+        .header .emoji {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            color: #94a3b8;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1rem, 2vh, 1.5rem);
+            margin-bottom: clamp(1rem, 2vh, 2rem);
+        }
+
+        .app-card {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: clamp(1rem, 3vh, 2rem);
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+
+        .app-card:hover {
+            border-color: #facc15;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(250, 204, 21, 0.2);
+        }
+
+        .app-icon {
+            font-size: clamp(2rem, 6vw, 3rem);
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
+        }
+
+        .app-card h2 {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            margin-bottom: clamp(0.3rem, 0.5vh, 0.5rem);
+            color: #facc15;
+        }
+
+        .app-card p {
+            color: #94a3b8;
+            line-height: 1.4;
+            margin-bottom: clamp(0.5rem, 1vh, 1rem);
+            font-size: clamp(0.85rem, 2vw, 1rem);
+        }
+
+        .app-card .device-type {
+            display: inline-block;
+            background: #334155;
+            padding: clamp(0.2rem, 0.5vh, 0.3rem) clamp(0.5rem, 1vw, 0.8rem);
+            border-radius: 5px;
+            font-size: clamp(0.75rem, 1.8vw, 0.9rem);
+            margin-top: clamp(0.3rem, 0.5vh, 0.5rem);
+        }
+
+        .future-badge {
+            color: #facc15;
+            font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+            margin-top: clamp(0.3rem, 0.5vh, 0.5rem);
+        }
+
+        .footer-link {
+            margin-top: 1rem;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: clamp(1.5rem, 3vh, 3rem);
+            padding-top: clamp(1rem, 2vh, 2rem);
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+        }
+
+        .footer p {
+            margin-bottom: clamp(0.3rem, 0.5vh, 0.5rem);
+        }
+
+        .footer a {
+            color: #facc15;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .partner-logos {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(1.5rem, 3vw, 3rem);
+            margin-top: clamp(1.5rem, 3vh, 2.5rem);
+            padding: clamp(1.5rem, 3vh, 2.5rem) 0;
+        }
+
+        .partner-logos img {
+            height: clamp(180px, 25vw, 280px);
+            width: auto;
+            object-fit: contain;
+            opacity: 0.9;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .partner-logos img:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* Tablet optimizations */
+        @media (max-width: 1024px) {
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Auth buttons */
+        .auth-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+            flex-wrap: wrap;
+        }
+        
+        .auth-btn {
+            padding: clamp(0.6rem, 1.5vh, 0.8rem) clamp(1.5rem, 3vw, 2rem);
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .auth-btn.sign-in {
+            background: rgba(250, 204, 21, 0.2);
+            border: 2px solid #facc15;
+            color: #facc15;
+        }
+        
+        .auth-btn.sign-in:hover {
+            background: rgba(250, 204, 21, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .auth-btn.create {
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #1a1a2e;
+        }
+        
+        .auth-btn.create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(250, 204, 21, 0.4);
+        }
+        
+        .auth-btn.sign-out {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        .auth-btn.sign-out:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .user-greeting {
+            color: #facc15;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: clamp(0.5rem, 2vh, 1rem);
+            }
+            
+            .header .emoji {
+                font-size: clamp(2rem, 10vw, 3rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="assets/images/dartstream-logo.png" alt="DartStream Logo">
+            </div>
+            
+            <!-- Auth Buttons -->
+            <div id="auth-section">
+                <div id="logged-out-buttons" class="auth-buttons" style="display: none;">
+                    <a href="player-account.html?action=login" class="auth-btn sign-in">Sign In</a>
+                    <a href="player-account.html?action=register" class="auth-btn create">Create Account</a>
+                </div>
+                <div id="logged-in-section" style="display: none; text-align: center;">
+                    <p class="user-greeting">Welcome, <span id="user-name"></span>!</p>
+                    <div class="auth-buttons">
+                        <button class="auth-btn sign-out" id="sign-out-btn">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h1>The Complete Production System for Live Darts</h1>
+            <p class="slogan">Every Stat, Every Score, Every Stream. From Oche to Screen.</p>
+            <p>DartStream is the all-in-one software solution that brings professional-grade broadcast quality to any darts event. Go beyond simple scoring with integrated event management, real-time player statistics, and customizable TV graphics—all controlled from one central hub.</p>
+        </div>
+
+        <!-- Key Features Section -->
+        <div class="features-section">
+            <h2>🌟 Unify Your Darts Event Production</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>📊 Total Score Control</h3>
+                    <p>Live scoreboard integration and in-app scoring, including automatic calculation for all popular formats.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📺 Broadcast Ready Graphics</h3>
+                    <p>Generate professional TV Score Bugs, Player Standing displays, and overlays instantly, designed to look great on any stream.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>📈 Data & Stats Engine</h3>
+                    <p>Real-time player stats tracking and event tracking to feed your graphics and enrich the viewing experience.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>🎮 Event Management Central</h3>
+                    <p>Use the integrated Live Match Central and Tournament Director tools to manage your entire event schedule, players, and match flow seamlessly.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider">💻 Choose Your DartStream App</div>
+
+        <!-- Apps Grid -->
+        <div class="apps-grid">
+            <a href="scoring-app.html" class="app-card">
+                <div class="app-icon">📱</div>
+                <h2>Scoring App</h2>
+                <p>Keep score, track stats, and sync live to scoreboard displays</p>
+                <div class="device-type">💻 Tablet / Desktop</div>
+            </a>
+
+            <a href="match-central.html" class="app-card">
+                <div class="app-icon">🎮</div>
+                <h2>Match Central</h2>
+                <p>View all active matches and select which game to display on your scoreboard</p>
+                <div class="device-type">💻 Desktop</div>
+            </a>
+
+            <a href="scoreboard.html" class="app-card">
+                <div class="app-icon">📺</div>
+                <h2>Scoreboard Display</h2>
+                <p>Professional broadcast overlay for OBS, TV displays, or streaming</p>
+                <div class="device-type">🖥️ OBS / TV</div>
+            </a>
+
+            <a href="controller.html" class="app-card">
+                <div class="app-icon">🎛️</div>
+                <h2>Scoreboard Controller</h2>
+                <p>Remote control for scoreboard settings, ads, and display options</p>
+                <div class="device-type">📱 Phone / Tablet</div>
+            </a>
+
+            <a href="play-online.html" class="app-card">
+                <div class="app-icon">📹</div>
+                <h2>Video Call</h2>
+                <p>Live video calling for remote darts matches - create or join rooms with room codes</p>
+                <div class="device-type">💻 Desktop / Tablet</div>
+            </a>
+
+            <a href="webapp-online-scorer.html" class="app-card">
+                <div class="app-icon">⚡</div>
+                <h2>Online Scorer</h2>
+                <p>Real-time synchronized darts scoring for multi-device online play</p>
+                <div class="device-type">💻 Desktop / Tablet</div>
+            </a>
+
+            <a href="player-account.html" class="app-card" id="my-stats-card" style="display: none;">
+                <div class="app-icon">📊</div>
+                <h2>My Stats</h2>
+                <p>View your personal statistics, match history, and career performance</p>
+                <div class="device-type">📱 All Devices</div>
+                <p class="future-badge">🔔 Track your progress across all matches</p>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>Created By MDStudios For CGCDarts & Atlantic Amateur Darts Series.</p>
+            <p>© 2025 DartStream. All rights reserved.</p>
+            
+            <div class="partner-logos">
+                <img src="logos/MDSTUDIOS - Copy.png" alt="MDStudios">
+                <img src="logos/cgcdarts.com logo - Copy.png" alt="CGCDarts.com">
+                <img src="logos/CGC-TV Logo - Copy.png" alt="CGC-TV">
+                <img src="logos/LIVE STREAM CGC LOGO - Copy.png" alt="CGC Live Stream">
+                <img src="logos/AADS OFFIAL LOGO - Copy.png" alt="Atlantic Amateur Darts Series">
+                <img src="logos/AADSDarts.com Logo.png" alt="AADS Darts.com">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/js/supabase-config.js"></script>
+    <script>
+        // Check authentication state and update UI
+        async function checkAuthState() {
+            try {
+                const supabase = getSupabaseClient();
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session) {
+                    // User is logged in - check if linked to a player card
+                    const { data: accountData } = await supabase
+                        .from('player_accounts')
+                        .select('first_name, last_name, account_linked_player_id')
+                        .eq('user_id', session.user.id)
+                        .maybeSingle();
+                    
+                    const isLinkedToPlayer = accountData?.account_linked_player_id != null;
+                    const userName = accountData 
+                        ? `${accountData.first_name} ${accountData.last_name}` 
+                        : session.user.email;
+                    
+                    // Show logged in UI
+                    document.getElementById('logged-out-buttons').style.display = 'none';
+                    document.getElementById('logged-in-section').style.display = 'block';
+                    document.getElementById('user-name').textContent = userName;
+                    
+                    // Show My Stats ONLY if linked to a player card
+                    if (isLinkedToPlayer) {
+                        document.getElementById('my-stats-card').style.display = 'block';
+                    } else {
+                        document.getElementById('my-stats-card').style.display = 'none';
+                    }
+                } else {
+                    // User is logged out
+                    document.getElementById('logged-out-buttons').style.display = 'flex';
+                    document.getElementById('logged-in-section').style.display = 'none';
+                    document.getElementById('my-stats-card').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking auth state:', error);
+                // Default to logged out state
+                document.getElementById('logged-out-buttons').style.display = 'flex';
+                document.getElementById('logged-in-section').style.display = 'none';
+                document.getElementById('my-stats-card').style.display = 'none';
+            }
+        }
+        
+        // Sign out handler
+        document.getElementById('sign-out-btn')?.addEventListener('click', async () => {
+            try {
+                const supabase = getSupabaseClient();
+                await supabase.auth.signOut();
+                window.location.reload();
+            } catch (error) {
+                console.error('Error signing out:', error);
+                alert('Error signing out. Please try again.');
+            }
+        });
+        
+        // Check auth state on page load
+        checkAuthState();
+    </script>
+    
+    <div style="position: fixed; top: 10px; right: 10px; font-size: 18px; font-weight: bold; color: #FF6B35; z-index: 9999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; border: 2px solid #FF6B35;">v2.6.0</div>
+</body>
+</html>

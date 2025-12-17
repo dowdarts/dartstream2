@@ -1,0 +1,3048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DartStream Scoreboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Set fixed base font size - prevents scaling with window */
+        html {
+            font-size: 10px; /* 1rem = 10px */
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            color: white;
+            margin: 0;
+            position: relative;
+            font-size: 16px; /* Reset body font size */
+        }
+
+        /* Chroma key container - green screen background */
+        .chroma-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #00ff00; /* Pure green for chroma key */
+            z-index: 1;
+        }
+
+        /* Content wrapper - holds scoreboard and ad */
+        .content-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+        }
+
+        /* PDC-Style Overlay at Top */
+        .scoreboard-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1056px;
+            height: 594px;
+            background: linear-gradient(to bottom, rgba(0,0,0,1), rgba(15,15,15,1));
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            overflow: visible;
+            resize: both;
+            border: 2px solid rgba(250, 204, 21, 0.3);
+            z-index: 999;
+            transform-origin: center center;
+        }
+
+        .scoreboard-overlay.resize-mode {
+            border-color: rgba(250, 204, 21, 0.5);
+        }
+
+        .scoreboard-overlay.resize-mode:hover {
+            border-color: rgba(250, 204, 21, 0.8);
+        }
+
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            background: #facc15;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .scoreboard-overlay.resize-mode .resize-handle,
+        .ad-bar.resize-mode .resize-handle {
+            pointer-events: auto;
+        }
+
+        .scoreboard-overlay.resize-mode:hover .resize-handle,
+        .ad-bar.resize-mode:hover .resize-handle {
+            opacity: 0.7;
+        }
+
+        .resize-handle:hover {
+            opacity: 1 !important;
+        }
+
+        .resize-handle.corner {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .resize-handle.edge {
+            background: rgba(250, 204, 21, 0.5);
+        }
+
+        .resize-nw {
+            top: -10px;
+            left: -10px;
+            cursor: nw-resize;
+        }
+
+        .resize-ne {
+            top: -10px;
+            right: -10px;
+            cursor: ne-resize;
+        }
+
+        .resize-sw {
+            bottom: -10px;
+            left: -10px;
+            cursor: sw-resize;
+        }
+
+        .resize-se {
+            bottom: -10px;
+            right: -10px;
+            cursor: se-resize;
+        }
+
+        .resize-n {
+            top: -5px;
+            left: 20px;
+            right: 20px;
+            height: 10px;
+            cursor: n-resize;
+        }
+
+        .resize-s {
+            bottom: -5px;
+            left: 20px;
+            right: 20px;
+            height: 10px;
+            cursor: s-resize;
+        }
+
+        .resize-e {
+            right: -5px;
+            top: 20px;
+            bottom: 20px;
+            width: 10px;
+            cursor: e-resize;
+        }
+
+        .resize-w {
+            left: -5px;
+            top: 20px;
+            bottom: 20px;
+            width: 10px;
+            cursor: w-resize;
+        }
+
+        .scoreboard-content {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .match-header {
+            background: #1a1a2e;
+            padding: 0.4vw 1.2vw;
+            text-align: center;
+            border-bottom: 0.15vw solid #facc15;
+            cursor: grab;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .match-header:active {
+            cursor: grabbing;
+        }
+
+        .match-title {
+            font-size: 1.2vw;
+            color: #94a3b8;
+            margin-bottom: 0.1vw;
+        }
+
+        .match-score {
+            font-size: 1.8vw;
+            font-weight: 900;
+            color: white;
+        }
+
+        .players-container {
+            position: relative;
+            width: 100%;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .column-headers {
+            display: grid;
+            grid-template-columns: 3vw 1fr 1.5vw 4vw 4vw 5vw 4.5vw 7vw 2vw;
+            align-items: center;
+            padding: 0.5vw 1vw;
+            gap: 0.8vw;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 2px solid #facc15;
+            position: relative;
+        }
+
+        .column-header {
+            text-align: center;
+            font-size: 0.9vw;
+            font-weight: bold;
+            color: #facc15;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .column-header.empty {
+            visibility: hidden;
+        }
+
+        .player-row {
+            display: grid;
+            grid-template-columns: 3vw 1fr 1.5vw 4vw 4vw 5vw 4.5vw 7vw 2vw;
+            align-items: center;
+            padding: 0.5vw 1vw;
+            gap: 0.8vw;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            transition: background 0.3s ease;
+        }
+        .player-row > * {
+            text-align: center;
+        }
+
+        .player-row:last-child {
+            border-bottom: none;
+        }
+
+        .turn-indicator {
+            width: 1.3vw;
+            height: 1.3vw;
+            border-radius: 50%;
+            margin: 0 auto;
+        }
+
+        .turn-indicator.start {
+            background: white;
+            border: 0.15vw solid white;
+        }
+
+        .turn-indicator.inactive {
+            background: transparent;
+            border: 0.15vw solid #334155;
+        }
+
+        .player-name {
+            font-size: 1.4vw;
+            font-weight: bold;
+            color: white;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .flag-container {
+            width: 3vw;
+            height: 2vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flag-icon {
+            height: 1.8vw;
+            width: auto;
+            border-radius: 0.15vw;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .stat-group {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2vw;
+            font-weight: bold;
+            color: white;
+        }
+
+        .legs-value {
+            font-size: 1.5vw;
+            font-weight: 900;
+            color: #facc15;
+        }
+
+        .score-box {
+            background: #000;
+            padding: 0.65vw 0.8vw;
+            border-radius: 0.3vw;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-value {
+            font-size: 2vw;
+            font-weight: 900;
+            color: white;
+            transition: opacity 0.3s ease;
+        }
+
+        .shot-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2vw;
+            font-weight: 900;
+            color: #facc15;
+            background: rgba(0,0,0,0.95);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .shot-display.show {
+            animation: shotFade 2s ease-out forwards;
+        }
+
+        @keyframes shotFade {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            10% {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            80% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+        }
+
+        .active-arrow {
+            width: 0;
+            height: 0;
+            border-top: 0.8vw solid transparent;
+            border-bottom: 0.8vw solid transparent;
+            border-right: 1vw solid #ef4444;
+            opacity: 0;
+            transition: all 0.4s ease;
+            position: absolute;
+            right: 0.3vw;
+        }
+
+        .player-row.active .active-arrow {
+            opacity: 1;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 1.5vw;
+            right: 1.5vw;
+            padding: 0.7vw 1.3vw;
+            border-radius: 0.5vw;
+            font-size: 1vw;
+            font-weight: bold;
+            background: rgba(0,0,0,0.8);
+            border: 0.15vw solid #334155;
+            z-index: 2000;
+        }
+
+        .connection-status.connected {
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .connection-status.disconnected {
+            border-color: #ef4444;
+            color: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-status.setup {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Code Entry Bar */
+        .code-entry-bar {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 2px solid #facc15;
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .code-entry-bar label {
+            color: #facc15;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .code-entry-bar input {
+            width: 80px;
+            padding: 8px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 5px;
+            font-weight: bold;
+            border: 2px solid #facc15;
+            background: #2a2a3e;
+            color: #facc15;
+            border-radius: 5px;
+        }
+
+        .code-entry-bar button {
+            background: #facc15;
+            color: #1a1a2e;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .code-entry-bar .divider {
+            width: 2px;
+            height: 30px;
+            background: rgba(250, 204, 21, 0.3);
+        }
+        
+        .controller-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            border: 1px solid rgba(250, 204, 21, 0.3);
+        }
+        
+        .controller-status label {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        
+        .controller-code-display {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #facc15;
+            background: #2a2a3e;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid #facc15;
+        }
+        
+        .connection-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        
+        .connection-indicator.connected {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            animation: pulse-green 2s infinite;
+        }
+        
+        @keyframes pulse-green {
+            0%, 100% { 
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            }
+            50% { 
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+            }
+        }
+
+        .code-entry-bar button:hover {
+            background: #fcd34d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 26, 46, 0.98);
+            padding: 2vw;
+            border-radius: 0.8vw;
+            border: 0.2vw solid #facc15;
+            z-index: 3000;
+            width: 50vw;
+            max-width: 800px;
+            min-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        .settings-panel h3 {
+            color: #facc15;
+            font-size: 1.2vw;
+            margin-bottom: 1vw;
+        }
+
+        .settings-input, .settings-select {
+            width: 100%;
+            padding: 0.5vw;
+            margin-bottom: 0.8vw;
+            font-size: 0.9vw;
+            background: #2a2a3e;
+            color: white;
+            border: 0.1vw solid #334155;
+            border-radius: 0.3vw;
+        }
+
+        .settings-select {
+            cursor: pointer;
+        }
+
+        .settings-label {
+            display: block;
+            color: #94a3b8;
+            font-size: 0.75vw;
+            margin-bottom: 0.3vw;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .settings-toggle {
+            background: #facc15;
+            color: #1a1a2e;
+            padding: 0.6vw 1.2vw;
+            border: none;
+            border-radius: 0.3vw;
+            font-size: 0.9vw;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 0.5vw;
+        }
+
+        .settings-toggle:hover {
+            background: #fcd34d;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 0.5vw;
+            margin-top: 0.5vw;
+        }
+
+        .settings-buttons button {
+            flex: 1;
+        }
+
+        .resize-mode-indicator {
+            position: fixed;
+            top: 70px;
+            right: 10px;
+            background: rgba(250, 204, 21, 0.9);
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 2999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .settings-toggle.close {
+            background: #64748b;
+        }
+
+        .settings-toggle.close:hover {
+            background: #94a3b8;
+        }
+
+        /* Footer */
+        .scoreboard-footer {
+            background: #1a1a2e;
+            padding: 0.4vw 1.2vw;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 0.15vw solid #facc15;
+        }
+
+        .footer-section {
+            font-size: 1.2vw;
+            color: #94a3b8;
+            flex: 1;
+        }
+
+        .footer-section:first-child {
+            text-align: left;
+        }
+
+        .footer-section:nth-child(2) {
+            text-align: center;
+        }
+
+        .footer-section:last-child {
+            text-align: right;
+        }
+
+        /* Column Visibility Controls */
+        .hide-flags .flag-container,
+        .hide-flags .column-headers > div:nth-child(1) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .hide-indicator .turn-indicator,
+        .hide-indicator .column-headers > div:nth-child(3) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .hide-sets .column-headers > div:nth-child(4),
+        .hide-sets .player-row > div:nth-child(4) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .hide-legs .column-headers > div:nth-child(5),
+        .hide-legs .player-row > div:nth-child(5) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .hide-avg .column-headers > div:nth-child(6),
+        .hide-avg .player-row > div:nth-child(6) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .hide-darts .column-headers > div:nth-child(7),
+        .hide-darts .player-row > div:nth-child(7) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        .hide-score .column-headers > div:nth-child(8),
+        .hide-score .player-row > div:nth-child(8) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* Settings Section Styles */
+        .settings-section-divider {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 15px;
+        }
+
+        .settings-checkbox {
+            margin-right: 8px;
+        }
+
+        .ad-image-hidden {
+            display: none;
+        }
+
+        /* Advertisement Bar - TV Bug Style */
+        .ad-bar {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 150px;
+            min-width: 150px;
+            min-height: 100px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,20,40,0.92));
+            border-radius: 15px;
+            border: 3px solid #facc15;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 998;
+            overflow: visible;
+            resize: both;
+            transition: all 1s ease-in-out;
+        }
+
+        .ad-bar.resize-mode {
+            border-color: rgba(250, 204, 21, 0.8);
+        }
+
+        /* Ad transition directions */
+        body.ad-hidden .ad-bar.slide-left {
+            margin-left: -600px;
+        }
+
+        body.ad-hidden .ad-bar.slide-right {
+            margin-right: -600px;
+        }
+
+        body.ad-hidden .ad-bar.slide-up {
+            margin-top: -400px;
+        }
+
+        body.ad-hidden .ad-bar.slide-down {
+            margin-bottom: -400px;
+        }
+
+        body.ad-hidden .ad-bar.fade {
+            opacity: 0;
+        }
+
+        /* Show ad - reset margins */
+        body.ad-visible .ad-bar {
+            margin-left: 0;
+            margin-right: 0;
+            margin-top: 0;
+            margin-bottom: 0;
+            opacity: 1;
+        }
+
+        .ad-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .ad-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .ad-placeholder {
+            font-size: 16px;
+            color: #facc15;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+        }
+
+        .ad-placeholder.ad-image-hidden {
+            display: none;
+        }
+
+        /* Ad Control Buttons */
+        .ad-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: none;
+            gap: 10px;
+            z-index: 1000;
+            flex-direction: row;
+        }
+
+        .ad-controls.enabled {
+            display: flex;
+        }
+
+        .ad-toggle-btn,
+        .ad-lock-btn {
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(250, 204, 21, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .ad-toggle-btn:hover,
+        .ad-lock-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(250, 204, 21, 0.5);
+        }
+
+        .ad-toggle-btn.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .ad-lock-btn {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+        }
+
+        .ad-lock-btn.locked {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Ad Upload Section in Settings */
+        .ad-upload-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #334155;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #334155;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #475569;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .ad-preview {
+            margin-top: 1rem;
+            max-width: 100%;
+            max-height: 150px;
+            border: 2px solid #334155;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .ad-preview.visible {
+            display: block;
+        }
+
+        .ad-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .ad-gallery-item {
+            position: relative;
+            border: 2px solid #334155;
+            border-radius: 5px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ad-gallery-item.active {
+            border-color: #facc15;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+        }
+
+        .ad-gallery-item:hover {
+            border-color: #facc15;
+        }
+
+        .ad-gallery-item img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ad-gallery-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .ad-gallery-item:hover .remove-btn {
+            display: block;
+        }
+
+        /* OBS Setup Modal */
+
+
+        .obs-info-button {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            margin-left: 10px;
+        }
+
+        .obs-info-button:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+    </style>
+</head>
+<body class="ad-hidden">
+    <!-- Chroma Key Background -->
+    <div class="chroma-container"></div>
+    
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+    
+    <!-- Top Control Bar -->
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; gap: 15px; align-items: center; background: rgba(26, 26, 46, 0.95); padding: 12px 20px; border-radius: 8px; border: 2px solid #facc15; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        <!-- Connection Code Entry -->
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="color: #facc15; font-size: 14px; font-weight: bold;">Code:</label>
+            <input type="text" id="pairingCode" placeholder="0000" maxlength="4" style="width: 80px; padding: 6px; font-size: 16px; text-align: center; letter-spacing: 3px; font-weight: bold; border: 2px solid #facc15; background: #2a2a3e; color: #facc15; border-radius: 5px;">
+            <button id="connectBtn" style="background: #facc15; color: #1a1a2e; padding: 6px 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">Connect</button>
+        </div>
+        
+        <!-- Connection Status -->
+        <div id="connectionStatus" style="color: #ff6b6b; font-size: 14px; font-weight: bold; padding: 6px 12px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+            ?? Not connected
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider"></div>
+        
+        <!-- Controller Connection Info -->
+        <div class="controller-status">
+            <label>Controller:</label>
+            <div class="controller-code-display" id="topConnectionCodeDisplay">----</div>
+            <div class="connection-indicator" id="controllerIndicator"></div>
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider"></div>
+        
+        <!-- Settings Button -->
+        <button id="settingsBtn" style="background: #8b5cf6; color: white; padding: 6px 16px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px;">?? Scoreboard</button>
+        
+        <!-- Ad Toggle Button -->
+        <button id="adToggleBtn" style="background: #10b981; color: white; padding: 6px 16px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px;">?? Toggle Ad</button>
+        
+        <!-- Ad Settings Button -->
+        <button id="adSettingsBtn" style="background: #6366f1; color: white; padding: 6px 16px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px;">?? Ad Settings</button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel hidden" id="settingsPanel">
+        <h3>Scoreboard Settings</h3>
+        <label class="settings-label">Event Title (Header)</label>
+        <input type="text" class="settings-input" id="headerText" placeholder="Men's Round Robin Board 11" value="">
+        
+        <label class="settings-label">Footer - Group</label>
+        <input type="text" class="settings-input" id="footerGroupInput" placeholder="Group A" value="">
+        
+        <label class="settings-label">Footer - Event Name</label>
+        <input type="text" class="settings-input" id="footerEventInput" placeholder="Premier League Darts" value="">
+        
+        <label class="settings-label">Footer - Match Format</label>
+        <input type="text" class="settings-input" id="footerFormatInput" placeholder="Best of 5 Legs" value="">
+        
+        <!-- Resize Mode Section -->
+        <label class="settings-label settings-section-divider">Resize Settings</label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="keepResizeMode" class="settings-checkbox">
+            Keep Resize Mode Active (allows resizing without opening settings)
+        </label>
+        
+        <!-- Column Visibility Section -->
+        <label class="settings-label settings-section-divider">Column Visibility</label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showFlags" checked class="settings-checkbox">
+            Show Flags
+        </label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showIndicator" checked class="settings-checkbox">
+            Show Throw Indicator
+        </label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showSets" checked class="settings-checkbox">
+            Show Sets
+        </label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showLegs" checked class="settings-checkbox">
+            Show Legs
+        </label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showAvg" checked class="settings-checkbox">
+            Show Average
+        </label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showDarts" checked class="settings-checkbox">
+            Show Darts
+        </label>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="showScore" checked class="settings-checkbox">
+            Show Score
+        </label>
+        
+        <div class="settings-buttons">
+            <button class="settings-toggle" id="saveSettingsBtn">?? Save</button>
+            <button class="settings-toggle close" id="closeSettingsBtn">Close</button>
+        </div>
+    </div>
+
+    <!-- Ad Settings Panel -->
+    <div class="settings-panel hidden" id="adSettingsPanel">
+        <h3>Advertisement Settings</h3>
+        
+        <div style="background: rgba(250, 204, 21, 0.1); border: 2px solid #facc15; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+            <label class="settings-label" style="margin-bottom: 5px;">Controller Connection Code</label>
+            <div style="background: #1a1a2e; border: 2px solid #facc15; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #facc15;" id="connectionCodeDisplay">----</div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px; text-align: center;">
+                Enter this code in your OBS Controller to connect
+            </div>
+        </div>
+        
+        <div class="file-input-wrapper">
+            <label class="file-input-label" for="adImageUpload">
+                Upload Ad Images (PNG/JPG) - Multiple Selection
+            </label>
+            <input type="file" id="adImageUpload" class="file-input" accept="image/png,image/jpeg,image/jpg,image/gif" multiple>
+        </div>
+        
+        <div id="adGallery" class="ad-gallery"></div>
+        
+        <div style="color: #facc15; font-size: 14px; margin-top: 10px; text-align: center;">
+            Use Shift + Left/Right Arrow to switch between ads
+        </div>
+        
+        <label class="settings-label">
+            <input type="checkbox" id="adEnableTransitions" class="settings-checkbox">
+            Enable Slide Transitions
+        </label>
+        
+        <label class="settings-label">Transition Type</label>
+        <select class="settings-select" id="adTransitionType">
+            <option value="slide-left">Slide Left</option>
+            <option value="slide-right">Slide Right</option>
+            <option value="slide-up">Slide Up</option>
+            <option value="slide-down">Slide Down</option>
+            <option value="fade">Fade In/Out</option>
+        </select>
+        
+        <label class="settings-label">Transition Duration (seconds)</label>
+        <input type="number" class="settings-input" id="adTransitionDuration" value="1" min="0.1" max="5" step="0.1">
+        
+        <label class="settings-label">
+            <input type="checkbox" id="adResizeMode" class="settings-checkbox">
+            Enable Resize/Move Mode for Ad
+        </label>
+        
+        <div class="settings-buttons">
+            <button class="settings-toggle" id="saveAdSettingsBtn">?? Save</button>
+            <button class="settings-toggle close" id="closeAdSettingsBtn">Close</button>
+        </div>
+    </div>
+
+
+
+    <div class="scoreboard-overlay">
+        <!-- Resize Handles -->
+        <div class="resize-handle corner resize-nw"></div>
+        <div class="resize-handle corner resize-ne"></div>
+        <div class="resize-handle corner resize-sw"></div>
+        <div class="resize-handle corner resize-se"></div>
+        <div class="resize-handle edge resize-n"></div>
+        <div class="resize-handle edge resize-s"></div>
+        <div class="resize-handle edge resize-e"></div>
+        <div class="resize-handle edge resize-w"></div>
+        
+        <div class="scoreboard-content">
+        <!-- Match Header -->
+        <div class="match-header" title="Drag to move | Click to edit">
+            <div class="match-title" id="matchFormat"></div>
+        </div>
+
+        <!-- Players Container -->
+        <div class="players-container">
+            <!-- Column Headers -->
+            <div class="column-headers">
+                <div class="column-header empty" data-col="0"></div>
+                <div class="column-header empty" data-col="1">NAME</div>
+                <div class="column-header empty" data-col="2"></div>
+                <div class="column-header" data-col="3">SETS</div>
+                <div class="column-header" data-col="4">LEGS</div>
+                <div class="column-header" data-col="5">AVG</div>
+                <div class="column-header" data-col="6">DARTS</div>
+                <div class="column-header" data-col="7">SCORE</div>
+                <div class="column-header empty" data-col="8"></div>
+            </div>
+
+            <!-- Home Player -->
+            <div class="player-row" id="homePlayer">
+                <div class="flag-container" id="homeFlagContainer"></div>
+                <div class="player-name" id="homeName">Home</div>
+                <div class="turn-indicator start" id="homeIndicator"></div>
+                <div class="stat-group">
+                    <span class="stat-value" id="homeSets">0</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-value" id="homeLegs">0</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-value" id="homeAverage">0.00</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-value" id="homeDarts">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="score-value" id="homeScore">501</span>
+                    <div class="shot-display" id="homeShot"></div>
+                </div>
+                <div class="active-arrow"></div>
+            </div>
+
+            <!-- Away Player -->
+            <div class="player-row" id="awayPlayer">
+                <div class="flag-container" id="awayFlagContainer"></div>
+                <div class="player-name" id="awayName">Away</div>
+                <div class="turn-indicator inactive" id="awayIndicator"></div>
+                <div class="stat-group">
+                    <span class="stat-value" id="awaySets">0</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-value" id="awayLegs">0</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-value" id="awayAverage">0.00</span>
+                </div>
+                <div class="stat-group">
+                    <span class="stat-value" id="awayDarts">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="score-value" id="awayScore">501</span>
+                    <div class="shot-display" id="awayShot"></div>
+                </div>
+                <div class="active-arrow"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="scoreboard-footer">
+            <div class="footer-section" id="footerGroup"></div>
+            <div class="footer-section" id="footerEvent"></div>
+            <div class="footer-section" id="footerFormat"></div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Advertisement Bar -->
+    <div id="adBar" class="ad-bar">
+        <!-- Resize Handles for Ad Bar -->
+        <div class="resize-handle corner resize-nw"></div>
+        <div class="resize-handle corner resize-ne"></div>
+        <div class="resize-handle corner resize-sw"></div>
+        <div class="resize-handle corner resize-se"></div>
+        <div class="resize-handle edge resize-n"></div>
+        <div class="resize-handle edge resize-s"></div>
+        <div class="resize-handle edge resize-e"></div>
+        <div class="resize-handle edge resize-w"></div>
+        
+        <div class="ad-content">
+            <img id="adImage" class="ad-image ad-image-hidden" alt="Advertisement">
+            <div id="adPlaceholder" class="ad-placeholder">Advertisement Space</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+
+        let supabaseClient = null;
+        let subscription = null;
+        let lastHomeScore = null;
+        let lastAwayScore = null;
+        let currentDisplayPlayer = 'home';
+        let currentGameCode = null;
+
+        // Auto-save functionality for scoreboard state
+        const SAVE_KEY = 'dartstream-scoreboard-state';
+        const SAVE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+
+        function saveScoreboardState(gameCode) {
+            const state = {
+                player1: {
+                    name: document.getElementById('homeName')?.textContent || '',
+                    score: lastHomeScore,
+                    average: document.getElementById('homeAverage')?.textContent || '0.00',
+                    sets: document.getElementById('homeSets')?.textContent || '0',
+                    legs: document.getElementById('homeLegs')?.textContent || '0',
+                    darts: document.getElementById('homeDarts')?.textContent || '0'
+                },
+                player2: {
+                    name: document.getElementById('awayName')?.textContent || '',
+                    score: lastAwayScore,
+                    average: document.getElementById('awayAverage')?.textContent || '0.00',
+                    sets: document.getElementById('awaySets')?.textContent || '0',
+                    legs: document.getElementById('awayLegs')?.textContent || '0',
+                    darts: document.getElementById('awayDarts')?.textContent || '0'
+                },
+                gameCode: gameCode,
+                timestamp: Date.now()
+            };
+            
+            try {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+                console.log('?? Scoreboard state saved');
+            } catch (err) {
+                console.error('Failed to save scoreboard state:', err);
+            }
+        }
+
+        function restoreScoreboardState() {
+            try {
+                const saved = localStorage.getItem(SAVE_KEY);
+                if (!saved) return null;
+
+                const state = JSON.parse(saved);
+                
+                // Check if expired
+                if (Date.now() - state.timestamp > SAVE_EXPIRY) {
+                    localStorage.removeItem(SAVE_KEY);
+                    console.log('? Saved state expired');
+                    return null;
+                }
+
+                return state;
+            } catch (err) {
+                console.error('Failed to restore state:', err);
+                return null;
+            }
+        }
+
+        function clearSavedScoreboardState() {
+            localStorage.removeItem(SAVE_KEY);
+            console.log('??? Saved scoreboard state cleared');
+        }
+
+        // Resize functionality
+        function initResize() {
+            const scoreboard = document.querySelector('.scoreboard-overlay');
+            const handles = scoreboard.querySelectorAll('.resize-handle');
+            
+            let isResizing = false;
+            let currentHandle = null;
+            let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', function(e) {
+                    isResizing = true;
+                    currentHandle = this;
+                    
+                    const rect = scoreboard.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = rect.width;
+                    startHeight = rect.height;
+                    
+                    const transform = window.getComputedStyle(scoreboard).transform;
+                    const matrix = new DOMMatrix(transform);
+                    startLeft = rect.left + rect.width / 2;
+                    startTop = rect.top + rect.height / 2;
+                    
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                
+                let newWidth = startWidth;
+                let newHeight = startHeight;
+                let newLeft = startLeft;
+                let newTop = startTop;
+
+                if (currentHandle.classList.contains('resize-e') || currentHandle.classList.contains('resize-se') || currentHandle.classList.contains('resize-ne')) {
+                    newWidth = startWidth + dx;
+                }
+                if (currentHandle.classList.contains('resize-w') || currentHandle.classList.contains('resize-sw') || currentHandle.classList.contains('resize-nw')) {
+                    newWidth = startWidth - dx;
+                    newLeft = startLeft + dx / 2;
+                }
+                if (currentHandle.classList.contains('resize-s') || currentHandle.classList.contains('resize-se') || currentHandle.classList.contains('resize-sw')) {
+                    newHeight = startHeight + dy;
+                }
+                if (currentHandle.classList.contains('resize-n') || currentHandle.classList.contains('resize-ne') || currentHandle.classList.contains('resize-nw')) {
+                    newHeight = startHeight - dy;
+                    newTop = startTop + dy / 2;
+                }
+
+                // Apply minimum constraints
+                if (newWidth < 500) newWidth = 500;
+                if (newHeight < 200) newHeight = 200;
+
+                scoreboard.style.width = newWidth + 'px';
+                scoreboard.style.height = newHeight + 'px';
+                scoreboard.style.left = newLeft + 'px';
+                scoreboard.style.top = newTop + 'px';
+            });
+
+            document.addEventListener('mouseup', function() {
+                isResizing = false;
+                currentHandle = null;
+            });
+        }
+
+        // Initialize resize on page load
+        window.addEventListener('DOMContentLoaded', initResize);
+
+        // Draggable functionality
+        function initDraggable() {
+            const scoreboard = document.querySelector('.scoreboard-overlay');
+            const header = document.querySelector('.match-header');
+            
+            let isDragging = false;
+            let hasMoved = false;
+            let startX, startY, startLeft, startTop;
+
+            header.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                hasMoved = false;
+                
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                // Get current position
+                const rect = scoreboard.getBoundingClientRect();
+                startLeft = rect.left + rect.width / 2;
+                startTop = rect.top + rect.height / 2;
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                
+                // Only start dragging if moved more than 5 pixels
+                if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                    hasMoved = true;
+                    header.style.cursor = 'grabbing';
+                    
+                    const newLeft = startLeft + dx;
+                    const newTop = startTop + dy;
+
+                    scoreboard.style.left = newLeft + 'px';
+                    scoreboard.style.top = newTop + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (isDragging) {
+                    isDragging = false;
+                    header.style.cursor = 'grab';
+                    
+                    // Only toggle settings if we didn't drag
+                    if (!hasMoved && e.target.closest('.match-header')) {
+                        toggleSettings();
+                    }
+                }
+            });
+        }
+
+        // Initialize draggable on page load
+        window.addEventListener('DOMContentLoaded', initDraggable);
+
+        async function connectWithCode() {
+            const code = document.getElementById('pairingCode').value.trim();
+            
+            if (code.length !== 4) {
+                alert('Please enter a 4-digit code');
+                return;
+            }
+
+            const supabaseUrl = 'https://kswwbqumgsdissnwuiab.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+
+            try {
+                console.log('?? Attempting to connect with code:', code);
+                supabaseClient = createClient(supabaseUrl, supabaseKey);
+                
+                // First, fetch ALL rows with this game_id to handle duplicates
+                const { data: allRows, error: fetchError } = await supabaseClient
+                    .from('game_states')
+                    .select('*')
+                    .eq('game_id', code)
+                    .order('updated_at', { ascending: false });
+
+                if (fetchError) {
+                    console.error('? Query error:', fetchError);
+                    throw fetchError;
+                }
+
+                if (!allRows || allRows.length === 0) {
+                    console.warn('?? No game found with code:', code);
+                    alert('No active game found with code: ' + code + '.\n\nMake sure:\n1. The scoring app has started a match\n2. You entered the correct 4-digit code');
+                    return;
+                }
+
+                console.log(`? Found ${allRows.length} row(s) with code ${code}`);
+                
+                // If there are duplicates, delete the older ones and keep the most recent
+                if (allRows.length > 1) {
+                    console.log('?? Cleaning up duplicate rows...');
+                    const rowsToDelete = allRows.slice(1); // Keep first (most recent), delete rest
+                    
+                    for (const row of rowsToDelete) {
+                        await supabaseClient
+                            .from('game_states')
+                            .delete()
+                            .eq('id', row.id);
+                        console.log(`??? Deleted duplicate row with id: ${row.id}`);
+                    }
+                }
+                
+                // Use the most recent row
+                const data = allRows[0];
+                console.log('? Using game data:', data);
+
+                currentGameCode = code; // Store the connected game code
+                sessionStorage.setItem('scoreboard-game-code', code); // Persist for reload
+                document.getElementById('connectionStatus').textContent = '? Connected';
+                document.getElementById('connectionStatus').style.color = '#10b981';
+
+                await subscribeToGame(code);
+                if (data?.game_state) {
+                    console.log('?? Updating scoreboard with initial state');
+                    updateScoreboard(data.game_state);
+                }
+            } catch (error) {
+                console.error('? Connection error:', error);
+                console.error('Error details:', error.message, error.code);
+                
+                let errorMessage = 'Failed to connect to the scoring app.\n\n';
+                
+                if (error.message && error.message.includes('406')) {
+                    errorMessage += 'Database query error. The game_states table might need to be set up correctly.\n\n';
+                    errorMessage += 'Please check the Supabase console to ensure the table exists.';
+                } else if (error.code === 'PGRST116') {
+                    errorMessage += 'No game found with code: ' + code;
+                } else {
+                    errorMessage += 'Error: ' + (error.message || 'Unknown error');
+                }
+                
+                alert(errorMessage);
+            }
+        }
+
+        async function subscribeToGame(gameId) {
+            console.log('?? Subscribing to game updates for code:', gameId);
+            subscription = supabaseClient
+                .channel('game-updates')
+                .on('postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'game_states',
+                        filter: `game_id=eq.${gameId}`
+                    },
+                    (payload) => {
+                        console.log('?? Update received:', payload);
+                        if (payload.new?.game_state) {
+                            updateScoreboard(payload.new.game_state);
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('?? Subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        document.getElementById('connectionStatus').textContent = '? Connected - Live';
+                        console.log('? Successfully subscribed to real-time updates');
+                    }
+                });
+        }
+
+        function updateScoreboard(data) {
+            console.log('Scoreboard received update:', data);
+
+            // Update player names and flags from new structure
+            if (data.player1?.name) {
+                updatePlayerName('home', data.player1.name);
+                // Auto-set flag from player nationality
+                if (data.player1.nationality) {
+                    sessionStorage.setItem('scoreboard-home-flag', data.player1.nationality);
+                }
+            }
+            if (data.player2?.name) {
+                updatePlayerName('away', data.player2.name);
+                // Auto-set flag from player nationality
+                if (data.player2.nationality) {
+                    sessionStorage.setItem('scoreboard-away-flag', data.player2.nationality);
+                }
+            }
+
+            // Update scores with animation
+            if (data.player1?.score !== undefined) {
+                const homeScoreEl = document.getElementById('homeScore');
+                const newScore = data.player1.score;
+                
+                // Check for checkout first (when lastCheckout exists)
+                if (data.player1?.lastCheckout) {
+                    showCheckoutAnimation('home', data.player1.lastCheckout.score, data.player1.lastCheckout.darts, newScore);
+                } else if (lastHomeScore !== null && lastHomeScore !== newScore) {
+                    // Normal score change
+                    const scoreEntered = lastHomeScore - newScore;
+                    if (scoreEntered > 0) {
+                        showScoreAnimation('home', scoreEntered, newScore);
+                    } else {
+                        // Score went up (bust), just update
+                        homeScoreEl.textContent = newScore;
+                    }
+                } else {
+                    homeScoreEl.textContent = newScore;
+                }
+                
+                lastHomeScore = newScore;
+            }
+
+            if (data.player2?.score !== undefined) {
+                const awayScoreEl = document.getElementById('awayScore');
+                const newScore = data.player2.score;
+                
+                // Check for checkout first (when lastCheckout exists)
+                if (data.player2?.lastCheckout) {
+                    showCheckoutAnimation('away', data.player2.lastCheckout.score, data.player2.lastCheckout.darts, newScore);
+                } else if (lastAwayScore !== null && lastAwayScore !== newScore) {
+                    // Normal score change
+                    const scoreEntered = lastAwayScore - newScore;
+                    if (scoreEntered > 0) {
+                        showScoreAnimation('away', scoreEntered, newScore);
+                    } else {
+                        // Score went up (bust), just update
+                        awayScoreEl.textContent = newScore;
+                    }
+                } else {
+                    awayScoreEl.textContent = newScore;
+                }
+                
+                lastAwayScore = newScore;
+            }
+
+            // Update active player highlight and turn indicators (red arrows)
+            const homeSection = document.getElementById('homePlayer');
+            const awaySection = document.getElementById('awayPlayer');
+            
+            console.log('Active player data - P1 isActive:', data.player1?.isActive, 'P2 isActive:', data.player2?.isActive);
+            
+            if (data.player1?.isActive) {
+                console.log('Setting Player 1 (home) as active');
+                homeSection.classList.add('active');
+                awaySection.classList.remove('active');
+            } else if (data.player2?.isActive) {
+                console.log('Setting Player 2 (away) as active');
+                awaySection.classList.add('active');
+                homeSection.classList.remove('active');
+            }
+
+            // Update throw indicators (white circles) based on who started the leg
+            const homeIndicator = document.getElementById('homeIndicator');
+            const awayIndicator = document.getElementById('awayIndicator');
+            if (data.legStarter !== undefined && data.legStarter !== null) {
+                if (data.legStarter === 1) {
+                    homeIndicator.classList.remove('inactive');
+                    homeIndicator.classList.add('start');
+                    awayIndicator.classList.remove('start');
+                    awayIndicator.classList.add('inactive');
+                } else if (data.legStarter === 2) {
+                    awayIndicator.classList.remove('inactive');
+                    awayIndicator.classList.add('start');
+                    homeIndicator.classList.remove('start');
+                    homeIndicator.classList.add('inactive');
+                }
+            }
+
+            // Update averages
+            if (data.player1?.matchAvg !== undefined) {
+                document.getElementById('homeAverage').textContent = data.player1.matchAvg.toFixed(2);
+            }
+            if (data.player2?.matchAvg !== undefined) {
+                document.getElementById('awayAverage').textContent = data.player2.matchAvg.toFixed(2);
+            }
+
+            // Update sets and legs
+            if (data.player1?.setWins !== undefined) {
+                document.getElementById('homeSets').textContent = data.player1.setWins;
+            }
+            if (data.player2?.setWins !== undefined) {
+                document.getElementById('awaySets').textContent = data.player2.setWins;
+            }
+
+            if (data.player1?.legWins !== undefined) {
+                document.getElementById('homeLegs').textContent = data.player1.legWins;
+            }
+            if (data.player2?.legWins !== undefined) {
+                document.getElementById('awayLegs').textContent = data.player2.legWins;
+            }
+            
+            // Update darts thrown
+            if (data.player1?.legDarts !== undefined) {
+                const homeDartsEl = document.getElementById('homeDarts');
+                if (homeDartsEl) {
+                    const dartsValue = parseInt(data.player1.legDarts) || 0;
+                    console.log('Setting homeDarts to:', dartsValue);
+                    homeDartsEl.textContent = dartsValue;
+                }
+            }
+            if (data.player2?.legDarts !== undefined) {
+                const awayDartsEl = document.getElementById('awayDarts');
+                if (awayDartsEl) {
+                    const dartsValue = parseInt(data.player2.legDarts) || 0;
+                    console.log('Setting awayDarts to:', dartsValue);
+                    awayDartsEl.textContent = dartsValue;
+                }
+            }
+            
+            // Auto-save state after each update (if connected to a game)
+            if (currentGameCode) {
+                saveScoreboardState(currentGameCode);
+            }
+        }
+        
+        // Show checkout animation (when player wins a leg)
+        function showCheckoutAnimation(player, checkoutScore, dartsUsed, newScore) {
+            const shotDisplay = document.getElementById(player === 'home' ? 'homeShot' : 'awayShot');
+            const scoreEl = document.getElementById(player === 'home' ? 'homeScore' : 'awayScore');
+            
+            // Display checkout score with darts in format "checkoutScore(dartsUsed)"
+            scoreEl.textContent = `${checkoutScore}(${dartsUsed})`;
+            scoreEl.style.opacity = '1';
+            
+            // After 3.5 seconds, fade to the final score (0)
+            setTimeout(() => {
+                scoreEl.textContent = newScore;
+                scoreEl.style.opacity = '1';
+            }, 3500);
+        }
+        
+        // Show score animation overlay
+        function showScoreAnimation(player, scoreEntered, finalScore) {
+            const shotDisplay = document.getElementById(player === 'home' ? 'homeShot' : 'awayShot');
+            const scoreEl = document.getElementById(player === 'home' ? 'homeScore' : 'awayScore');
+            
+            // Show the score entered
+            shotDisplay.textContent = scoreEntered;
+            shotDisplay.classList.add('show');
+            
+            // Hide the current score temporarily
+            scoreEl.style.opacity = '0';
+            
+            // After 2 seconds, fade out the score entered and show the remaining score
+            setTimeout(() => {
+                shotDisplay.classList.remove('show');
+                scoreEl.textContent = finalScore;
+                scoreEl.style.opacity = '1';
+            }, 2000);
+        }
+
+        window.connectWithCode = connectWithCode;
+
+        // Update player name with flag
+        function updatePlayerName(player, name) {
+            const flag = sessionStorage.getItem(`scoreboard-${player}-flag`) || '';
+            const nameElement = document.getElementById(`${player}Name`);
+            const flagContainer = document.getElementById(`${player}FlagContainer`);
+            
+            console.log(`?? updatePlayerName called - player: ${player}, name: ${name}, flag: ${flag}`);
+            
+            // Clear flag container
+            flagContainer.innerHTML = '';
+            
+            // Add flag image if selected
+            if (flag && flag !== '') {
+                const flagImg = document.createElement('img');
+                // Try to load from root, if that fails GitHub Pages might need the full path
+                flagImg.src = `./${flag}`;
+                flagImg.alt = 'Flag';
+                flagImg.className = 'flag-icon';
+                flagImg.onerror = () => {
+                    console.error('Failed to load flag from ./' + flag + ', trying absolute path');
+                    // Try absolute path as fallback
+                    flagImg.src = `https://dowdarts.github.io/dartstream2/${flag}`;
+                };
+                flagImg.onload = () => console.log('? Flag loaded successfully:', flagImg.src);
+                flagContainer.appendChild(flagImg);
+                console.log(`? Flag image added for ${player}:`, flag);
+            } else {
+                console.log(`?? No flag for ${player}`);
+            }
+            
+            // Update player name (text only)
+            nameElement.textContent = name.toUpperCase();
+        }
+
+        // Settings Panel Functions
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const scoreboard = document.querySelector('.scoreboard-overlay');
+            const isOpening = panel.classList.contains('hidden');
+            
+            panel.classList.toggle('hidden');
+            
+            if (isOpening) {
+                // Entering settings mode - enable resize
+                scoreboard.classList.add('resize-mode');
+                showResizeModeIndicator();
+            } else {
+                // Exiting settings mode - check if we should keep resize mode
+                const keepResizeMode = document.getElementById('keepResizeMode').checked;
+                if (!keepResizeMode) {
+                    scoreboard.classList.remove('resize-mode');
+                    hideResizeModeIndicator();
+                }
+                // If keepResizeMode is true, leave resize mode active
+            }
+        }
+
+        function showResizeModeIndicator() {
+            let indicator = document.getElementById('resizeModeIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'resizeModeIndicator';
+                indicator.className = 'resize-mode-indicator';
+                indicator.textContent = '?? Resize Mode Active - Drag corners/edges to resize';
+                document.body.appendChild(indicator);
+            }
+        }
+
+        function hideResizeModeIndicator() {
+            const indicator = document.getElementById('resizeModeIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // Load saved settings from sessionStorage
+        function loadSettings() {
+            const savedHeader = sessionStorage.getItem('scoreboard-header');
+            const savedGroup = sessionStorage.getItem('scoreboard-footer-group');
+            const savedEvent = sessionStorage.getItem('scoreboard-footer-event');
+            const savedFormat = sessionStorage.getItem('scoreboard-footer-format');
+            
+            if (savedHeader !== null) {
+                document.getElementById('matchFormat').textContent = savedHeader;
+                document.getElementById('headerText').value = savedHeader;
+            }
+            if (savedGroup !== null) {
+                document.getElementById('footerGroup').textContent = savedGroup;
+                document.getElementById('footerGroupInput').value = savedGroup;
+            }
+            if (savedEvent !== null) {
+                document.getElementById('footerEvent').textContent = savedEvent;
+                document.getElementById('footerEventInput').value = savedEvent;
+            }
+            if (savedFormat !== null) {
+                document.getElementById('footerFormat').textContent = savedFormat;
+                document.getElementById('footerFormatInput').value = savedFormat;
+            }
+            
+            // Flags are now automatically set from player nationality data
+            
+            // Load saved scoreboard dimensions
+            const savedWidth = sessionStorage.getItem('scoreboard-width');
+            const savedHeight = sessionStorage.getItem('scoreboard-height');
+            const savedLeft = sessionStorage.getItem('scoreboard-left');
+            const savedTop = sessionStorage.getItem('scoreboard-top');
+            
+            const scoreboard = document.querySelector('.scoreboard-overlay');
+            if (savedWidth) scoreboard.style.width = savedWidth;
+            if (savedHeight) scoreboard.style.height = savedHeight;
+            // Center scoreboard by default if no saved position
+            if (savedLeft) {
+                scoreboard.style.left = savedLeft;
+            } else {
+                scoreboard.style.left = '50%';
+            }
+            if (savedTop) {
+                scoreboard.style.top = savedTop;
+            } else {
+                scoreboard.style.top = '50%';
+            }
+            
+            // Always enable resize mode
+            scoreboard.classList.add('resize-mode');
+            showResizeModeIndicator();
+            
+            // Update checkbox to reflect always-on state
+            document.getElementById('keepResizeMode').checked = true;
+            sessionStorage.setItem('keep-resize-mode', 'true');
+            
+            // Load column visibility settings
+            loadColumnVisibility();
+        }
+
+        // Load and apply column visibility settings
+        function loadColumnVisibility() {
+            const overlay = document.querySelector('.scoreboard-overlay');
+            
+            // Load saved preferences (default to checked/visible)
+            const showFlags = sessionStorage.getItem('show-flags') !== 'false';
+            const showIndicator = sessionStorage.getItem('show-indicator') !== 'false';
+            const showSets = sessionStorage.getItem('show-sets') !== 'false';
+            const showLegs = sessionStorage.getItem('show-legs') !== 'false';
+            const showAvg = sessionStorage.getItem('show-avg') !== 'false';
+            const showDarts = sessionStorage.getItem('show-darts') !== 'false';
+            const showScore = sessionStorage.getItem('show-score') !== 'false';
+            
+            // Update checkboxes
+            document.getElementById('showFlags').checked = showFlags;
+            document.getElementById('showIndicator').checked = showIndicator;
+            document.getElementById('showSets').checked = showSets;
+            document.getElementById('showLegs').checked = showLegs;
+            document.getElementById('showAvg').checked = showAvg;
+            document.getElementById('showDarts').checked = showDarts;
+            document.getElementById('showScore').checked = showScore;
+            
+            // Apply visibility classes
+            overlay.classList.toggle('hide-flags', !showFlags);
+            overlay.classList.toggle('hide-indicator', !showIndicator);
+            overlay.classList.toggle('hide-sets', !showSets);
+            overlay.classList.toggle('hide-legs', !showLegs);
+            overlay.classList.toggle('hide-avg', !showAvg);
+            overlay.classList.toggle('hide-darts', !showDarts);
+            overlay.classList.toggle('hide-score', !showScore);
+        }
+
+        // Save settings when Save button is clicked
+        function saveSettings() {
+            const headerValue = document.getElementById('headerText').value;
+            const groupValue = document.getElementById('footerGroupInput').value;
+            const eventValue = document.getElementById('footerEventInput').value;
+            const formatValue = document.getElementById('footerFormatInput').value;
+            
+            // Update display
+            document.getElementById('matchFormat').textContent = headerValue;
+            document.getElementById('footerGroup').textContent = groupValue;
+            document.getElementById('footerEvent').textContent = eventValue;
+            document.getElementById('footerFormat').textContent = formatValue;
+            
+            // Save to sessionStorage (persists only while browser is open)
+            sessionStorage.setItem('scoreboard-header', headerValue);
+            sessionStorage.setItem('scoreboard-footer-group', groupValue);
+            sessionStorage.setItem('scoreboard-footer-event', eventValue);
+            sessionStorage.setItem('scoreboard-footer-format', formatValue);
+            
+            // Flags are automatically set from player nationality - no need to save manually
+            
+            // Save column visibility settings
+            const showFlags = document.getElementById('showFlags').checked;
+            const showIndicator = document.getElementById('showIndicator').checked;
+            const showSets = document.getElementById('showSets').checked;
+            const showLegs = document.getElementById('showLegs').checked;
+            const showAvg = document.getElementById('showAvg').checked;
+            const showDarts = document.getElementById('showDarts').checked;
+            const showScore = document.getElementById('showScore').checked;
+            
+            sessionStorage.setItem('show-flags', showFlags);
+            sessionStorage.setItem('show-indicator', showIndicator);
+            sessionStorage.setItem('show-sets', showSets);
+            sessionStorage.setItem('show-legs', showLegs);
+            sessionStorage.setItem('show-avg', showAvg);
+            sessionStorage.setItem('show-darts', showDarts);
+            sessionStorage.setItem('show-score', showScore);
+            
+            // Apply visibility
+            loadColumnVisibility();
+            
+            // Save ad settings
+            saveAdSettings();
+            
+            // Save resize mode setting
+            const keepResizeMode = document.getElementById('keepResizeMode').checked;
+            sessionStorage.setItem('keep-resize-mode', keepResizeMode);
+            
+            // Save current scoreboard size
+            const scoreboard = document.querySelector('.scoreboard-overlay');
+            const currentWidth = scoreboard.style.width;
+            const currentHeight = scoreboard.style.height;
+            const currentLeft = scoreboard.style.left;
+            const currentTop = scoreboard.style.top;
+            
+            if (currentWidth) sessionStorage.setItem('scoreboard-width', currentWidth);
+            if (currentHeight) sessionStorage.setItem('scoreboard-height', currentHeight);
+            if (currentLeft) sessionStorage.setItem('scoreboard-left', currentLeft);
+            if (currentTop) sessionStorage.setItem('scoreboard-top', currentTop);
+            
+            // Close settings panel (this will check keepResizeMode and conditionally disable resize mode)
+            toggleSettings();
+        }
+
+        // Advertisement Bar Functions
+        let adBarTimeout = null;
+        let adBarLocked = false;
+        let adEnableTransitions = false;
+
+        function loadAdSettings() {
+            const savedAdImage = sessionStorage.getItem('ad-bar-image');
+            
+            if (savedAdImage) {
+                document.getElementById('adImage').src = savedAdImage;
+                document.getElementById('adImage').classList.remove('ad-image-hidden');
+                document.getElementById('adPlaceholder').classList.add('ad-image-hidden');
+                document.getElementById('adPreview').src = savedAdImage;
+                document.getElementById('adPreview').classList.add('visible');
+            }
+            
+            // Load saved ad box dimensions and position
+            const savedWidth = sessionStorage.getItem('ad-width');
+            const savedHeight = sessionStorage.getItem('ad-height');
+            const savedLeft = sessionStorage.getItem('ad-left');
+            const savedTop = sessionStorage.getItem('ad-top');
+            
+            const adBar = document.getElementById('adBar');
+            if (savedWidth) adBar.style.width = savedWidth;
+            if (savedHeight) adBar.style.height = savedHeight;
+            if (savedLeft) {
+                adBar.style.left = savedLeft;
+            } else {
+                // Center horizontally by default
+                adBar.style.left = '50%';
+            }
+            if (savedTop) {
+                adBar.style.top = savedTop;
+            } else {
+                // Center vertically by default
+                adBar.style.top = '50%';
+            }
+        }
+
+        function toggleAdBar() {
+            if (document.body.classList.contains('ad-visible')) {
+                hideAdBar();
+            } else {
+                showAdBar();
+            }
+        }
+
+        function showAdBar() {
+            document.body.classList.remove('ad-hidden');
+            document.body.classList.add('ad-visible');
+            
+            // Auto-hide after 10 seconds only if not locked
+            if (!adBarLocked) {
+                if (adBarTimeout) clearTimeout(adBarTimeout);
+                adBarTimeout = setTimeout(() => {
+                    hideAdBar();
+                }, 10000);
+            }
+        }
+
+        function hideAdBar() {
+            document.body.classList.remove('ad-visible');
+            document.body.classList.add('ad-hidden');
+            
+            if (adBarTimeout) {
+                clearTimeout(adBarTimeout);
+                adBarTimeout = null;
+            }
+        }
+
+        function toggleAdLock() {
+            const lockBtn = document.getElementById('adLockBtn');
+            const adBar = document.getElementById('adBar');
+            
+            adBarLocked = !adBarLocked;
+            
+            if (adBarLocked) {
+                // Lock is ON - ad will stay visible
+                lockBtn.classList.add('locked');
+                lockBtn.textContent = '?? Locked';
+                
+                // Cancel any existing timeout
+                if (adBarTimeout) {
+                    clearTimeout(adBarTimeout);
+                    adBarTimeout = null;
+                }
+            } else {
+                // Lock is OFF - ad will hide after 3 seconds
+                lockBtn.classList.remove('locked');
+                lockBtn.textContent = '?? Unlock';
+                
+                // If ad is currently showing, hide it after 3 seconds
+                if (adBar.classList.contains('active')) {
+                    if (adBarTimeout) clearTimeout(adBarTimeout);
+                    adBarTimeout = setTimeout(() => {
+                        hideAdBar();
+                    }, 3000);
+                }
+            }
+        }
+
+        // Handle ad image upload
+        document.getElementById('adImageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.match('image.*')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imageData = event.target.result;
+                    
+                    // Update preview
+                    document.getElementById('adPreview').src = imageData;
+                    document.getElementById('adPreview').classList.add('visible');
+                    
+                    // Update ad bar image
+                    document.getElementById('adImage').src = imageData;
+                    document.getElementById('adImage').classList.remove('ad-image-hidden');
+                    document.getElementById('adPlaceholder').classList.add('ad-image-hidden');
+                    
+                    // Save to sessionStorage
+                    sessionStorage.setItem('ad-bar-image', imageData);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Load settings on page load
+        loadSettings();
+        loadAdSettings();
+
+        // Check for saved scoreboard state and offer to restore
+        function checkSavedScoreboardState() {
+            const savedState = restoreScoreboardState();
+            if (savedState && savedState.player1) {
+                const timeSaved = new Date(savedState.timestamp).toLocaleTimeString();
+                const shouldRestore = confirm(
+                    `Found a saved scoreboard from ${timeSaved}.\n\n` +
+                    `Players: ${savedState.player1?.name || 'Player 1'} vs ${savedState.player2?.name || 'Player 2'}\n` +
+                    `Scores: ${savedState.player1?.score || 0} - ${savedState.player2?.score || 0}\n\n` +
+                    `Would you like to restore this scoreboard?`
+                );
+
+                if (shouldRestore) {
+                    console.log('?? Restoring saved scoreboard state');
+                    
+                    // Restore player names
+                    if (savedState.player1?.name) {
+                        updatePlayerName('home', savedState.player1.name);
+                    }
+                    if (savedState.player2?.name) {
+                        updatePlayerName('away', savedState.player2.name);
+                    }
+                    
+                    // Restore scores and stats
+                    if (savedState.player1?.score !== undefined) {
+                        document.getElementById('homeScore').textContent = savedState.player1.score;
+                        lastHomeScore = savedState.player1.score;
+                    }
+                    if (savedState.player2?.score !== undefined) {
+                        document.getElementById('awayScore').textContent = savedState.player2.score;
+                        lastAwayScore = savedState.player2.score;
+                    }
+                    if (savedState.player1?.average) {
+                        document.getElementById('homeAverage').textContent = savedState.player1.average;
+                    }
+                    if (savedState.player2?.average) {
+                        document.getElementById('awayAverage').textContent = savedState.player2.average;
+                    }
+                    if (savedState.player1?.sets) {
+                        document.getElementById('homeSets').textContent = savedState.player1.sets;
+                    }
+                    if (savedState.player2?.sets) {
+                        document.getElementById('awaySets').textContent = savedState.player2.sets;
+                    }
+                    if (savedState.player1?.legs) {
+                        document.getElementById('homeLegs').textContent = savedState.player1.legs;
+                    }
+                    if (savedState.player2?.legs) {
+                        document.getElementById('awayLegs').textContent = savedState.player2.legs;
+                    }
+                    if (savedState.player1?.darts) {
+                        document.getElementById('homeDarts').textContent = savedState.player1.darts;
+                    }
+                    if (savedState.player2?.darts) {
+                        document.getElementById('awayDarts').textContent = savedState.player2.darts;
+                    }
+                    
+                    // If we have a game code, try to reconnect
+                    if (savedState.gameCode) {
+                        currentGameCode = savedState.gameCode;
+                        document.getElementById('pairingCode').value = savedState.gameCode;
+                        setTimeout(() => {
+                            console.log('?? Attempting to reconnect to game...');
+                            connectWithCode();
+                        }, 1000);
+                    }
+                } else {
+                    // User declined, clear the saved state
+                    clearSavedScoreboardState();
+                }
+            }
+        }
+
+        // Check for auto-connect from match central or session
+        function checkAutoConnect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let autoConnectCode = urlParams.get('autoconnect');
+            
+            // If no URL param, check sessionStorage for saved game code
+            if (!autoConnectCode) {
+                autoConnectCode = sessionStorage.getItem('scoreboard-game-code');
+                if (autoConnectCode) {
+                    console.log('?? Found saved game code:', autoConnectCode);
+                }
+            }
+            
+            if (autoConnectCode && autoConnectCode.length === 4) {
+                console.log('?? Auto-connecting to match:', autoConnectCode);
+                // Auto-fill the code and connect
+                document.getElementById('pairingCode').value = autoConnectCode;
+                
+                // Show connecting status
+                document.getElementById('connectionStatus').textContent = '?? Auto-connecting from Match Central...';
+                document.getElementById('connectionStatus').style.color = '#facc15';
+                
+                setTimeout(() => {
+                    connectWithCode();
+                }, 500);
+                
+                return true; // Indicate that auto-connect is happening
+            }
+            return false;
+        }
+
+        // Run checks on page load - auto-connect takes priority
+        const isAutoConnecting = checkAutoConnect();
+        if (!isAutoConnecting) {
+            // Only check for saved state if not auto-connecting
+            checkSavedScoreboardState();
+        }
+
+        // Ad Settings Variables
+        let adTransitionType = 'slide-left';
+        let adTransitionDuration = 1;
+        let adResizeEnabled = false;
+
+        // Toggle Ad Function
+        function toggleAd() {
+            const adBar = document.getElementById('adBar');
+            
+            if (document.body.classList.contains('ad-visible')) {
+                // Hide ad
+                document.body.classList.remove('ad-visible');
+                document.body.classList.add('ad-hidden');
+            } else {
+                // Show ad
+                document.body.classList.remove('ad-hidden');
+                document.body.classList.add('ad-visible');
+            }
+        }
+
+        // Toggle Ad Settings Panel
+        function toggleAdSettings() {
+            const panel = document.getElementById('adSettingsPanel');
+            const adBar = document.getElementById('adBar');
+            const isOpening = panel.classList.contains('hidden');
+            
+            panel.classList.toggle('hidden');
+            
+            if (isOpening) {
+                // Load current settings
+                loadAdSettingsPanel();
+            }
+        }
+
+        // Load Ad Settings
+        function loadAdSettingsPanel() {
+            const savedTransitionType = sessionStorage.getItem('ad-transition-type') || 'slide-left';
+            const savedTransitionDuration = sessionStorage.getItem('ad-transition-duration') || '1';
+            const savedEnableTransitions = sessionStorage.getItem('ad-enable-transitions') === 'true';
+            
+            document.getElementById('adTransitionType').value = savedTransitionType;
+            document.getElementById('adTransitionDuration').value = savedTransitionDuration;
+            document.getElementById('adEnableTransitions').checked = savedEnableTransitions;
+            document.getElementById('adResizeMode').checked = adResizeEnabled;
+            
+            adTransitionType = savedTransitionType;
+            adTransitionDuration = parseFloat(savedTransitionDuration);
+            adEnableTransitions = savedEnableTransitions;
+        }
+
+        // Save Ad Settings
+        function saveAdSettingsPanel() {
+            const adBar = document.getElementById('adBar');
+            
+            adTransitionType = document.getElementById('adTransitionType').value;
+            adTransitionDuration = parseFloat(document.getElementById('adTransitionDuration').value);
+            adEnableTransitions = document.getElementById('adEnableTransitions').checked;
+            adResizeEnabled = document.getElementById('adResizeMode').checked;
+            
+            // Save to sessionStorage
+            sessionStorage.setItem('ad-transition-type', adTransitionType);
+            sessionStorage.setItem('ad-transition-duration', adTransitionDuration);
+            sessionStorage.setItem('ad-enable-transitions', adEnableTransitions);
+            sessionStorage.setItem('ad-resize-enabled', adResizeEnabled);
+            
+            // Save current ad box dimensions
+            const currentWidth = adBar.style.width;
+            const currentHeight = adBar.style.height;
+            const currentLeft = adBar.style.left;
+            const currentTop = adBar.style.top;
+            
+            if (currentWidth) sessionStorage.setItem('ad-width', currentWidth);
+            if (currentHeight) sessionStorage.setItem('ad-height', currentHeight);
+            if (currentLeft) sessionStorage.setItem('ad-left', currentLeft);
+            if (currentTop) sessionStorage.setItem('ad-top', currentTop);
+            
+            // Apply resize mode
+            if (adResizeEnabled) {
+                adBar.classList.add('resize-mode');
+            } else {
+                adBar.classList.remove('resize-mode');
+            }
+            
+            // Update transition class and duration only if transitions are enabled
+            adBar.classList.remove('slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade');
+            if (adEnableTransitions) {
+                adBar.classList.add(adTransitionType);
+                adBar.style.transition = `all ${adTransitionDuration}s ease-in-out`;
+            } else {
+                adBar.style.transition = 'none';
+            }
+        }
+
+        // Load Ad Image
+        function loadAdImage(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                // Load all selected images
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Add to ad images array
+                        if (!window.adImages) {
+                            window.adImages = [];
+                        }
+                        window.adImages.push(e.target.result);
+                        
+                        // Update gallery
+                        updateAdGallery();
+                        
+                        // If first image, display it
+                        if (window.adImages.length === 1) {
+                            displayAdImage(0);
+                        }
+                        
+                        // Save to sessionStorage
+                        sessionStorage.setItem('ad-bar-images', JSON.stringify(window.adImages));
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        function updateAdGallery() {
+            const gallery = document.getElementById('adGallery');
+            gallery.innerHTML = '';
+            
+            if (!window.adImages || window.adImages.length === 0) return;
+            
+            window.adImages.forEach((imgSrc, index) => {
+                const item = document.createElement('div');
+                item.className = 'ad-gallery-item';
+                if (index === (window.currentAdIndex || 0)) {
+                    item.classList.add('active');
+                }
+                
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeAdImage(index);
+                };
+                
+                item.appendChild(img);
+                item.appendChild(removeBtn);
+                item.onclick = () => displayAdImage(index);
+                
+                gallery.appendChild(item);
+            });
+        }
+
+        function displayAdImage(index) {
+            if (!window.adImages || index >= window.adImages.length) return;
+            
+            window.currentAdIndex = index;
+            const adImage = document.getElementById('adImage');
+            const adPlaceholder = document.getElementById('adPlaceholder');
+            
+            adImage.src = window.adImages[index];
+            adImage.classList.remove('ad-image-hidden');
+            adPlaceholder.classList.add('ad-image-hidden');
+            
+            // Update gallery active state
+            updateAdGallery();
+            
+            // Save current index
+            sessionStorage.setItem('ad-bar-current-index', index.toString());
+        }
+
+        function removeAdImage(index) {
+            if (!window.adImages) return;
+            
+            window.adImages.splice(index, 1);
+            
+            if (window.adImages.length === 0) {
+                // No images left
+                const adImage = document.getElementById('adImage');
+                const adPlaceholder = document.getElementById('adPlaceholder');
+                adImage.classList.add('ad-image-hidden');
+                adPlaceholder.classList.remove('ad-image-hidden');
+                window.currentAdIndex = 0;
+            } else if (index === window.currentAdIndex) {
+                // If we removed the current image, show the previous one or first
+                const newIndex = Math.max(0, index - 1);
+                displayAdImage(newIndex);
+            } else if (index < window.currentAdIndex) {
+                // Adjust current index if we removed an earlier image
+                window.currentAdIndex--;
+            }
+            
+            updateAdGallery();
+            sessionStorage.setItem('ad-bar-images', JSON.stringify(window.adImages));
+            sessionStorage.setItem('ad-bar-current-index', (window.currentAdIndex || 0).toString());
+        }
+
+        function cycleAdImage(direction) {
+            if (!window.adImages || window.adImages.length <= 1) return;
+            
+            const currentIndex = window.currentAdIndex || 0;
+            let newIndex;
+            
+            if (direction === 'next') {
+                newIndex = (currentIndex + 1) % window.adImages.length;
+            } else {
+                newIndex = currentIndex - 1;
+                if (newIndex < 0) newIndex = window.adImages.length - 1;
+            }
+            
+            displayAdImage(newIndex);
+        }
+
+        // Initialize ad draggable and resizable
+        function initAdDraggable() {
+            const adBar = document.getElementById('adBar');
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            const handleMouseMove = function(e) {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                const newLeft = startLeft + deltaX;
+                const newTop = startTop + deltaY;
+                
+                adBar.style.left = newLeft + 'px';
+                adBar.style.top = newTop + 'px';
+                adBar.style.transform = 'none';
+            };
+
+            const handleMouseUp = function() {
+                if (isDragging) {
+                    isDragging = false;
+                    adBar.style.cursor = '';
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                }
+            };
+            
+            adBar.addEventListener('mousedown', function(e) {
+                if (!adResizeEnabled) return;
+                if (e.target.classList.contains('resize-handle')) return;
+                if (e.target !== adBar && !e.target.classList.contains('ad-content') && !e.target.classList.contains('ad-placeholder') && !e.target.classList.contains('ad-image')) return;
+                
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                const rect = adBar.getBoundingClientRect();
+                startLeft = rect.left;
+                startTop = rect.top;
+                
+                adBar.style.cursor = 'grabbing';
+                e.preventDefault();
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+            });
+        }
+
+        // Initialize ad resize functionality
+        function initAdResize() {
+            const adBar = document.getElementById('adBar');
+            const handles = adBar.querySelectorAll('.resize-handle');
+            
+            let isResizing = false;
+            let currentHandle = null;
+            let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+            const handleMouseMove = function(e) {
+                if (!isResizing) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                
+                let newWidth = startWidth;
+                let newHeight = startHeight;
+                let newLeft = startLeft;
+                let newTop = startTop;
+
+                if (currentHandle.classList.contains('resize-e') || currentHandle.classList.contains('resize-se') || currentHandle.classList.contains('resize-ne')) {
+                    newWidth = startWidth + dx;
+                }
+                if (currentHandle.classList.contains('resize-w') || currentHandle.classList.contains('resize-sw') || currentHandle.classList.contains('resize-nw')) {
+                    newWidth = startWidth - dx;
+                    newLeft = startLeft + dx;
+                }
+                if (currentHandle.classList.contains('resize-s') || currentHandle.classList.contains('resize-se') || currentHandle.classList.contains('resize-sw')) {
+                    newHeight = startHeight + dy;
+                }
+                if (currentHandle.classList.contains('resize-n') || currentHandle.classList.contains('resize-ne') || currentHandle.classList.contains('resize-nw')) {
+                    newHeight = startHeight - dy;
+                    newTop = startTop + dy;
+                }
+
+                // Apply minimum constraints
+                if (newWidth < 150) newWidth = 150;
+                if (newHeight < 100) newHeight = 100;
+
+                adBar.style.width = newWidth + 'px';
+                adBar.style.height = newHeight + 'px';
+                adBar.style.left = newLeft + 'px';
+                adBar.style.top = newTop + 'px';
+                adBar.style.transform = 'none';
+            };
+
+            const handleMouseUp = function() {
+                if (isResizing) {
+                    isResizing = false;
+                    currentHandle = null;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                }
+            };
+
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', function(e) {
+                    if (!adResizeEnabled) return;
+                    
+                    isResizing = true;
+                    currentHandle = this;
+                    
+                    const rect = adBar.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = rect.width;
+                    startHeight = rect.height;
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                });
+            });
+        }
+
+        // Initialize ad on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            initAdDraggable();
+            initAdResize();
+            
+            // Apply saved settings
+            const savedTransitionType = sessionStorage.getItem('ad-transition-type') || 'slide-left';
+            const savedTransitionDuration = sessionStorage.getItem('ad-transition-duration') || '1';
+            const savedEnableTransitions = sessionStorage.getItem('ad-enable-transitions') === 'true';
+            const savedResizeEnabled = sessionStorage.getItem('ad-resize-enabled') === 'true';
+            
+            const adBar = document.getElementById('adBar');
+            adBar.className = 'ad-bar ' + savedTransitionType;
+            
+            // Only apply transition if enabled
+            if (savedEnableTransitions) {
+                adBar.style.transition = `all ${savedTransitionDuration}s ease-in-out`;
+            } else {
+                adBar.style.transition = 'none';
+            }
+            
+            // Load saved ad dimensions
+            const savedWidth = sessionStorage.getItem('ad-width');
+            const savedHeight = sessionStorage.getItem('ad-height');
+            const savedLeft = sessionStorage.getItem('ad-left');
+            const savedTop = sessionStorage.getItem('ad-top');
+            
+            if (savedWidth) adBar.style.width = savedWidth;
+            if (savedHeight) adBar.style.height = savedHeight;
+            
+            // Center ad bar by default if no saved position
+            if (savedLeft) {
+                adBar.style.left = savedLeft;
+            } else {
+                adBar.style.left = '50%';
+            }
+            if (savedTop) {
+                adBar.style.top = savedTop;
+            } else {
+                adBar.style.top = '50%';
+            }
+            
+            // Always enable resize mode
+            adBar.classList.add('resize-mode');
+            adResizeEnabled = true;
+            sessionStorage.setItem('ad-resize-enabled', 'true');
+            
+            adTransitionType = savedTransitionType;
+            adTransitionDuration = parseFloat(savedTransitionDuration);
+            adEnableTransitions = savedEnableTransitions;
+            
+            // Load saved ad images
+            const savedImages = sessionStorage.getItem('ad-bar-images');
+            const savedIndex = sessionStorage.getItem('ad-bar-current-index');
+            if (savedImages) {
+                try {
+                    window.adImages = JSON.parse(savedImages);
+                    window.currentAdIndex = parseInt(savedIndex) || 0;
+                    if (window.adImages.length > 0) {
+                        displayAdImage(window.currentAdIndex);
+                        updateAdGallery();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved ad images:', e);
+                }
+            }
+            
+            // Add keyboard controls for fine adjustment
+            initAdKeyboardControls();
+        });
+
+        // Keyboard controls for ad box positioning
+        function initAdKeyboardControls() {
+            const adBar = document.getElementById('adBar');
+            
+            document.addEventListener('keydown', function(e) {
+                // Shift + Arrow Left/Right to cycle through ad images
+                if (e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                    // Check if not in resize mode and no input focused
+                    if (!adResizeEnabled && 
+                        document.activeElement.tagName !== 'INPUT' && 
+                        document.activeElement.tagName !== 'TEXTAREA' && 
+                        document.activeElement.tagName !== 'SELECT') {
+                        if (e.key === 'ArrowLeft') {
+                            cycleAdImage('prev');
+                        } else {
+                            cycleAdImage('next');
+                        }
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                
+                // Only allow arrow keys when resize mode is enabled and no input is focused
+                if (!adResizeEnabled) return;
+                if (document.activeElement.tagName === 'INPUT' || 
+                    document.activeElement.tagName === 'TEXTAREA' || 
+                    document.activeElement.tagName === 'SELECT') return;
+                
+                const step = e.shiftKey ? 10 : 1; // Hold Shift for larger steps
+                const rect = adBar.getBoundingClientRect();
+                let currentLeft = parseFloat(adBar.style.left) || rect.left;
+                let currentTop = parseFloat(adBar.style.top) || rect.top;
+                
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        currentLeft -= step;
+                        adBar.style.left = currentLeft + 'px';
+                        adBar.style.transform = 'none';
+                        e.preventDefault();
+                        break;
+                    case 'ArrowRight':
+                        currentLeft += step;
+                        adBar.style.left = currentLeft + 'px';
+                        adBar.style.transform = 'none';
+                        e.preventDefault();
+                        break;
+                    case 'ArrowUp':
+                        currentTop -= step;
+                        adBar.style.top = currentTop + 'px';
+                        adBar.style.transform = 'none';
+                        e.preventDefault();
+                        break;
+                    case 'ArrowDown':
+                        currentTop += step;
+                        adBar.style.top = currentTop + 'px';
+                        adBar.style.transform = 'none';
+                        e.preventDefault();
+                        break;
+                }
+            });
+        }
+
+        window.toggleSettings = toggleSettings;
+        window.saveSettings = saveSettings;
+        window.toggleAd = toggleAd;
+        window.toggleAdSettings = toggleAdSettings;
+        window.saveAdSettingsPanel = saveAdSettingsPanel;
+        
+
+        
+        // Initialize controller communication
+        let controlChannel = null;
+        let authorizedControllers = new Set();
+        let scoreboardConnectionCode = null;
+        
+        function initializeControllerComms() {
+            // Try to load existing controller code from sessionStorage
+            const savedControllerCode = sessionStorage.getItem('scoreboard-controller-code');
+            if (savedControllerCode) {
+                scoreboardConnectionCode = savedControllerCode;
+                console.log('?? Restored controller code:', scoreboardConnectionCode);
+            } else {
+                // Generate a NEW unique connection code
+                scoreboardConnectionCode = Math.floor(1000 + Math.random() * 9000).toString();
+                sessionStorage.setItem('scoreboard-controller-code', scoreboardConnectionCode);
+                console.log('?? Generated unique controller code:', scoreboardConnectionCode);
+            }
+            
+            // Display the connection code in both locations
+            const codeDisplay = document.getElementById('connectionCodeDisplay');
+            if (codeDisplay) {
+                codeDisplay.textContent = scoreboardConnectionCode;
+            }
+            const topCodeDisplay = document.getElementById('topConnectionCodeDisplay');
+            if (topCodeDisplay) {
+                topCodeDisplay.textContent = scoreboardConnectionCode;
+            }
+            
+            // Set up BroadcastChannel for same-browser communication
+            controlChannel = new BroadcastChannel('dartstream-control');
+            
+            controlChannel.addEventListener('message', function(event) {
+                handleControllerMessage(event.data);
+            });
+            
+            // Listen for localStorage changes (cross-browser/computer)
+            window.addEventListener('storage', function(e) {
+                if (e.key && e.key.startsWith('dartstream-control-')) {
+                    try {
+                        if (e.newValue) {
+                            const message = JSON.parse(e.newValue);
+                            handleControllerMessage(message);
+                        }
+                    } catch (err) {
+                        console.error('Error parsing controller message:', err);
+                    }
+                }
+            });
+            
+            // Poll localStorage for OBS Browser Source compatibility
+            // (storage event doesn't fire in same browser context)
+            let processedMessages = new Set();
+            setInterval(() => {
+                try {
+                    // Get all localStorage keys
+                    const keys = Object.keys(localStorage);
+                    const controlKeys = keys.filter(k => k.startsWith('dartstream-control-'));
+                    
+                    // Process all unprocessed messages
+                    controlKeys.forEach(key => {
+                        if (!processedMessages.has(key)) {
+                            const rawValue = localStorage.getItem(key);
+                            if (rawValue) {
+                                try {
+                                    const message = JSON.parse(rawValue);
+                                    console.log('?? Processing controller message from:', key);
+                                    handleControllerMessage(message);
+                                    processedMessages.add(key);
+                                } catch (parseErr) {
+                                    console.warn('Failed to parse message:', parseErr);
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Clean up old processed message tracking (keep last 100)
+                    if (processedMessages.size > 100) {
+                        const oldKeys = Array.from(processedMessages).slice(0, 50);
+                        oldKeys.forEach(k => processedMessages.delete(k));
+                    }
+                } catch (err) {
+                    console.error('Error polling localStorage:', err);
+                }
+            }, 100); // Poll every 100ms for responsive updates
+            
+            // Set up Supabase Realtime for remote controller commands
+            setupSupabaseControllerChannel();
+        }
+        
+        // Set up Supabase Realtime channel for controller commands
+        function setupSupabaseControllerChannel() {
+            // Initialize Supabase client if not already initialized
+            if (!supabaseClient) {
+                const supabaseUrl = 'https://kswwbqumgsdissnwuiab.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50';
+                supabaseClient = createClient(supabaseUrl, supabaseKey);
+                console.log('? Supabase client initialized for controller channel');
+            }
+            
+            const channelName = `controller:${scoreboardConnectionCode}`;
+            console.log('?? Setting up controller channel:', channelName);
+            const controllerChannel = supabaseClient.channel(channelName);
+            
+            controllerChannel
+                .on('broadcast', { event: 'controller-command' }, (payload) => {
+                    console.log('Received remote controller command:', payload);
+                    handleControllerMessage(payload.payload);
+                })
+                .subscribe((status) => {
+                    console.log('Controller channel status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('? Remote controller channel ready');
+                    }
+                });
+        }
+        
+        // Call initialization
+        initializeControllerComms();
+        
+        // Track last ping time for connection monitoring
+        let lastControllerPing = 0;
+        
+        // Check controller connection status every 10 seconds
+        setInterval(function() {
+            const indicator = document.getElementById('controllerIndicator');
+            if (!indicator) return;
+            
+            const timeSinceLastPing = Date.now() - lastControllerPing;
+            if (timeSinceLastPing > 10000 && authorizedControllers.size > 0) {
+                // No ping in 10 seconds, mark as disconnected
+                indicator.classList.remove('connected');
+                // Clear authorized controllers
+                authorizedControllers.clear();
+            }
+        }, 10000);
+        
+        // Listen for controller messages
+        window.addEventListener('storage', function(e) {
+            if (!e.key || !e.key.startsWith('dartstream-controller-')) return;
+            
+            try {
+                const message = JSON.parse(e.newValue);
+                handleControllerMessage(message);
+            } catch (err) {
+                console.error('Error parsing controller message:', err);
+            }
+        });
+        
+        function sendToController(message) {
+            // Send via BroadcastChannel
+            if (controlChannel) {
+                controlChannel.postMessage(message);
+            }
+            
+            // Also send via localStorage
+            const channel = 'dartstream-response-' + Date.now();
+            localStorage.setItem(channel, JSON.stringify(message));
+            
+            // Send via Supabase for remote communication
+            if (supabaseClient && scoreboardConnectionCode) {
+                const channelName = `controller:${scoreboardConnectionCode}`;
+                const supabaseChannel = supabaseClient.channel(channelName);
+                supabaseChannel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await supabaseChannel.send({
+                            type: 'broadcast',
+                            event: 'controller-response',
+                            payload: message
+                        });
+                    }
+                });
+            }
+            
+            // Clean up
+            setTimeout(() => {
+                localStorage.removeItem(channel);
+            }, 5000);
+        }
+        
+        function handleControllerMessage(message) {
+            console.log('?? Scoreboard received message:', message);
+            
+            // Check if message is valid
+            if (!message || typeof message !== 'object') {
+                console.warn('Invalid controller message received:', message);
+                return;
+            }
+            
+            // Handle ping first to establish connection
+            if (message.type === 'ping' && message.scoreboardCode) {
+                console.log('?? Ping received, checking code...');
+                // Verify the controller has the correct scoreboard code
+                if (message.scoreboardCode === scoreboardConnectionCode) {
+                    console.log('? Code matches! Authorizing controller...');
+                    // Generate a unique controller ID and authorize it
+                    const controllerId = 'controller-' + Date.now();
+                    authorizedControllers.add(controllerId);
+                    lastControllerPing = Date.now();
+                    
+                    // Update connection indicator
+                    const indicator = document.getElementById('controllerIndicator');
+                    if (indicator) {
+                        indicator.classList.add('connected');
+                    }
+                    
+                    sendToController({
+                        type: 'pong',
+                        controllerId: controllerId
+                    });
+                    console.log('Controller connected with ID:', controllerId);
+                } else {
+                    console.warn('Invalid scoreboard code from controller');
+                }
+                return;
+            }
+            
+            // Check if controller is authorized
+            if (!message.controllerId || !authorizedControllers.has(message.controllerId)) {
+                console.warn('Unauthorized controller message - ID:', message.controllerId, 'Authorized:', Array.from(authorizedControllers));
+                return;
+            }
+            
+            // Update last ping time for any authorized message
+            lastControllerPing = Date.now();
+            
+            // Send acknowledgment
+            sendToController({
+                type: 'ack',
+                controllerId: message.controllerId,
+                commandType: message.type
+            });
+            
+            switch(message.type) {
+                case 'updateScoreboard':
+                    // Update scoreboard settings
+                    if (message.header) {
+                        document.getElementById('matchFormat').textContent = message.header;
+                        sessionStorage.setItem('scoreboard-header', message.header);
+                    }
+                    if (message.group) {
+                        document.getElementById('footerGroup').textContent = message.group;
+                        sessionStorage.setItem('scoreboard-footer-group', message.group);
+                    }
+                    if (message.event) {
+                        document.getElementById('footerEvent').textContent = message.event;
+                        sessionStorage.setItem('scoreboard-footer-event', message.event);
+                    }
+                    if (message.format) {
+                        document.getElementById('footerFormat').textContent = message.format;
+                        sessionStorage.setItem('scoreboard-footer-format', message.format);
+                    }
+                    
+                    // Update column visibility
+                    const overlay = document.querySelector('.scoreboard-overlay');
+                    overlay.classList.toggle('hide-flags', !message.showFlags);
+                    overlay.classList.toggle('hide-indicator', !message.showIndicator);
+                    overlay.classList.toggle('hide-sets', !message.showSets);
+                    overlay.classList.toggle('hide-legs', !message.showLegs);
+                    overlay.classList.toggle('hide-avg', !message.showAvg);
+                    overlay.classList.toggle('hide-darts', !message.showDarts);
+                    overlay.classList.toggle('hide-score', !message.showScore);
+                    
+                    sessionStorage.setItem('show-flags', message.showFlags);
+                    sessionStorage.setItem('show-indicator', message.showIndicator);
+                    sessionStorage.setItem('show-sets', message.showSets);
+                    sessionStorage.setItem('show-legs', message.showLegs);
+                    sessionStorage.setItem('show-avg', message.showAvg);
+                    sessionStorage.setItem('show-darts', message.showDarts);
+                    sessionStorage.setItem('show-score', message.showScore);
+                    break;
+                    
+                case 'updateAdImage':
+                    const adImage = document.getElementById('adImage');
+                    const adPlaceholder = document.getElementById('adPlaceholder');
+                    adImage.src = message.image;
+                    adImage.classList.remove('ad-image-hidden');
+                    adPlaceholder.classList.add('ad-image-hidden');
+                    sessionStorage.setItem('ad-bar-image', message.image);
+                    break;
+                
+                case 'updateAdImages':
+                    window.adImages = message.images || [];
+                    window.currentAdIndex = message.currentIndex || 0;
+                    if (window.adImages.length > 0) {
+                        displayAdImage(window.currentAdIndex);
+                        updateAdGallery();
+                    }
+                    sessionStorage.setItem('ad-bar-images', JSON.stringify(window.adImages));
+                    sessionStorage.setItem('ad-bar-current-index', window.currentAdIndex.toString());
+                    break;
+                
+                case 'selectAdImage':
+                    if (message.index !== undefined) {
+                        displayAdImage(message.index);
+                    }
+                    break;
+                    
+                case 'toggleAd':
+                    toggleAd();
+                    break;
+                    
+                case 'showAd':
+                    // Show the ad
+                    document.body.classList.remove('ad-hidden');
+                    break;
+                    
+                case 'hideAd':
+                    // Hide the ad
+                    document.body.classList.add('ad-hidden');
+                    break;
+                    
+                case 'updateAdSettings':
+                    const adBar = document.getElementById('adBar');
+                    adEnableTransitions = message.enableTransitions;
+                    adTransitionType = message.transitionType;
+                    adTransitionDuration = parseFloat(message.transitionDuration);
+                    
+                    sessionStorage.setItem('ad-enable-transitions', message.enableTransitions);
+                    sessionStorage.setItem('ad-transition-type', message.transitionType);
+                    sessionStorage.setItem('ad-transition-duration', message.transitionDuration);
+                    
+                    adBar.classList.remove('slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade');
+                    if (adEnableTransitions) {
+                        adBar.classList.add(adTransitionType);
+                        adBar.style.transition = `all ${adTransitionDuration}s ease-in-out`;
+                    } else {
+                        adBar.style.transition = 'none';
+                    }
+                    break;
+            }
+        }
+        
+        // Add event listeners after DOM is loaded
+        document.getElementById('connectBtn').addEventListener('click', connectWithCode);
+        document.getElementById('pairingCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') connectWithCode();
+        });
+        document.getElementById('settingsBtn').addEventListener('click', toggleSettings);
+        document.getElementById('adToggleBtn').addEventListener('click', toggleAd);
+        document.getElementById('adSettingsBtn').addEventListener('click', toggleAdSettings);
+        
+        // Settings panel buttons
+        document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+        document.getElementById('closeSettingsBtn').addEventListener('click', toggleSettings);
+        
+        // Ad settings panel buttons
+        document.getElementById('adImageUpload').addEventListener('change', loadAdImage);
+        document.getElementById('saveAdSettingsBtn').addEventListener('click', saveAdSettingsPanel);
+        document.getElementById('closeAdSettingsBtn').addEventListener('click', toggleAdSettings);
+        
+        // OBS modal button
+        document.getElementById('closeOBSBtn').addEventListener('click', closeOBSSetup);
+    </script>
+    
+    <div style="position: fixed; top: 10px; right: 10px; font-size: 18px; font-weight: bold; color: #FF6B35; z-index: 9999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; border: 2px solid #FF6B35;">v2.1.1</div>
+    </div> <!-- End content-wrapper -->
+</body>
+</html>
