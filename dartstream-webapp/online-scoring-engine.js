@@ -678,6 +678,9 @@ function renderGameState(roomData) {
     document.getElementById('leg-score-display').textContent = 
         `${scores.host_legs_won} - ${scores.guest_legs_won}`;
     
+    // Update local currentTurn state from database
+    onlineState.currentTurn = roomData.current_turn;
+    
     // Update turn status based on current_turn from roomData (not game_state)
     updateTurnStatus(roomData.current_turn);
     
@@ -859,6 +862,9 @@ async function submitScore() {
             console.error('Error submitting score:', error);
             return;
         }
+        
+        console.log(`✅ Score submitted. Turn switched from ${playerKey} to ${nextTurn}`);
+        
         // Clear local input
         onlineState.localInput = '';
         updateInputDisplay();
