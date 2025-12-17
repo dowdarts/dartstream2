@@ -148,9 +148,21 @@
                         type: 'AUTO_JOIN_VIDEO_ROOM',
                         roomCode: event.data.roomCode,
                         hostName: event.data.hostName,
-                        guestName: event.data.guestName
+                        guestName: event.data.guestName,
+                        persistent: true  // Keep showing until dismissed
                     }, '*');
                     console.log('📡 Forwarded to video call iframe:', event.data.roomCode);
+                }
+            }
+            
+            // Hide notification when game starts
+            if (event.data.type === 'ONLINE_SCORER_GAME_STARTED') {
+                console.log('🎮 Game started, hiding video call notification');
+                const videoCallFrame = document.querySelector('iframe[src*="play-online"]');
+                if (videoCallFrame && videoCallFrame.contentWindow) {
+                    videoCallFrame.contentWindow.postMessage({
+                        type: 'HIDE_AUTO_JOIN_NOTIFICATION'
+                    }, '*');
                 }
             }
         });

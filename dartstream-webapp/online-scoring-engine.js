@@ -649,17 +649,32 @@ function subscribeToMatchUpdates() {
                     const playerSelectionScreen = document.getElementById('player-selection-screen');
                     if (waitingScreen?.classList.contains('active')) {
                         startGame();
-                        
-                        // Notify parent window (split-screen mode) that both players connected
-                        if (window.parent !== window) {
-                            window.parent.postMessage({
-                                type: 'ONLINE_SCORER_PLAYERS_CONNECTED',
-                                roomCode: onlineState.roomCode,
-                                hostName: onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName,
-                                guestName: onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName
-                            }, '*');
-                            console.log('📡 Notified parent: both players connected to room', onlineState.roomCode);
-                        }
+                    }
+                    
+                    // Notify parent window (split-screen mode) that both players connected
+                    // Send this continuously while on player selection or waiting for game start
+                    const gameScreen = document.getElementById('game-screen');
+                    const isOnPreGameScreens = waitingScreen?.classList.contains('active') || 
+                                              playerSelectionScreen?.classList.contains('active') ||
+                                              (gameScreen?.classList.contains('active') && roomData.status === 'waiting');
+                    
+                    if (isOnPreGameScreens && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'ONLINE_SCORER_PLAYERS_CONNECTED',
+                            roomCode: onlineState.roomCode,
+                            hostName: onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName,
+                            guestName: onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName,
+                            status: roomData.status
+                        }, '*');
+                        console.log('📡 Notified parent: both players connected to room', onlineState.roomCode);
+                    }
+                    
+                    // Hide notification when game actually starts
+                    if (roomData.status === 'playing' && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'ONLINE_SCORER_GAME_STARTED',
+                            roomCode: onlineState.roomCode
+                        }, '*');
                     }
                 }
                 
