@@ -633,6 +633,15 @@ function subscribeToMatchUpdates() {
                     }
                 }
                 
+                // If game status changed to 'playing' and guest is on game screen waiting, render it
+                if (roomData.status === 'playing' && onlineState.myRole === 'guest') {
+                    const gameScreen = document.getElementById('game-screen');
+                    if (gameScreen?.classList.contains('active')) {
+                        console.log('🎮 Game started by host, rendering for guest');
+                        renderGameState(roomData);
+                    }
+                }
+                
                 // Update the game state from database
                 if (document.getElementById('game-screen').classList.contains('active')) {
                     renderGameState(roomData);
