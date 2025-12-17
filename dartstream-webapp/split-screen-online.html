@@ -135,6 +135,26 @@
             container.classList.toggle('vertical');
         }
 
+        // Listen for messages from online scorer iframe
+        window.addEventListener('message', (event) => {
+            // Security: In production, specify exact origin
+            if (event.data.type === 'ONLINE_SCORER_PLAYERS_CONNECTED') {
+                console.log('📡 Split-screen received: both players connected', event.data);
+                
+                // Forward to video call iframe
+                const videoCallFrame = document.querySelector('iframe[src*="play-online"]');
+                if (videoCallFrame && videoCallFrame.contentWindow) {
+                    videoCallFrame.contentWindow.postMessage({
+                        type: 'AUTO_JOIN_VIDEO_ROOM',
+                        roomCode: event.data.roomCode,
+                        hostName: event.data.hostName,
+                        guestName: event.data.guestName
+                    }, '*');
+                    console.log('📡 Forwarded to video call iframe:', event.data.roomCode);
+                }
+            }
+        });
+
         // Draggable divider functionality
         const divider = document.getElementById('divider');
         const container = document.getElementById('container');

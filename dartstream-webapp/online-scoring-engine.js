@@ -649,6 +649,17 @@ function subscribeToMatchUpdates() {
                     const playerSelectionScreen = document.getElementById('player-selection-screen');
                     if (waitingScreen?.classList.contains('active')) {
                         startGame();
+                        
+                        // Notify parent window (split-screen mode) that both players connected
+                        if (window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'ONLINE_SCORER_PLAYERS_CONNECTED',
+                                roomCode: onlineState.roomCode,
+                                hostName: onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName,
+                                guestName: onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName
+                            }, '*');
+                            console.log('📡 Notified parent: both players connected to room', onlineState.roomCode);
+                        }
                     }
                 }
                 

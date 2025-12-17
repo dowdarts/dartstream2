@@ -174,6 +174,44 @@
             50% { opacity: 0.6; }
         }
 
+        .auto-join-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #1a1a2e;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            box-shadow: 0 8px 30px rgba(250, 204, 21, 0.6);
+            animation: flashPulse 1s infinite;
+            cursor: pointer;
+            z-index: 10000;
+            display: none;
+            transition: transform 0.3s ease;
+            border: 3px solid #fff;
+        }
+
+        .auto-join-notification:hover {
+            transform: scale(1.05);
+        }
+
+        .auto-join-notification.visible {
+            display: block;
+        }
+
+        @keyframes flashPulse {
+            0%, 100% { 
+                box-shadow: 0 8px 30px rgba(250, 204, 21, 0.8);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 8px 50px rgba(250, 204, 21, 1);
+                transform: scale(1.02);
+            }
+        }
+
         .info-text {
             color: #94a3b8;
             font-size: 1.1rem;
@@ -560,6 +598,12 @@
     </style>
 </head>
 <body>
+    <!-- Auto-join notification -->
+    <div id="autoJoinNotification" class="auto-join-notification">
+        <div>🎮 Online Match Connected!</div>
+        <div style="font-size: 0.9rem; margin-top: 5px;">Click to join video call</div>
+    </div>
+
     <div class="container">
         <!-- START SCREEN -->
         <div id="startScreen" class="screen active">
@@ -667,6 +711,41 @@
     <script src="video-room.js?v=13"></script>
     <script src="room-manager.js?v=13"></script>
     <script src="play-online.js?v=3"></script>
+    
+    <!-- Auto-join video call listener for split-screen mode -->
+    <script>
+        let autoJoinRoomCode = null;
+        
+        // Listen for auto-join messages from parent (split-screen mode)
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'AUTO_JOIN_VIDEO_ROOM') {
+                console.log('📹 Video call received auto-join request:', event.data);
+                autoJoinRoomCode = event.data.roomCode;
+                
+                // Show flashing notification
+                const notification = document.getElementById('autoJoinNotification');
+                notification.classList.add('visible');
+                
+                // Handle click on notification
+                notification.onclick = () => {
+                    notification.classList.remove('visible');
+                    // Populate room code input
+                    const roomCodeInput = document.getElementById('roomCodeInput');
+                    if (roomCodeInput) {
+                        roomCodeInput.value = autoJoinRoomCode;
+                    }
+                    // Switch to join screen
+                    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                    document.getElementById('joinScreen').classList.add('active');
+                };
+                
+                // Auto-hide after 30 seconds
+                setTimeout(() => {
+                    notification.classList.remove('visible');
+                }, 30000);
+            }
+        });
+    </script>
     
     <div style="position: fixed; top: 10px; right: 10px; font-size: 18px; font-weight: bold; color: #FF6B35; z-index: 9999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 6px; border: 2px solid #FF6B35;">v2.1.1</div>
 </body>
