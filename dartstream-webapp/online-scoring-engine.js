@@ -101,6 +101,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Check for reconnection to existing match
         await checkForReconnection();
+        
+        // Check for room code in URL parameter (for auto-join from split-screen)
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCodeParam = urlParams.get('room');
+        if (roomCodeParam && roomCodeParam.length === 4) {
+            console.log('🔗 Auto-joining room from URL:', roomCodeParam);
+            // Pre-fill room code and show join setup
+            document.getElementById('room-code-input').value = roomCodeParam.toUpperCase();
+            showJoinSetup();
+        }
     } else {
         console.error('[ERROR] Authentication failed, event listeners NOT set up');
     }

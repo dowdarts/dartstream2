@@ -122,7 +122,7 @@
 
     <div class="split-container" id="container">
         <div class="split-pane">
-            <iframe src="webapp-online-scorer.html" title="Online Scorer"></iframe>
+            <iframe id="online-scorer-iframe" src="webapp-online-scorer.html" title="Online Scorer"></iframe>
         </div>
         <div class="divider" id="divider"></div>
         <div class="split-pane">
@@ -131,6 +131,15 @@
     </div>
 
     <script>
+        // Check for room code in URL and pass to online scorer iframe
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+        if (roomCode && roomCode.length === 4) {
+            console.log('🔗 Split-screen loaded with room code:', roomCode);
+            const onlineScorerIframe = document.getElementById('online-scorer-iframe');
+            onlineScorerIframe.src = `webapp-online-scorer.html?room=${roomCode.toUpperCase()}`;
+        }
+        
         function toggleLayout() {
             const container = document.getElementById('container');
             container.classList.toggle('vertical');
