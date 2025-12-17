@@ -27,7 +27,7 @@ The following files are **PROTECTED** and require explicit confirmation before a
 - **`app-folders/dartstream-webapp/player-account.html`** - Backup stats page
 
 ### Main Application Pages
-- **`index.html`** - Main home page
+- **`index.html`** - Main home page (TEMPORARY UNLOCK for webapp-online-scorer.html link update)
 - **`dartstream-webapp/index.html`** - Fire OS home page
 - **`controller.html`** - Game controller interface
 - **`match-central.html`** - Match management center
