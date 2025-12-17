@@ -525,16 +525,17 @@ function renderGameState(roomData) {
     document.getElementById('player1-name').textContent = matchData.host_name;
     document.getElementById('player2-name').textContent = matchData.guest_name;
     
-    // Highlight active player (white background on their score)
-    const player1Display = document.querySelector('[id="player1-score"]')?.parentElement;
-    const player2Display = document.querySelector('[id="player2-score"]')?.parentElement;
-    
-    if (roomData.current_turn === 'host') {
-        player1Display?.style.setProperty('background-color', 'rgba(255, 255, 255, 0.15)', 'important');
-        player2Display?.style.setProperty('background-color', 'transparent');
-    } else {
-        player1Display?.style.setProperty('background-color', 'transparent');
-        player2Display?.style.setProperty('background-color', 'rgba(255, 255, 255, 0.15)', 'important');
+    // Highlight active player (score box) using .active class
+    const player1Header = document.getElementById('player1-display');
+    const player2Header = document.getElementById('player2-display');
+    if (player1Header && player2Header) {
+        if (roomData.current_turn === 'host') {
+            player1Header.classList.add('active');
+            player2Header.classList.remove('active');
+        } else {
+            player2Header.classList.add('active');
+            player1Header.classList.remove('active');
+        }
     }
     
     // Update leg score display
@@ -932,9 +933,10 @@ function updatePreviousShotDisplay(scoreHistory, hostName, guestName) {
         const scoringArea = document.querySelector('.scoring-area');
         if (scoringArea) scoringArea.insertBefore(prevShotBar, scoringArea.firstChild);
     }
+    // Use 1→ and 2→ style, no names
     prevShotBar.innerHTML =
-        `<span><b>${hostName || 'Host'}:</b> ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>` +
-        `<span><b>${guestName || 'Guest'}:</b> ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
+        `<span>1&#8594; ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>` +
+        `<span>2&#8594; ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
 }
 
 function exitMatch() {
