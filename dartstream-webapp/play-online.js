@@ -775,7 +775,7 @@ class PlayOnlineV7 {
             `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    showConnectionSuccess() {
+    showConnectionSuccess(sendSignal = true) {
         if (!this.display.connectionBanner) return;
         
         // Clear the timer interval
@@ -791,8 +791,10 @@ class PlayOnlineV7 {
         
         console.log('✅ Connection banner showing success');
         
-        // Send connection success signal to opponent
-        this.sendConnectionSuccessSignal();
+        // Only send signal on actual connection event, not when receiving opponent's signal
+        if (sendSignal) {
+            this.sendConnectionSuccessSignal();
+        }
         
         // Auto-hide after 5 seconds
         if (this.connectionAutoHideTimer) {
@@ -860,8 +862,8 @@ class PlayOnlineV7 {
             if (from === this.playerId || type !== 'connection-success') return;
             
             console.log('🟢 Received connection success signal from opponent:', from);
-            // Trigger connection success for the opponent
-            this.showConnectionSuccess();
+            // Trigger connection success without sending signal back (prevent infinite loop)
+            this.showConnectionSuccess(false);
         });
         
         // Monitor for online scorer matches (for auto-join notification)
