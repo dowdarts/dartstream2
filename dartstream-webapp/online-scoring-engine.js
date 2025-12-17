@@ -650,9 +650,10 @@ function subscribeToMatchUpdates() {
                     if (waitingScreen?.classList.contains('active')) {
                         startGame();
                         
-                        // BROADCAST video call notification to both users via Supabase channel
-                        if (window.supabaseClient && onlineState.supabaseChannel) {
-                            onlineState.supabaseChannel.send({
+                        // BROADCAST video call notification to both users via GLOBAL channel
+                        if (window.supabaseClient) {
+                            const globalChannel = window.supabaseClient.channel('dartstream-video-global');
+                            globalChannel.send({
                                 type: 'broadcast',
                                 event: 'VIDEO_CALL_PROMPT',
                                 payload: {
@@ -662,7 +663,7 @@ function subscribeToMatchUpdates() {
                                     timestamp: Date.now()
                                 }
                             });
-                            console.log('📢 BROADCAST: Video call prompt sent to both users via channel');
+                            console.log('📢 BROADCAST: Video call prompt sent to GLOBAL channel for room:', onlineState.roomCode);
                         }
                     }
                     
@@ -691,9 +692,10 @@ function subscribeToMatchUpdates() {
                             roomCode: onlineState.roomCode
                         }, '*');
                         
-                        // BROADCAST game started to hide notifications
-                        if (window.supabaseClient && onlineState.supabaseChannel) {
-                            onlineState.supabaseChannel.send({
+                        // BROADCAST game started to GLOBAL channel
+                        if (window.supabaseClient) {
+                            const globalChannel = window.supabaseClient.channel('dartstream-video-global');
+                            globalChannel.send({
                                 type: 'broadcast',
                                 event: 'GAME_STARTED',
                                 payload: { roomCode: onlineState.roomCode }

@@ -874,9 +874,9 @@ class PlayOnlineV7 {
             return;
         }
         
-        // Subscribe to broadcast messages from online scorer matches
+        // Subscribe to the SAME global broadcast channel that online scorer uses
         const broadcastChannel = window.supabaseClient
-            .channel('video-call-global-broadcast')
+            .channel('dartstream-video-global')
             .on('broadcast', { event: 'VIDEO_CALL_PROMPT' }, (payload) => {
                 console.log('📢 RECEIVED BROADCAST: Video call prompt', payload);
                 
@@ -917,71 +917,11 @@ class PlayOnlineV7 {
             })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('✅ Subscribed to video call broadcast channel');
+                    console.log('✅ Subscribed to dartstream-video-global broadcast channel');
                 }
             });
         
-        // Also subscribe to database changes as backup
-        const channel = window.supabaseClient
-            .channel('video-call-monitor')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'game_rooms'
-                },
-                (payload) => {
-                    const roomData = payload.new;
-                    
-                    // Check if both players are connected and game hasn't started
-                    if (roomData.game_state?.host_name && 
-                        roomData.game_state?.guest_name && 
-                        roomData.status === 'waiting') {
-                        
-                        console.log('📹 Online scorer match detected (DB):', roomData.room_code);
-                        
-                        // Show notification
-                        const notification = document.getElementById('autoJoinNotification');
-                        if (notification && !notification.classList.contains('visible')) {
-                            const hostName = roomData.game_state.host_name;
-                            const guestName = roomData.game_state.guest_name;
-                            
-                            notification.innerHTML = `
-                                <div>🎮 Online Match Connected!</div>
-                                <div style="font-size: 0.9rem; margin-top: 5px;">${hostName} vs ${guestName}</div>
-                                <div style="font-size: 0.85rem; margin-top: 5px; opacity: 0.9;">Click to start video call for bull-off</div>
-                            `;
-                            notification.classList.add('visible');
-                            
-                            // Store room code for auto-join
-                            const autoJoinRoomCode = roomData.room_code;
-                            
-                            notification.onclick = () => {
-                                notification.classList.remove('visible');
-                                // Populate room code input
-                                const roomCodeInput = document.getElementById('roomCodeInput');
-                                if (roomCodeInput) {
-                                    roomCodeInput.value = autoJoinRoomCode;
-                                }
-                                // Switch to join screen
-                                this.showScreen('join');
-                            };
-                        }
-                    }
-                    
-                    // Hide notification when game starts
-                    if (roomData.status === 'playing') {
-                        const notification = document.getElementById('autoJoinNotification');
-                        if (notification) {
-                            notification.classList.remove('visible');
-                        }
-                    }
-                }
-            )
-            .subscribe();
-        
-        console.log('👀 Monitoring online scorer matches for auto-join (broadcast + DB)');
+        console.log('👀 Monitoring online scorer matches for auto-join via global broadcast');
     }
 }
 
