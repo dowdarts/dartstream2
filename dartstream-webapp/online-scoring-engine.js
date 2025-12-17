@@ -195,7 +195,7 @@ function setupEventListeners() {
     document.getElementById('action-btn').addEventListener('click', undoLastDart);
     document.getElementById('submit-btn').addEventListener('click', function() {
         // If input is present, submit score; else, add 0 (MISS)
-        if (Array.isArray(onlineState.localInput) && onlineState.localInput.length > 0) {
+        if (onlineState.localInput && onlineState.localInput.length > 0) {
             submitScore();
         } else {
             addToInput(0); // MISS
@@ -207,7 +207,7 @@ function setupEventListeners() {
         // Dual-function 180/0 button
         if (btn.id === 'btn-180-zero') {
             btn.addEventListener('click', function() {
-                if (Array.isArray(onlineState.localInput) && onlineState.localInput.length > 0) {
+                if (onlineState.localInput && onlineState.localInput.length > 0) {
                     addToInput(0); // 0 when input present
                 } else {
                     addToInput(180); // 180 when no input
@@ -215,6 +215,46 @@ function setupEventListeners() {
             });
         } else {
             btn.addEventListener('click', (e) => addToInput(parseInt(e.target.dataset.score)));
+        }
+    });
+    
+    // Keyboard support
+    document.addEventListener('keydown', function(e) {
+        // Only handle keyboard input when online scoring screen is active
+        const gameScreen = document.getElementById('game-screen');
+        if (!gameScreen || !gameScreen.classList.contains('active')) {
+            return;
+        }
+        
+        // Only allow keyboard input if it's your turn
+        if (onlineState.currentTurn !== onlineState.myRole) {
+            return;
+        }
+        
+        // Number keys (0-9)
+        if (e.key >= '0' && e.key <= '9') {
+            e.preventDefault();
+            addToInput(parseInt(e.key));
+        }
+        // Enter key to submit
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (onlineState.localInput && onlineState.localInput.length > 0) {
+                submitScore();
+            } else {
+                addToInput(0); // MISS if no input
+            }
+        }
+        // Backspace to undo last digit
+        else if (e.key === 'Backspace') {
+            e.preventDefault();
+            undoLastDart();
+        }
+        // Escape to clear input
+        else if (e.key === 'Escape') {
+            e.preventDefault();
+            onlineState.localInput = '';
+            updateInputDisplay();
         }
     });
     
