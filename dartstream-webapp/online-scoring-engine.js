@@ -1292,7 +1292,8 @@ async function startNextLeg() {
                     scores: scores
                 },
                 current_turn: 'host',  // Host starts next leg
-                status: 'playing'\n            })
+                status: 'playing'
+            })
             .eq('id', onlineState.matchId);
         
         if (error) {
@@ -1345,7 +1346,8 @@ async function saveMatchStats() {
                 count_140s: countAchievements(scores.score_history, 'host', 140),
                 count_100s: countAchievements(scores.score_history, 'host', 100),
                 darts_thrown: scores.host_darts_thrown || 0,
-                game_type: gameState.game_type\n            });
+                game_type: gameState.game_type
+            });
         }
         
         // Save guest stats (if guest has linked player_id)
