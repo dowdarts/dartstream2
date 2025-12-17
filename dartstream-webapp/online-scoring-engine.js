@@ -896,11 +896,22 @@ async function submitScore() {
         scores[playerKey] = newScore;
         // Check for winner (reached exactly 0)
         let matchWinner = null;
+        let legWinner = null;
         let dartOut = null;
         if (newScore === 0) {
-            matchWinner = playerKey;
+            legWinner = playerKey;
             // Show finish darts modal and wait for response
             dartOut = await showFinishDartsModal(scoreInput);
+            
+            // Increment leg wins
+            const legWinsKey = playerKey + '_legs_won';
+            scores[legWinsKey] = (scores[legWinsKey] || 0) + 1;
+            
+            // Check if match is complete based on format
+            const isMatchComplete = checkMatchComplete(scores, match.game_state);
+            if (isMatchComplete) {
+                matchWinner = playerKey;
+            }
         }
         // Show good shot display for high scores
         if (!isBust && scoreInput >= 95) {
@@ -922,10 +933,16 @@ async function submitScore() {
         // Switch turn (unless match is won)
         let nextTurn = isHost ? 'guest' : 'host';
         let gameStatus = 'playing';
-        if (matchWinner) {
-            gameStatus = 'complete';
-            // Show winner modal
-            showWinnerModal(playerKey, dartOut, scoreInput);
+        if (legWinner) {
+            if (matchWinner) {
+                gameStatus = 'complete';
+                // Show match winner modal
+                showWinnerModal(playerKey, dartOut, scoreInput, true);
+            } else {
+                gameStatus = 'leg_complete';
+                // Show leg winner modal
+                showWinnerModal(playerKey, dartOut, scoreInput, false);
+            }
         }
         // Update database
         const { error } = await window.supabaseClient
@@ -962,6 +979,31 @@ async function submitScore() {
 /**
  * ============ FINISH DARTS MODAL ============
  */
+
+/**
+ * Check if match is complete based on format
+ */
+function checkMatchComplete(scores, gameState) {
+    const hostLegs = scores.host_legs_won || 0;
+    const guestLegs = scores.guest_legs_won || 0;
+    const totalLegs = gameState.total_legs || 1;
+    const legsFormat = gameState.legs_format || 'single';
+    
+    if (legsFormat === 'single') {
+        // Single leg - first to 1 wins
+        return hostLegs >= 1 || guestLegs >= 1;
+    } else if (legsFormat === 'playall') {
+        // Play all legs - match ends when all legs played
+        return (hostLegs + guestLegs) >= totalLegs;
+    } else if (legsFormat === 'bestof') {
+        // Best of - first to majority wins
+        const legsToWin = Math.ceil(totalLegs / 2);
+        return hostLegs >= legsToWin || guestLegs >= legsToWin;
+    }
+    
+    return false;
+}
+
 function showFinishDartsModal(checkoutScore) {
     return new Promise((resolve) => {
         const modal = document.getElementById('finish-darts-modal');
@@ -983,23 +1025,29 @@ function showFinishDartsModal(checkoutScore) {
     });
 }
 
-function showWinnerModal(winnerKey, dartOut, checkoutScore) {
+function showWinnerModal(winnerKey, dartOut, checkoutScore, isMatchComplete) {
     // Show the winner modal with info
     const modal = document.getElementById('match-complete-modal');
     if (!modal) return;
     const winnerName = winnerKey === 'host' ? (onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName) : (onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName);
     document.getElementById('match-winner-name').textContent = winnerName;
-    document.getElementById('match-complete-text').textContent = `Checkout: ${checkoutScore} (Dart ${dartOut})`;
+    
+    if (isMatchComplete) {
+        document.getElementById('match-complete-text').textContent = `Match Winner! Checkout: ${checkoutScore} (Dart ${dartOut})`;
+    } else {
+        document.getElementById('match-complete-text').textContent = `Leg Winner! Checkout: ${checkoutScore} (Dart ${dartOut})`;
+    }
+    
     modal.style.display = 'flex';
     
     // Setup match complete modal buttons
-    setupMatchCompleteActions();
+    setupMatchCompleteActions(isMatchComplete);
 }
 
 /**
  * Setup match complete modal actions
  */
-function setupMatchCompleteActions() {
+function setupMatchCompleteActions(isMatchComplete) {
     // Change Game Mode button
     const changeGameModeBtn = document.getElementById('change-game-mode-btn');
     if (changeGameModeBtn) {
@@ -1013,10 +1061,21 @@ function setupMatchCompleteActions() {
     // Continue Match button (play next leg/set)
     const continueMatchBtn = document.getElementById('continue-match-btn');
     if (continueMatchBtn) {
-        continueMatchBtn.onclick = async () => {
-            await startNextLeg();
-            document.getElementById('match-complete-modal').style.display = 'none';
-        };
+        if (isMatchComplete) {
+            // Match is complete, disable continue button
+            continueMatchBtn.disabled = true;
+            continueMatchBtn.style.opacity = '0.5';
+            continueMatchBtn.style.cursor = 'not-allowed';
+        } else {
+            // Leg complete, enable continue to next leg
+            continueMatchBtn.disabled = false;
+            continueMatchBtn.style.opacity = '1';
+            continueMatchBtn.style.cursor = 'pointer';
+            continueMatchBtn.onclick = async () => {
+                await startNextLeg();
+                document.getElementById('match-complete-modal').style.display = 'none';
+            };
+        }
     }
     
     // End Match button (save stats)
@@ -1273,6 +1332,14 @@ async function startNextLeg() {
         const gameState = match.game_state || {};
         const scores = gameState.scores || {};
         
+        // Determine who starts next leg (alternate from current turn)
+        const lastTurn = match.current_turn;
+        const nextStarter = lastTurn === 'host' ? 'guest' : 'host';
+        
+        // Track leg counter
+        if (!gameState.current_leg) gameState.current_leg = 1;
+        gameState.current_leg += 1;
+        
         // Reset scores to starting score
         const startScore = gameState.game_type === '501' ? 501 : 301;
         scores.host = startScore;
@@ -1291,7 +1358,7 @@ async function startNextLeg() {
                     ...gameState,
                     scores: scores
                 },
-                current_turn: 'host',  // Host starts next leg
+                current_turn: nextStarter,  // Alternate starter
                 status: 'playing'
             })
             .eq('id', onlineState.matchId);
@@ -1302,7 +1369,7 @@ async function startNextLeg() {
             return;
         }
         
-        console.log('✅ Next leg started');
+        console.log(`✅ Next leg started. ${nextStarter} starts leg ${gameState.current_leg}`);
         fetchAndRenderMatchState();
         
     } catch (error) {
