@@ -291,11 +291,25 @@ function renderGameState(matchData) {
     const player1Darts = isHost ? scores.host_darts_thrown : scores.guest_darts_thrown;
     const player2Darts = isHost ? scores.guest_darts_thrown : scores.host_darts_thrown;
     
+    // Calculate averages (points scored / darts thrown * 3 for 3-dart average)
+    const startScore = parseInt(onlineState.gameType);
+    const player1PointsScored = startScore - player1Score;
+    const player2PointsScored = startScore - player2Score;
+    
+    const player1LegAvg = player1Darts > 0 ? (player1PointsScored / player1Darts) * 3 : 0;
+    const player2LegAvg = player2Darts > 0 ? (player2PointsScored / player2Darts) * 3 : 0;
+    
     // Update scoreboard
     document.getElementById('player1-score').textContent = player1Score;
     document.getElementById('player2-score').textContent = player2Score;
     document.getElementById('player1-name').textContent = matchData.host_name;
     document.getElementById('player2-name').textContent = matchData.guest_name;
+    
+    // Update averages (leg average only for now - match average would require persistent storage)
+    document.getElementById('player1-leg-avg').textContent = player1LegAvg.toFixed(2);
+    document.getElementById('player2-leg-avg').textContent = player2LegAvg.toFixed(2);
+    document.getElementById('player1-match-avg').textContent = player1LegAvg.toFixed(2);
+    document.getElementById('player2-match-avg').textContent = player2LegAvg.toFixed(2);
     
     // Update leg score display
     document.getElementById('leg-score-display').textContent = 
