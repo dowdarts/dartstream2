@@ -933,10 +933,24 @@ function updatePreviousShotDisplay(scoreHistory, hostName, guestName) {
         const scoringArea = document.querySelector('.scoring-area');
         if (scoringArea) scoringArea.insertBefore(prevShotBar, scoringArea.firstChild);
     }
-    // Use 1→ and 2→ style, no names
-    prevShotBar.innerHTML =
-        `<span>1&#8594; ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>` +
-        `<span>2&#8594; ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
+    // Use 1→ and 2→ style, no names, and switch order based on current turn
+    // Determine current turn from global onlineState or fallback to host
+    let currentTurn = 'host';
+    if (window.onlineState && window.onlineState.currentTurn) {
+        currentTurn = window.onlineState.currentTurn;
+    } else if (window.onlineState && window.onlineState.myRole) {
+        currentTurn = window.onlineState.myRole;
+    }
+    // If it's host's turn, show 1→ left, 2→ right; if guest's turn, swap
+    let left, right;
+    if (currentTurn === 'host') {
+        left = `<span>1&#8594; ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>`;
+        right = `<span>2&#8594; ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
+    } else {
+        left = `<span>2&#8594; ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
+        right = `<span>1&#8594; ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>`;
+    }
+    prevShotBar.innerHTML = left + right;
 }
 
 function exitMatch() {
