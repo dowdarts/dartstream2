@@ -96,6 +96,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('[INIT] Setting up event listeners...');
         setupEventListeners();
         console.log('[OK] Event listeners setup complete');
+        
+        // Check for reconnection to existing match
+        await checkForReconnection();
     } else {
         console.error('[ERROR] Authentication failed, event listeners NOT set up');
     }
@@ -273,6 +276,94 @@ function showScreen(screenId) {
 }
 
 /**
+ * ============ RECONNECTION LOGIC ============
+ */
+function saveMatchState() {
+    if (!onlineState.matchId || !onlineState.roomCode) return;
+    
+    const matchState = {
+        matchId: onlineState.matchId,
+        roomCode: onlineState.roomCode,
+        myRole: onlineState.myRole,
+        gameType: onlineState.gameType,
+        timestamp: Date.now()
+    };
+    
+    localStorage.setItem('dartstream_active_match', JSON.stringify(matchState));
+    console.log('💾 Match state saved to localStorage:', matchState);
+}
+
+function clearSavedMatchState() {
+    localStorage.removeItem('dartstream_active_match');
+    console.log('🗑️ Cleared saved match state');
+}
+
+async function checkForReconnection() {
+    const savedMatch = localStorage.getItem('dartstream_active_match');
+    if (!savedMatch) {
+        console.log('ℹ️ No saved match found');
+        return;
+    }
+    
+    try {
+        const matchState = JSON.parse(savedMatch);
+        console.log('🔄 Found saved match, attempting reconnection:', matchState);
+        
+        // Check if match is still active in database
+        const { data: match, error } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('id', matchState.matchId)
+            .single();
+        
+        if (error || !match) {
+            console.warn('⚠️ Saved match no longer exists in database');
+            clearSavedMatchState();
+            return;
+        }
+        
+        // Check if match is still in progress
+        if (match.status === 'complete' || match.status === 'cancelled') {
+            console.log('ℹ️ Match has ended, clearing saved state');
+            clearSavedMatchState();
+            return;
+        }
+        
+        // Restore state
+        onlineState.matchId = matchState.matchId;
+        onlineState.roomCode = matchState.roomCode;
+        onlineState.myRole = matchState.myRole;
+        onlineState.gameType = matchState.gameType;
+        
+        const gameState = match.game_state || {};
+        if (matchState.myRole === 'host') {
+            onlineState.opponentName = gameState.guest_name || 'Guest';
+            onlineState.opponentPlayerId = gameState.guest_player_id;
+        } else {
+            onlineState.opponentName = gameState.host_name || 'Host';
+            onlineState.opponentPlayerId = gameState.host_player_id;
+        }
+        
+        console.log('✅ Reconnected to match:', onlineState.roomCode);
+        
+        // Show reconnection message and go to game screen
+        showScreen('game-screen');
+        document.getElementById('room-code-display-game').textContent = onlineState.roomCode;
+        
+        // Subscribe to updates and render current state
+        subscribeToMatchUpdates();
+        renderGameState(match);
+        
+        // Show reconnection notification
+        alert(`Reconnected to match: ${onlineState.roomCode}`);
+        
+    } catch (error) {
+        console.error('❌ Error during reconnection:', error);
+        clearSavedMatchState();
+    }
+}
+
+/**
  * ============ LANDING & SETUP SCREENS ============
  */
 
@@ -409,6 +500,9 @@ async function hostMatch() {
         onlineState.matchId = data.id;
         console.log('✅ Match created with room code:', onlineState.roomCode);
 
+        // Save match state for reconnection
+        saveMatchState();
+
         // Start listening for guest joining (subscription will trigger startGame when guest joins)
         subscribeToMatchUpdates();
 
@@ -479,6 +573,9 @@ async function joinMatch() {
             alert('Failed to join match');
             return;
         }
+        
+        // Save match state for reconnection
+        saveMatchState();
         
         document.getElementById('waiting-message').textContent = 'Joined! Waiting for host to start...';
         subscribeToMatchUpdates();
@@ -779,6 +876,10 @@ function showWinnerModal(winnerKey, dartOut, checkoutScore) {
     document.getElementById('match-winner-name').textContent = winnerName;
     document.getElementById('match-complete-text').textContent = `Checkout: ${checkoutScore} (Dart ${dartOut})`;
     modal.style.display = 'flex';
+    
+    // Clear saved match state since match is complete
+    clearSavedMatchState();
+    
     // Optionally, add a button to return to main menu
     const returnBtn = document.getElementById('return-to-landing-btn');
     if (returnBtn) {
@@ -1030,6 +1131,7 @@ function exitMatch() {
     if (onlineState.supabaseChannel) {
         onlineState.supabaseChannel.unsubscribe();
     }
+    clearSavedMatchState();
     resetOnlineState();
     showLanding();
 }
