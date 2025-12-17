@@ -1,1030 +1,872 @@
-// ===== PLAY ONLINE MODULE =====
-// Handles video calling and real-time game synchronization via Supabase Realtime
+/**
+ * PlayOnlineV7 - Fresh, clean implementation
+ * Simple flow: Create/Join → Device Config → Video Call
+ */
 
-const PlayOnline = {
-    roomCode: null,
-    isHost: false,
-    localStream: null,
-    remoteStream: null,
-    peerConnection: null,
-    supabaseChannel: null,
-    currentTurn: null, // 'host' or 'guest'
-    opponentId: null,
-    localPlayerId: null,
-
-    // WebRTC Configuration
-    rtcConfig: {
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-    },
-
-    // Initialize on page load
-    async init() {
-        console.log('PlayOnline initializing...');
-        
-        // Wait for Supabase to be ready
-        await this.waitForSupabase();
-        
-        if (!window.supabaseClient) {
-            console.error('Failed to initialize Supabase client');
-            alert('Failed to connect to database. Please refresh the page.');
-            return;
-        }
-        
-        // Check if user is authenticated
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        if (!session) {
-            alert('Please sign in to use Play Online features');
-            window.location.href = 'player-account.html';
-            return;
-        }
-
-        this.localPlayerId = session.user.id;
-        console.log('User authenticated:', this.localPlayerId);
-
-        // Enumerate media devices
-        await this.enumerateDevices();
-    },
-
-    waitForSupabase() {
-        return new Promise((resolve, reject) => {
-            const maxAttempts = 50;
-            let attempts = 0;
-            
-            const checkClient = () => {
-                attempts++;
-                
-                // Try to get the client using the global function
-                if (typeof getSupabaseClient === 'function') {
-                    const client = getSupabaseClient();
-                    if (client) {
-                        console.log('Supabase client ready!');
-                        resolve();
-                        return;
-                    }
-                }
-                
-                // Also check if it already exists on window
-                if (window.supabaseClient) {
-                    console.log('Supabase client found on window!');
-                    resolve();
-                    return;
-                }
-                
-                if (attempts >= maxAttempts) {
-                    reject(new Error('Timeout waiting for Supabase to load'));
-                    return;
-                }
-                
-                setTimeout(checkClient, 100);
-            };
-            
-            checkClient();
-        });
-    },
-
-    // Show host setup screen
-    async showHostSetup() {
-        document.getElementById('initial-setup').classList.add('hidden');
-        document.getElementById('host-setup').classList.remove('hidden');
-        
-        this.isHost = true;
-        this.currentTurn = 'host'; // Host starts
-        
-        // Generate random 4-digit room code
-        this.roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-        document.getElementById('generated-room-code').textContent = this.roomCode;
-
-        // Create room in Supabase
-        await this.createRoom();
-        
-        // Listen for opponent joining
-        await this.listenForOpponent();
-    },
-
-    // Show join setup screen
-    showJoinSetup() {
-        document.getElementById('initial-setup').classList.add('hidden');
-        document.getElementById('join-setup').classList.remove('hidden');
-        this.isHost = false;
-    },
-
-    // Cancel host
-    cancelHost() {
-        if (this.supabaseChannel) {
-            this.supabaseChannel.unsubscribe();
-        }
-        this.resetToInitial();
-    },
-
-    // Cancel join
-    cancelJoin() {
-        this.resetToInitial();
-    },
-
-    resetToInitial() {
-        document.getElementById('host-setup').classList.add('hidden');
-        document.getElementById('join-setup').classList.add('hidden');
-        document.getElementById('initial-setup').classList.remove('hidden');
+class PlayOnlineV7 {
+    constructor() {
         this.roomCode = null;
-    },
-
-    // Generate random 4-digit alphanumeric code
-    generateRoomCode() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let code = '';
-        for (let i = 0; i < 4; i++) {
-            code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return code;
-    },
-
-    // Create room in Supabase
-    async createRoom() {
-        try {
-            // Ensure client is ready
-            if (!window.supabaseClient) {
-                await this.waitForSupabase();
-            }
-            if (!window.supabaseClient) {
-                throw new Error('Supabase client not initialized');
-            }
-
-            const { data, error } = await window.supabaseClient
-                .from('game_rooms')
-                .insert([{
-                    room_code: this.roomCode,
-                    host_id: this.localPlayerId,
-                    status: 'waiting',
-                    created_at: new Date().toISOString()
-                }])
-                .select();
-
-            if (error) throw error;
-            console.log('Room created:', data);
-        } catch (error) {
-            console.error('Error creating room:', error);
-            alert('Failed to create room. Please try again.');
-        }
-    },
-
-    // Listen for opponent joining
-    async listenForOpponent() {
-        // Ensure client is ready
-        if (!window.supabaseClient) {
-            await this.waitForSupabase();
-        }
-        if (!window.supabaseClient) {
-            throw new Error('Supabase client not initialized');
-        }
-
-        this.supabaseChannel = window.supabaseClient
-            .channel(`room:${this.roomCode}`)
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'game_rooms',
-                filter: `room_code=eq.${this.roomCode}`
-            }, (payload) => {
-                console.log('Room updated:', payload);
-                if (payload.new.guest_id && payload.new.status === 'active') {
-                    this.opponentId = payload.new.guest_id;
-                    // Host shows game config screen when guest joins
-                    this.showGameConfig();
-                }
-            })
-            .on('broadcast', { event: 'game-config' }, (payload) => {
-                const { from, config } = payload.payload;
-                if (from !== this.localPlayerId && !this.isHost) {
-                    console.log('Received game config from host:', config);
-                    this.currentTurn = config.startingPlayer;
-                    this.hostPlayerName = config.player1Name;
-                    this.guestPlayerName = config.player2Name;
-                    this.initializeMatch(config);
-                }
-            })
-            .on('broadcast', { event: 'game-state' }, (payload) => {
-                const { from, gameState } = payload.payload;
-                if (from !== this.localPlayerId) {
-                    console.log('Received game state from opponent:', gameState);
-                    this.updateLocalGameState(gameState);
-                }
-            })
-            .on('broadcast', { event: 'match-complete' }, (payload) => {
-                const { from, matchData } = payload.payload;
-                if (from !== this.localPlayerId) {
-                    console.log('Opponent completed match, saving stats...');
-                    this.saveRemoteMatchStats(matchData);
-                }
-            })
-            .subscribe();
-    },
-
-    // Join existing room
-    async joinRoom() {
-        const code = document.getElementById('join-room-code').value.trim().toUpperCase();
+        this.playerId = null;
+        this.playerName = null;
+        this.roomManager = null;
+        this.videoRoom = null;
+        this.currentRoomCountdown = null;
+        this.devices = { cameras: [], microphones: [] };
+        this.selectedDevices = { camera: null, microphone: null };
+        this.mediaStream = null;
+        this.micEnabled = true;
+        this.cameraEnabled = true;
+        this.isSettingsMode = false;
         
-        if (code.length !== 4) {
-            alert('Please enter a 4-digit room code');
+        // Dragging state
+        this.isDragging = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+
+        // Connection tracking
+        this.connectionStartTime = null;
+        this.connectionTimerInterval = null;
+        this.connectionAutoHideTimer = null;
+
+        this.initializeElements();
+        this.setupEventListeners();
+        this.initializeModules();
+    }
+
+    initializeElements() {
+        // Screens
+        this.screens = {
+            start: document.getElementById('startScreen'),
+            roomCode: document.getElementById('roomCodeScreen'),
+            join: document.getElementById('joinScreen'),
+            deviceConfig: document.getElementById('deviceConfigScreen'),
+            videoCall: document.getElementById('videoCallScreen'),
+        };
+
+        // Buttons
+        this.buttons = {
+            createRoom: document.getElementById('createRoomBtn'),
+            joinRoom: document.getElementById('joinRoomBtn'),
+            copyCode: document.getElementById('copyCodeBtn'),
+            joinRoomCode: document.getElementById('joinRoomCodeBtn'),
+            cancelRoom: document.getElementById('cancelRoomBtn'),
+            joinGame: document.getElementById('joinGameBtn'),
+            backToStart: document.getElementById('backToStartBtn'),
+            confirmDevices: document.getElementById('confirmDevicesBtn'),
+            cancelDevices: document.getElementById('cancelDevicesBtn'),
+            toggleMic: document.getElementById('toggleMicBtn'),
+            toggleCamera: document.getElementById('toggleCameraBtn'),
+            settings: document.getElementById('settingsBtn'),
+            refreshCall: document.getElementById('refreshCallBtn'),
+            endCall: document.getElementById('endCallBtn'),
+        };
+
+        // Inputs
+        this.inputs = {
+            roomCode: document.getElementById('roomCodeInput'),
+            camera: document.getElementById('cameraSelect'),
+            microphone: document.getElementById('microphoneSelect'),
+        };
+
+        // Video elements
+        this.video = {
+            localPreview: document.getElementById('cameraPreview'),
+            local: document.getElementById('localVideo'),
+            remote: document.getElementById('remoteVideo'),
+        };
+
+        // Display elements
+        this.display = {
+            roomCode: document.getElementById('roomCodeDisplay'),
+            countdown: document.getElementById('roomCountdown'),
+            error: document.getElementById('errorMessage'),
+            opponentName: document.getElementById('opponentName'),
+            youName: document.getElementById('youName'),
+            connectionBanner: document.getElementById('connectionBanner'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            connectionTimer: document.getElementById('connectionTimer'),
+        };
+    }
+
+    setupEventListeners() {
+        // Start screen
+        this.buttons.createRoom.addEventListener('click', () => this.handleCreateRoom());
+        this.buttons.joinRoom.addEventListener('click', () => this.showScreen('join'));
+
+        // Room code screen
+        this.buttons.cancelRoom.addEventListener('click', () => this.cancelRoomCreation());
+        this.buttons.copyCode.addEventListener('click', () => this.copyRoomCode());
+        this.buttons.joinRoomCode.addEventListener('click', () => this.autoJoinAsHost());
+
+        // Join screen
+        this.buttons.joinGame.addEventListener('click', () => this.handleJoinRoom());
+        this.buttons.backToStart.addEventListener('click', () => this.showScreen('start'));
+        this.inputs.roomCode.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleJoinRoom();
+        });
+
+        // Device config screen
+        this.buttons.confirmDevices.addEventListener('click', () => this.handleConfirmDevices());
+        this.buttons.cancelDevices.addEventListener('click', () => this.cancelDeviceConfig());
+        this.inputs.camera.addEventListener('change', () => this.previewCamera());
+        this.inputs.microphone.addEventListener('change', () => {
+            this.selectedDevices.microphone = this.inputs.microphone.value;
+        });
+
+        // Video call controls
+        this.buttons.toggleMic.addEventListener('click', () => this.toggleMicrophone());
+        this.buttons.toggleCamera.addEventListener('click', () => this.toggleCamera());
+        this.buttons.settings.addEventListener('click', () => this.showDeviceSettings());
+        this.buttons.refreshCall.addEventListener('click', () => this.refreshCall());
+        this.buttons.endCall.addEventListener('click', () => this.endCall());
+
+        // Local video dragging - set up after DOM is ready
+        setTimeout(() => this.setupLocalVideoDrag(), 100);
+    }
+
+    setupLocalVideoDrag() {
+        const localVideoContainer = document.querySelector('.local-video-container');
+        if (!localVideoContainer) return;
+
+        localVideoContainer.addEventListener('mousedown', (e) => this.onVideoDragStart(e, localVideoContainer));
+        localVideoContainer.addEventListener('touchstart', (e) => this.onVideoDragStart(e, localVideoContainer));
+        
+        document.addEventListener('mousemove', (e) => this.onVideoDrag(e, localVideoContainer));
+        document.addEventListener('touchmove', (e) => this.onVideoDrag(e, localVideoContainer), { passive: false });
+        
+        document.addEventListener('mouseup', () => this.onVideoDragEnd(localVideoContainer));
+        document.addEventListener('touchend', () => this.onVideoDragEnd(localVideoContainer));
+    }
+
+    onVideoDragStart(e, el) {
+        this.isDragging = true;
+        el.classList.add('dragging');
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const rect = el.getBoundingClientRect();
+        this.dragOffsetX = clientX - rect.left;
+        this.dragOffsetY = clientY - rect.top;
+        
+        e.preventDefault();
+    }
+
+    onVideoDrag(e, el) {
+        if (!this.isDragging) return;
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const x = clientX - this.dragOffsetX;
+        const y = clientY - this.dragOffsetY;
+        
+        el.style.left = Math.max(0, Math.min(x, window.innerWidth - el.offsetWidth)) + 'px';
+        el.style.top = Math.max(0, Math.min(y, window.innerHeight - el.offsetHeight)) + 'px';
+        el.style.right = 'auto';
+        
+        e.preventDefault();
+    }
+
+    onVideoDragEnd(el) {
+        this.isDragging = false;
+        el.classList.remove('dragging');
+    }
+
+    async initializeModules() {
+        // Wait for Supabase to load (CDN is async, may take a moment)
+        let attempts = 0;
+        const maxAttempts = 100; // 10 seconds (100 * 100ms)
+        
+        while (!window.supabaseClient && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+
+        if (!window.supabaseClient) {
+            this.showError('Failed to connect to Supabase');
+            console.error('❌ Supabase client never initialized after', maxAttempts * 100, 'ms');
             return;
         }
 
-        this.roomCode = code;
-
-        try {
-            // Ensure client is ready
-            if (!window.supabaseClient) {
-                await this.waitForSupabase();
-            }
-            if (!window.supabaseClient) {
-                throw new Error('Supabase client not initialized');
-            }
-
-            // Find room
-            const { data: rooms, error: findError } = await window.supabaseClient
-                .from('game_rooms')
-                .select('*')
-                .eq('room_code', code)
-                .eq('status', 'waiting')
-                .maybeSingle();
-
-            if (findError) {
-                console.error('Database error:', findError);
-                alert('Error searching for room. Please try again.');
-                return;
-            }
-
-            if (!rooms) {
-                alert('Room not found or already in use');
-                return;
-            }
-
-            this.opponentId = rooms.host_id;
-
-            // Update room with guest
-            const { error: updateError } = await window.supabaseClient
-                .from('game_rooms')
-                .update({
-                    guest_id: this.localPlayerId,
-                    status: 'active'
-                })
-                .eq('room_code', code);
-
-            if (updateError) throw updateError;
-
-            // Subscribe to room channel for signaling AND broadcasts
-            this.supabaseChannel = window.supabaseClient
-                .channel(`room:${this.roomCode}`)
-                .on('broadcast', { event: 'game-config' }, (payload) => {
-                    const { from, config } = payload.payload;
-                    console.log('📡 Guest received game-config broadcast:', payload);
-                    if (from !== this.localPlayerId && !this.isHost) {
-                        console.log('✅ Valid config from host, initializing match:', config);
-                        this.currentTurn = config.startingPlayer;
-                        this.hostPlayerName = config.player1Name;
-                        this.guestPlayerName = config.player2Name;
-                        this.initializeMatch(config);
-                    } else {
-                        console.log('⚠️ Ignoring own broadcast or not guest');
-                    }
-                })
-                .on('broadcast', { event: 'game-state' }, (payload) => {
-                    const { from, gameState } = payload.payload;
-                    if (from !== this.localPlayerId) {
-                        console.log('Received game state from opponent:', gameState);
-                        this.updateLocalGameState(gameState);
-                    }
-                })
-                .on('broadcast', { event: 'match-complete' }, (payload) => {
-                    const { from, matchData } = payload.payload;
-                    if (from !== this.localPlayerId) {
-                        console.log('Opponent completed match, saving stats...');
-                        this.saveRemoteMatchStats(matchData);
-                    }
-                })
-                .subscribe();
-
-            // Guest: Immediately show split screen with waiting message
-            this.showGuestWaitingScreen();
-        } catch (error) {
-            console.error('Error joining room:', error);
-            alert('Failed to join room. Please try again.');
-        }
-    },
-
-    // Show guest waiting screen (split screen with video + waiting message)
-    showGuestWaitingScreen() {
-        console.log('Guest: Showing split screen, waiting for host configuration...');
-        
-        // Hide setup, show main interface
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('videostream-container').classList.remove('hidden');
-
-        // Update connection status
-        this.updateConnectionStatus('Connected - Waiting for host', true);
-
-        // Listen for game updates (will receive config when host sends it)
-        this.listenForGameUpdates();
-        
-        console.log('🎮 Guest waiting for game config from host...');
-    },
-
-    // Show game configuration screen (Host only after both players connect)
-    async showGameConfig() {
-        console.log('✅ Both players connected - showing game configuration...');
-        
-        // Load player details from accounts
-        await this.loadPlayerNames();
-        
-        // Auto-start with default 501 SIDO Best of 3
-        const defaultConfig = {
-            gameType: '501',
-            startScore: 501,
-            doubleOut: false, // SIDO
-            player1Name: this.hostPlayerName,
-            player2Name: this.guestPlayerName,
-            player1Id: this.hostPlayerId,
-            player2Id: this.guestPlayerId,
-            totalLegs: 3,
-            legsFormat: 'best-of',
-            firstThrow: 'player1', // Host starts
-            roomCode: this.roomCode
-        };
-        
-        console.log('🎮 Starting match with config:', defaultConfig);
-        
-        // Hide setup screens
-        document.getElementById('setup-screen').classList.add('hidden');
-        
-        // Show split screen
-        document.getElementById('videostream-container').classList.remove('hidden');
-        
-        // Broadcast config to guest
-        console.log('📡 Broadcasting game-config to guest...');
-        this.supabaseChannel.send({
-            type: 'broadcast',
-            event: 'game-config',
-            payload: { from: this.localPlayerId, config: defaultConfig }
-        }).then(() => {
-            console.log('✅ Game config broadcast sent successfully');
-        }).catch(err => {
-            console.error('❌ Failed to broadcast game config:', err);
-        });
-        
-        // Initialize match for host
-        this.initializeMatch(defaultConfig);
-        
-        // Update connection status
-        this.updateConnectionStatus('Match in progress', true);
-    },
-
-    // Load player names from player_accounts table
-    async loadPlayerNames() {
-        try {
-            if (!window.supabaseClient) {
-                await this.waitForSupabase();
-            }
-
-            // Get host's account
-            const { data: hostAccount } = await window.supabaseClient
-                .from('player_accounts')
-                .select('first_name, last_name, account_linked_player_id')
-                .eq('user_id', this.isHost ? this.localPlayerId : this.opponentId)
-                .maybeSingle();
-
-            // Get guest's account
-            const { data: guestAccount } = await window.supabaseClient
-                .from('player_accounts')
-                .select('first_name, last_name, account_linked_player_id')
-                .eq('user_id', this.isHost ? this.opponentId : this.localPlayerId)
-                .maybeSingle();
-
-            // Display names
-            const hostName = hostAccount ? `${hostAccount.first_name} ${hostAccount.last_name}` : 'Host Player';
-            const guestName = guestAccount ? `${guestAccount.first_name} ${guestAccount.last_name}` : 'Guest Player';
-
-            // Store for game initialization
-            this.hostPlayerName = hostName;
-            this.guestPlayerName = guestName;
-            this.hostPlayerId = hostAccount?.account_linked_player_id;
-            this.guestPlayerId = guestAccount?.account_linked_player_id;
-
-        } catch (error) {
-            console.error('Error loading player names:', error);
-            // Use defaults if fetch fails
-            this.hostPlayerName = 'Host Player';
-            this.guestPlayerName = 'Guest Player';
-            this.hostPlayerId = null;
-            this.guestPlayerId = null;
-        }
-    },
-
-    // Initialize match with config
-    initializeMatch(config) {
-        console.log('🎮 Initializing match with config:', config);
-        
-        // Update connection status
-        this.updateConnectionStatus('Match in progress', true);
-
-        // Initialize turn indicator
-        this.updateTurnIndicator();
-
-        // Listen for game state changes
-        this.listenForGameUpdates();
-
-        // Initialize the online scoring app iframe with config
-        const iframe = document.getElementById('scoring-iframe');
-        
-        if (!iframe) {
-            console.error('❌ Scoring iframe not found!');
+        // Initialize room manager with Supabase client
+        this.roomManager = window.RoomManager;
+        if (!this.roomManager) {
+            this.showError('Room manager not loaded');
             return;
         }
-        
-        console.log('📤 Sending config to iframe...');
-        console.log('📊 Iframe dimensions:', {
-            width: iframe.offsetWidth,
-            height: iframe.offsetHeight,
-            display: window.getComputedStyle(iframe).display,
-            visibility: window.getComputedStyle(iframe).visibility
-        });
-        
-        // Function to send config
-        const sendConfig = () => {
-            console.log('🚀 Posting message to iframe:', {
-                type: 'initialize-online-game',
-                config: {
-                    ...config,
-                    isHost: this.isHost,
-                    localPlayerNumber: this.isHost ? 1 : 2,
-                    roomCode: this.roomCode
-                }
-            });
-            
-            iframe.contentWindow.postMessage({
-                type: 'initialize-online-game',
-                config: {
-                    ...config,
-                    isHost: this.isHost,
-                    localPlayerNumber: this.isHost ? 1 : 2,
-                    roomCode: this.roomCode
-                }
-            }, '*');
-        };
-        
-        // Try sending immediately and also on iframe load
-        if (iframe.contentWindow) {
-            sendConfig();
+
+        try {
+            await this.roomManager.initialize(window.supabaseClient);
+        } catch (err) {
+            console.error('❌ Failed to initialize room manager:', err);
+            this.showError('Failed to initialize room manager: ' + err.message);
+            return;
         }
-        
-        iframe.addEventListener('load', () => {
-            console.log('✅ Iframe loaded, sending config...');
-            setTimeout(sendConfig, 100);
-        });
-    },
 
-    // Original startMatch renamed and simplified for guest
-    startMatch() {
-        console.log('Starting match (guest waiting for config)...');
-        
-        // Hide setup, show waiting message
-        document.getElementById('setup-screen').classList.add('hidden');
-        // Guest waits for host to configure
-        this.updateConnectionStatus('Waiting for host to configure match...', true);
-    },
+        // Generate player ID
+        this.playerId = this.generatePlayerId();
 
-    // Enumerate available media devices
-    async enumerateDevices() {
+        // Load available devices
+        await this.loadDevices();
+
+        console.log('✅ PlayOnlineV7 initialized');
+    }
+
+    async loadDevices() {
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
             
-            const videoDevices = devices.filter(d => d.kind === 'videoinput');
-            const audioDevices = devices.filter(d => d.kind === 'audioinput');
-
-            // Populate camera select
-            const cameraSelect = document.getElementById('camera-select');
-            cameraSelect.innerHTML = '';
-            videoDevices.forEach((device, index) => {
-                const option = document.createElement('option');
-                option.value = device.deviceId;
-                option.text = device.label || `Camera ${index + 1}`;
-                cameraSelect.appendChild(option);
-            });
-
-            // Populate microphone select
-            const micSelect = document.getElementById('microphone-select');
-            micSelect.innerHTML = '';
-            audioDevices.forEach((device, index) => {
-                const option = document.createElement('option');
-                option.value = device.deviceId;
-                option.text = device.label || `Microphone ${index + 1}`;
-                micSelect.appendChild(option);
-            });
-
-            // Add change listeners
-            cameraSelect.addEventListener('change', () => this.switchCamera());
-            micSelect.addEventListener('change', () => this.switchMicrophone());
-
-        } catch (error) {
-            console.error('Error enumerating devices:', error);
-        }
-    },
-
-    // Connect video call
-    async connectVideo() {
-        try {
-            const cameraId = document.getElementById('camera-select').value;
-            const micId = document.getElementById('microphone-select').value;
-
-            const constraints = {
-                video: { deviceId: cameraId ? { exact: cameraId } : undefined },
-                audio: { deviceId: micId ? { exact: micId } : undefined }
-            };
-
-            this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-            
-            // Show local video
-            const localVideo = document.getElementById('local-video');
-            localVideo.srcObject = this.localStream;
-
-            // Hide waiting room
-            document.getElementById('video-waiting').classList.add('hidden');
-
-            // Update UI
-            document.getElementById('connect-btn').classList.add('hidden');
-            document.getElementById('hangup-btn').classList.remove('hidden');
-            this.updateConnectionStatus('Video connected', true);
-
-            // Initialize WebRTC connection
-            await this.initWebRTC();
-
-        } catch (error) {
-            console.error('Error accessing media devices:', error);
-            alert('Could not access camera/microphone. Please check permissions.');
-        }
-    },
-
-    // Initialize WebRTC peer connection
-    async initWebRTC() {
-        this.peerConnection = new RTCPeerConnection(this.rtcConfig);
-
-        // Add local stream tracks
-        this.localStream.getTracks().forEach(track => {
-            this.peerConnection.addTrack(track, this.localStream);
-        });
-
-        // Handle incoming tracks
-        this.peerConnection.ontrack = (event) => {
-            console.log('Received remote track');
-            const remoteVideo = document.getElementById('remote-video');
-            if (!remoteVideo.srcObject) {
-                remoteVideo.srcObject = event.streams[0];
-            }
-        };
-
-        // Handle ICE candidates
-        this.peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                this.sendSignal('ice-candidate', event.candidate);
-            }
-        };
-
-        // Monitor connection state
-        this.peerConnection.onconnectionstatechange = () => {
-            console.log('Connection state:', this.peerConnection.connectionState);
-            if (this.peerConnection.connectionState === 'connected') {
-                this.updateConnectionStatus('Peer connected', true);
-            }
-        };
-
-        // If host, create offer
-        if (this.isHost) {
-            const offer = await this.peerConnection.createOffer();
-            await this.peerConnection.setLocalDescription(offer);
-            this.sendSignal('offer', offer);
-        }
-
-        // Listen for signaling messages
-        this.listenForSignals();
-    },
-
-    // Send signaling message via Supabase
-    async sendSignal(type, data) {
-        await this.supabaseChannel.send({
-            type: 'broadcast',
-            event: 'signal',
-            payload: { type, data, from: this.localPlayerId }
-        });
-    },
-
-    // Listen for signaling messages
-    listenForSignals() {
-        this.supabaseChannel.on('broadcast', { event: 'signal' }, async (payload) => {
-            const { type, data, from } = payload.payload;
-            
-            if (from === this.localPlayerId) return; // Ignore own messages
-
-            console.log('Received signal:', type);
-
-            switch (type) {
-                case 'offer':
-                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data));
-                    const answer = await this.peerConnection.createAnswer();
-                    await this.peerConnection.setLocalDescription(answer);
-                    this.sendSignal('answer', answer);
-                    break;
-
-                case 'answer':
-                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data));
-                    break;
-
-                case 'ice-candidate':
-                    await this.peerConnection.addIceCandidate(new RTCIceCandidate(data));
-                    break;
-            }
-        });
-    },
-
-    // Toggle mute
-    toggleMute() {
-        if (!this.localStream) return;
-
-        const audioTrack = this.localStream.getAudioTracks()[0];
-        if (audioTrack) {
-            audioTrack.enabled = !audioTrack.enabled;
-            const muteBtn = document.getElementById('mute-btn');
-            if (audioTrack.enabled) {
-                muteBtn.textContent = '🎤 Mute';
-                muteBtn.classList.remove('active');
-            } else {
-                muteBtn.textContent = '🎤 Unmute';
-                muteBtn.classList.add('active');
-            }
-        }
-    },
-
-    // Toggle video
-    toggleVideo() {
-        if (!this.localStream) return;
-
-        const videoTrack = this.localStream.getVideoTracks()[0];
-        if (videoTrack) {
-            videoTrack.enabled = !videoTrack.enabled;
-            const videoBtn = document.getElementById('video-toggle-btn');
-            if (videoTrack.enabled) {
-                videoBtn.textContent = '📹 Camera Off';
-                videoBtn.classList.remove('active');
-            } else {
-                videoBtn.textContent = '📹 Camera On';
-                videoBtn.classList.add('active');
-            }
-        }
-    },
-
-    // Switch camera
-    async switchCamera() {
-        if (!this.localStream) return;
-
-        const cameraId = document.getElementById('camera-select').value;
-        const constraints = {
-            video: { deviceId: { exact: cameraId } }
-        };
-
-        try {
-            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-            const videoTrack = newStream.getVideoTracks()[0];
-            
-            const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-            if (sender) {
-                sender.replaceTrack(videoTrack);
-            }
-
-            const oldVideoTrack = this.localStream.getVideoTracks()[0];
-            oldVideoTrack.stop();
-            this.localStream.removeTrack(oldVideoTrack);
-            this.localStream.addTrack(videoTrack);
-
-            document.getElementById('local-video').srcObject = this.localStream;
-        } catch (error) {
-            console.error('Error switching camera:', error);
-        }
-    },
-
-    // Switch microphone
-    async switchMicrophone() {
-        if (!this.localStream) return;
-
-        const micId = document.getElementById('microphone-select').value;
-        const constraints = {
-            audio: { deviceId: { exact: micId } }
-        };
-
-        try {
-            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-            const audioTrack = newStream.getAudioTracks()[0];
-            
-            const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'audio');
-            if (sender) {
-                sender.replaceTrack(audioTrack);
-            }
-
-            const oldAudioTrack = this.localStream.getAudioTracks()[0];
-            oldAudioTrack.stop();
-            this.localStream.removeTrack(oldAudioTrack);
-            this.localStream.addTrack(audioTrack);
-        } catch (error) {
-            console.error('Error switching microphone:', error);
-        }
-    },
-
-    // Hang up video call
-    hangup() {
-        if (this.localStream) {
-            this.localStream.getTracks().forEach(track => track.stop());
-            this.localStream = null;
-        }
-
-        if (this.peerConnection) {
-            this.peerConnection.close();
-            this.peerConnection = null;
-        }
-
-        document.getElementById('local-video').srcObject = null;
-        document.getElementById('remote-video').srcObject = null;
-        document.getElementById('video-waiting').classList.remove('hidden');
-        document.getElementById('connect-btn').classList.remove('hidden');
-        document.getElementById('hangup-btn').classList.add('hidden');
-        
-        this.updateConnectionStatus('Video disconnected', false);
-    },
-
-    // Update connection status indicator
-    updateConnectionStatus(text, connected) {
-        document.getElementById('connection-text').textContent = text;
-        const indicator = document.getElementById('connection-indicator');
-        if (connected) {
-            indicator.classList.add('connected');
-        } else {
-            indicator.classList.remove('connected');
-        }
-    },
-
-    // Listen for game state updates
-    listenForGameUpdates() {
-        // Listen for scoring updates from iframe
-        window.addEventListener('message', (event) => {
-            if (event.data.type === 'score-update') {
-                console.log('Score updated:', event.data);
-                this.broadcastGameState(event.data);
-                this.switchTurn();
-            } else if (event.data.type === 'match-complete') {
-                console.log('Match completed:', event.data);
-                this.handleMatchComplete(event.data);
-            } else if (event.data.type === 'iframe-ready') {
-                console.log('✅ Iframe is ready');
-            }
-        });
-    },
-
-    // Broadcast game state to opponent
-    async broadcastGameState(gameState) {
-        await this.supabaseChannel.send({
-            type: 'broadcast',
-            event: 'game-state',
-            payload: { from: this.localPlayerId, gameState }
-        });
-    },
-
-    // Update local game state from opponent
-    updateLocalGameState(gameState) {
-        const iframe = document.getElementById('scoring-iframe');
-        iframe.contentWindow.postMessage({
-            type: 'update-game-state',
-            gameState: gameState
-        }, '*');
-    },
-
-    // Switch turn between players
-    switchTurn() {
-        this.currentTurn = this.currentTurn === 'host' ? 'guest' : 'host';
-        this.updateTurnIndicator();
-        
-        // Enable/disable scoring controls based on turn
-        const isMyTurn = (this.isHost && this.currentTurn === 'host') || 
-                         (!this.isHost && this.currentTurn === 'guest');
-        
-        const iframe = document.getElementById('scoring-iframe');
-        iframe.contentWindow.postMessage({
-            type: 'set-turn',
-            enabled: isMyTurn
-        }, '*');
-    },
-
-    // Update turn indicator
-    updateTurnIndicator() {
-        const indicator = document.getElementById('turn-indicator');
-        const isMyTurn = (this.isHost && this.currentTurn === 'host') || 
-                         (!this.isHost && this.currentTurn === 'guest');
-        
-        indicator.classList.add('active');
-        if (isMyTurn) {
-            indicator.textContent = '✅ Your Turn';
-            indicator.classList.add('your-turn');
-            indicator.classList.remove('opponent-turn');
-        } else {
-            indicator.textContent = '⏳ Opponent\'s Turn';
-            indicator.classList.add('opponent-turn');
-            indicator.classList.remove('your-turn');
-        }
-    },
-
-    // Handle match completion from scoring iframe
-    async handleMatchComplete(matchData) {
-        console.log('Handling match completion...');
-        
-        try {
-            // Get current user's player account info
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            const { data: accountData } = await window.supabaseClient
-                .from('player_accounts')
-                .select('account_linked_player_id, first_name, last_name')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-
-            if (!accountData || !accountData.account_linked_player_id) {
-                console.log('No linked player account, stats not saved');
-                // Broadcast to opponent anyway
-                await this.broadcastMatchComplete(matchData);
-                return;
-            }
-
-            // Get opponent's account info from room
-            const { data: roomData } = await window.supabaseClient
-                .from('game_rooms')
-                .select('host_id, guest_id')
-                .eq('room_code', this.roomCode)
-                .single();
-
-            const opponentUserId = this.isHost ? roomData.guest_id : roomData.host_id;
-            
-            const { data: opponentAccount } = await window.supabaseClient
-                .from('player_accounts')
-                .select('account_linked_player_id, first_name, last_name')
-                .eq('user_id', opponentUserId)
-                .maybeSingle();
-
-            // Determine which player is local
-            const localPlayerName = `${accountData.first_name} ${accountData.last_name}`;
-            const opponentPlayerName = opponentAccount ? 
-                `${opponentAccount.first_name} ${opponentAccount.last_name}` : 'Opponent';
-
-            // Extract match stats for local player
-            const gameState = matchData.gameState;
-            let localPlayerStats, localPlayerNum;
-            
-            if (gameState.players.player1.name === localPlayerName) {
-                localPlayerStats = gameState.players.player1;
-                localPlayerNum = 1;
-            } else {
-                localPlayerStats = gameState.players.player2;
-                localPlayerNum = 2;
-            }
-
-            const winnerNum = matchData.winnerNum;
-            const matchId = `online_${this.roomCode}_${Date.now()}`;
-            const matchDate = new Date().toISOString();
-
-            // Prepare match stats for local player
-            const localMatchData = {
-                match_id: matchId,
-                player_library_id: accountData.account_linked_player_id,
-                opponent_name: opponentPlayerName,
-                match_date: matchDate,
-                won: winnerNum === localPlayerNum,
-                legs_won: localPlayerStats.legWins,
-                legs_lost: localPlayerNum === 1 ? gameState.players.player2.legWins : gameState.players.player1.legWins,
-                sets_won: localPlayerStats.setWins,
-                sets_lost: localPlayerNum === 1 ? gameState.players.player2.setWins : gameState.players.player1.setWins,
-                total_darts_thrown: localPlayerStats.matchDarts,
-                total_score: localPlayerStats.matchScore,
-                average_3dart: localPlayerStats.matchAvg,
-                first_9_average: 0,
-                highest_checkout: 0,
-                checkout_percentage: 0,
-                count_180s: localPlayerStats.achievements.count_180s,
-                count_171s: localPlayerStats.achievements.count_171s,
-                count_95s: localPlayerStats.achievements.count_95s,
-                count_100_plus: localPlayerStats.achievements.count_100_plus,
-                count_120_plus: localPlayerStats.achievements.count_120_plus,
-                count_140_plus: localPlayerStats.achievements.count_140_plus,
-                count_160_plus: localPlayerStats.achievements.count_160_plus,
-                leg_scores: gameState.allLegs || [],
-                checkout_history: []
-            };
-
-            // Save to database
-            await window.PlayerDB.recordMatchStats(localMatchData);
-            console.log('Local player stats saved successfully');
-
-            // Broadcast completion to opponent with full match data
-            await this.broadcastMatchComplete({
-                ...matchData,
-                matchId: matchId,
-                localPlayerName: localPlayerName,
-                opponentPlayerName: opponentPlayerName
-            });
-
-            alert('Match completed! Your stats have been saved to your account.');
-            
-        } catch (error) {
-            console.error('Error saving match stats:', error);
-            alert('Match completed, but there was an error saving stats.');
-        }
-    },
-
-    // Broadcast match completion to opponent
-    async broadcastMatchComplete(matchData) {
-        await this.supabaseChannel.send({
-            type: 'broadcast',
-            event: 'match-complete',
-            payload: { from: this.localPlayerId, matchData }
-        });
-    },
-
-    // Save match stats when received from opponent
-    async saveRemoteMatchStats(matchData) {
-        try {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            const { data: accountData } = await window.supabaseClient
-                .from('player_accounts')
-                .select('account_linked_player_id, first_name, last_name')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-
-            if (!accountData || !accountData.account_linked_player_id) {
-                console.log('No linked player account, stats not saved for opponent');
-                return;
-            }
-
-            const localPlayerName = `${accountData.first_name} ${accountData.last_name}`;
-            const gameState = matchData.gameState;
-            
-            // Find which player is local
-            let localPlayerStats, localPlayerNum;
-            if (gameState.players.player1.name === localPlayerName) {
-                localPlayerStats = gameState.players.player1;
-                localPlayerNum = 1;
-            } else {
-                localPlayerStats = gameState.players.player2;
-                localPlayerNum = 2;
-            }
-
-            const winnerNum = matchData.winnerNum;
-            const matchId = matchData.matchId || `online_${this.roomCode}_${Date.now()}`;
-
-            // Prepare match stats
-            const remoteMatchData = {
-                match_id: matchId,
-                player_library_id: accountData.account_linked_player_id,
-                opponent_name: matchData.localPlayerName || 'Opponent',
-                match_date: new Date().toISOString(),
-                won: winnerNum === localPlayerNum,
-                legs_won: localPlayerStats.legWins,
-                legs_lost: localPlayerNum === 1 ? gameState.players.player2.legWins : gameState.players.player1.legWins,
-                sets_won: localPlayerStats.setWins,
-                sets_lost: localPlayerNum === 1 ? gameState.players.player2.setWins : gameState.players.player1.setWins,
-                total_darts_thrown: localPlayerStats.matchDarts,
-                total_score: localPlayerStats.matchScore,
-                average_3dart: localPlayerStats.matchAvg,
-                first_9_average: 0,
-                highest_checkout: 0,
-                checkout_percentage: 0,
-                count_180s: localPlayerStats.achievements.count_180s,
-                count_171s: localPlayerStats.achievements.count_171s,
-                count_95s: localPlayerStats.achievements.count_95s,
-                count_100_plus: localPlayerStats.achievements.count_100_plus,
-                count_120_plus: localPlayerStats.achievements.count_120_plus,
-                count_140_plus: localPlayerStats.achievements.count_140_plus,
-                count_160_plus: localPlayerStats.achievements.count_160_plus,
-                leg_scores: gameState.allLegs || [],
-                checkout_history: []
-            };
-
-            await window.PlayerDB.recordMatchStats(remoteMatchData);
-            console.log('Remote match stats saved successfully');
-            alert('Match completed! Your stats have been saved to your account.');
-
-        } catch (error) {
-            console.error('Error saving remote match stats:', error);
+            this.devices.cameras = devices.filter(d => d.kind === 'videoinput');
+            this.devices.microphones = devices.filter(d => d.kind === 'audioinput');
+
+            // Populate dropdowns (will be needed later)
+            this.updateDeviceSelects();
+        } catch (err) {
+            console.error('❌ Failed to enumerate devices:', err);
         }
     }
-};
 
-// Expose globally immediately so onclick handlers work
-window.PlayOnline = PlayOnline;
+    updateDeviceSelects() {
+        // Camera select
+        this.inputs.camera.innerHTML = '';
+        this.devices.cameras.forEach(camera => {
+            const option = document.createElement('option');
+            option.value = camera.deviceId;
+            option.textContent = camera.label || `Camera ${this.inputs.camera.children.length + 1}`;
+            this.inputs.camera.appendChild(option);
+        });
 
-// Initialize on page load
+        if (this.devices.cameras.length > 0) {
+            this.selectedDevices.camera = this.devices.cameras[0].deviceId;
+            this.inputs.camera.value = this.selectedDevices.camera;
+        }
+
+        // Microphone select
+        this.inputs.microphone.innerHTML = '';
+        this.devices.microphones.forEach(mic => {
+            const option = document.createElement('option');
+            option.value = mic.deviceId;
+            option.textContent = mic.label || `Microphone ${this.inputs.microphone.children.length + 1}`;
+            this.inputs.microphone.appendChild(option);
+        });
+
+        if (this.devices.microphones.length > 0) {
+            this.selectedDevices.microphone = this.devices.microphones[0].deviceId;
+            this.inputs.microphone.value = this.selectedDevices.microphone;
+        }
+    }
+
+    async previewCamera() {
+        try {
+            this.selectedDevices.camera = this.inputs.camera.value;
+
+            // Stop existing preview
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            // Get preview stream with high resolution
+            const constraints = {
+                video: {
+                    deviceId: { exact: this.selectedDevices.camera },
+                    width: { min: 1280, ideal: 1920, max: 3840 },
+                    height: { min: 720, ideal: 1080, max: 2160 }
+                },
+                audio: false,
+            };
+
+            this.mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            this.video.localPreview.srcObject = this.mediaStream;
+        } catch (err) {
+            console.error('❌ Camera preview failed:', err);
+            this.showError('Failed to access camera');
+        }
+    }
+
+    async handleCreateRoom() {
+        try {
+            const result = await this.roomManager.createRoom();
+            this.roomCode = result.roomCode;
+            this.playerName = 'Host'; // Default name for creator
+            this.display.roomCode.textContent = result.roomCode;
+
+            // Show code for 60 seconds, then auto-join
+            this.showScreen('roomCode');
+            this.startRoomCountdown();
+            
+            // After 3 seconds, auto-join the room as host
+            setTimeout(() => {
+                if (this.roomCode === result.roomCode) {
+                    this.autoJoinAsHost();
+                }
+            }, 3000);
+        } catch (err) {
+            console.error('❌ Create room failed:', err);
+            this.showError('Failed to create room: ' + err.message);
+        }
+    }
+
+    async autoJoinAsHost() {
+        try {
+            // Join as host to the room just created
+            await this.roomManager.joinRoom(this.roomCode, this.playerName);
+            
+            // Stop the countdown timer - user has progressed past the room code screen
+            this.stopRoomCountdown();
+            
+            // Show device config screen
+            this.showScreen('deviceConfig');
+            await this.loadDevices();
+            this.updateDeviceSelects();
+            await this.previewCamera();
+        } catch (err) {
+            console.error('❌ Auto-join failed:', err);
+        }
+    }
+
+    startRoomCountdown() {
+        let seconds = 60;
+        this.display.countdown.textContent = `Expires in ${seconds} seconds`;
+
+        this.currentRoomCountdown = setInterval(() => {
+            seconds--;
+            this.display.countdown.textContent = `Expires in ${seconds} seconds`;
+
+            if (seconds <= 0) {
+                clearInterval(this.currentRoomCountdown);
+                this.cancelRoomCreation();
+            }
+        }, 1000);
+    }
+
+    cancelRoomCreation() {
+        if (this.currentRoomCountdown) {
+            clearInterval(this.currentRoomCountdown);
+            this.currentRoomCountdown = null;
+        }
+        this.roomCode = null;
+        this.showScreen('start');
+    }
+    
+    stopRoomCountdown() {
+        // Stop the countdown timer once user moves past the room code screen
+        if (this.currentRoomCountdown) {
+            clearInterval(this.currentRoomCountdown);
+            this.currentRoomCountdown = null;
+            console.log('⏹️  Room countdown stopped - user has progressed past code screen');
+        }
+    }
+
+    copyRoomCode() {
+        if (!this.roomCode) {
+            this.showError('No room code to copy');
+            return;
+        }
+        
+        navigator.clipboard.writeText(this.roomCode).then(() => {
+            console.log('✅ Room code copied to clipboard:', this.roomCode);
+            // Show feedback
+            const btn = this.buttons.copyCode;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy code:', err);
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = this.roomCode;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            const btn = this.buttons.copyCode;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        });
+    }
+
+    async handleJoinRoom() {
+        const code = this.inputs.roomCode.value.trim().toUpperCase();
+
+        if (!code || code.length !== 4) {
+            this.showError('Enter a valid 4-digit room code');
+            return;
+        }
+
+        try {
+            this.playerName = 'Guest'; // Default name for joiner
+            this.roomCode = code;
+
+            // Join the room
+            const room = await this.roomManager.joinRoom(code, this.playerName);
+
+            if (!room) {
+                this.showError('Room not found or expired');
+                return;
+            }
+
+            // Show device config screen
+            this.showScreen('deviceConfig');
+            await this.loadDevices();
+            this.updateDeviceSelects();
+            await this.previewCamera();
+        } catch (err) {
+            console.error('❌ Join room failed:', err);
+            this.showError('Failed to join room: ' + err.message);
+        }
+    }
+
+    cancelDeviceConfig() {
+        // Stop preview stream
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+            this.mediaStream = null;
+        }
+
+        this.roomCode = null;
+        this.inputs.roomCode.value = '';
+        this.showScreen('start');
+    }
+
+    async handleConfirmDevices() {
+        if (!this.selectedDevices.camera || !this.selectedDevices.microphone) {
+            this.showError('Select both camera and microphone');
+            return;
+        }
+
+        try {
+            // High resolution constraints
+            const constraints = {
+                video: {
+                    deviceId: { exact: this.selectedDevices.camera },
+                    width: { min: 1280, ideal: 1920, max: 3840 },
+                    height: { min: 720, ideal: 1080, max: 2160 }
+                },
+                audio: { deviceId: { exact: this.selectedDevices.microphone } },
+            };
+
+            // If we're in settings mode, update devices and reconnect to video call
+            if (this.isSettingsMode) {
+                // Stop old stream
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                }
+
+                // Disconnect from current video room
+                if (this.videoRoom) {
+                    await this.videoRoom.leaveRoom();
+                    // Reset VideoRoom state to force complete re-initialization
+                    this.videoRoom.realtimeChannel = null;
+                    this.videoRoom.roomCode = null;
+                    this.videoRoom.peers = {};
+                }
+
+                // Reconnect with new settings - use the VideoRoom object directly
+                await window.VideoRoom.initialize(
+                    this.roomCode,
+                    this.playerId,
+                    this.playerName,
+                    this.video.local,
+                    null,  // Don't reuse stream, get fresh one with new constraints
+                    constraints
+                );
+
+                this.mediaStream = window.VideoRoom.localStream;
+                this.videoRoom = window.VideoRoom;
+
+                // Set up callbacks again
+                this.videoRoom.onPeerJoined = (peerId, peerName) => {
+                    console.log('✅ Peer rejoined after settings change:', peerId, peerName);
+                    this.display.opponentName.textContent = peerName || 'Opponent';
+                    // Show connection successful banner
+                    this.showConnectionSuccess();
+                };
+
+                this.videoRoom.onPeerVideoReady = (peerId, stream) => {
+                    console.log('📹 Peer video ready after settings change:', peerId);
+                    if (this.video.remote) {
+                        this.video.remote.srcObject = stream;
+                    }
+                };
+
+                this.videoRoom.onPeerLeft = (peerId) => {
+                    console.log('👋 Peer left after settings change:', peerId);
+                    this.display.opponentName.textContent = 'Opponent (disconnected)';
+                    if (this.video.remote) {
+                        this.video.remote.srcObject = null;
+                    }
+                };
+
+                // Reset media states
+                this.micEnabled = true;
+                this.cameraEnabled = true;
+                this.buttons.toggleMic.textContent = '🎤';
+                this.buttons.toggleCamera.textContent = '📷';
+
+                this.isSettingsMode = false;
+                this.showScreen('videoCall');
+                this.setupConnectionStatusListener();
+                this.showError('Settings updated and reconnected!');
+                console.log('✅ Settings updated and video call reconnected');
+                return;
+            }
+
+            // Normal flow: Initialize video room with selected devices
+            // Clear preview
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            // Initialize video room using the VideoRoom object
+            await window.VideoRoom.initialize(
+                this.roomCode,
+                this.playerId,
+                this.playerName,
+                this.video.local,
+                null,  // existingStream - let it create new one
+                constraints
+            );
+
+            // Store the stream for later use
+            this.mediaStream = window.VideoRoom.localStream;
+            this.videoRoom = window.VideoRoom;
+
+            // Set up callbacks
+            this.videoRoom.onPeerJoined = (peerId, peerName) => {
+                console.log('✅ Peer joined:', peerId, peerName);
+                this.display.opponentName.textContent = peerName || 'Opponent';
+                // Show connection successful banner
+                this.showConnectionSuccess();
+            };
+
+            this.videoRoom.onPeerVideoReady = (peerId, stream) => {
+                console.log('📹 Peer video ready:', peerId);
+                if (this.video.remote) {
+                    this.video.remote.srcObject = stream;
+                }
+            };
+
+            this.videoRoom.onPeerLeft = (peerId) => {
+                console.log('👋 Peer left:', peerId);
+                this.display.opponentName.textContent = 'Opponent (disconnected)';
+                if (this.video.remote) {
+                    this.video.remote.srcObject = null;
+                }
+            };
+
+            // Show video call screen and start connection tracking
+            this.showScreen('videoCall');
+            this.display.youName.textContent = this.playerName || 'You';
+            
+            // Start connection timer and setup connection status listener
+            this.startConnectionTracking();
+            this.setupConnectionStatusListener();
+
+            console.log('✅ Device confirmation successful - video call started');
+        } catch (err) {
+            console.error('❌ Device confirmation failed:', err);
+            this.showError('Failed to start video call: ' + err.message);
+        }
+    }
+
+    toggleMicrophone() {
+        if (!this.videoRoom || !this.videoRoom.localStream) return;
+
+        this.micEnabled = !this.micEnabled;
+        const btn = this.buttons.toggleMic;
+
+        this.videoRoom.localStream.getAudioTracks().forEach(track => {
+            track.enabled = this.micEnabled;
+        });
+
+        btn.textContent = this.micEnabled ? '🎤' : '🔇';
+        btn.classList.toggle('off');
+    }
+
+    toggleCamera() {
+        if (!this.videoRoom || !this.videoRoom.localStream) return;
+
+        this.cameraEnabled = !this.cameraEnabled;
+        const btn = this.buttons.toggleCamera;
+
+        this.videoRoom.localStream.getVideoTracks().forEach(track => {
+            track.enabled = this.cameraEnabled;
+        });
+
+        btn.textContent = this.cameraEnabled ? '📷' : '🚫';
+        btn.classList.toggle('off');
+    }
+
+    showDeviceSettings() {
+        // Store current video room and media stream
+        const currentVideoRoom = this.videoRoom;
+        const currentStream = this.mediaStream;
+
+        // Show device config screen but mark it as settings mode
+        this.isSettingsMode = true;
+        this.showScreen('deviceConfig');
+
+        // Pre-populate with current selections
+        if (this.selectedDevices.camera) {
+            this.inputs.camera.value = this.selectedDevices.camera;
+        }
+        if (this.selectedDevices.microphone) {
+            this.inputs.microphone.value = this.selectedDevices.microphone;
+        }
+
+        // Preview the camera
+        this.previewCamera();
+    }
+
+    async refreshCall() {
+        if (!this.videoRoom) return;
+
+        this.showError('Refreshing video call...');
+
+        try {
+            // Disconnect from current call
+            await this.videoRoom.leaveRoom();
+
+            // Fully reset VideoRoom state to force complete re-initialization
+            this.videoRoom.realtimeChannel = null;
+            this.videoRoom.roomCode = null;
+            this.videoRoom.peers = {};
+            
+            // Stop old stream
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            // Reconnect to same room with high resolution - this will now fully re-initialize
+            await this.videoRoom.initialize(
+                this.roomCode,
+                this.playerId,
+                this.playerName,
+                this.video.local,
+                null,  // Get fresh stream
+                {
+                    video: {
+                        deviceId: { exact: this.selectedDevices.camera },
+                        width: { min: 1280, ideal: 1920, max: 3840 },
+                        height: { min: 720, ideal: 1080, max: 2160 }
+                    },
+                    audio: { deviceId: { exact: this.selectedDevices.microphone } },
+                }
+            );
+
+            this.mediaStream = this.videoRoom.localStream;
+
+            // Set up callbacks for peer events
+            this.videoRoom.onPeerJoined = (peerId, peerName) => {
+                console.log('✅ Peer rejoined after refresh:', peerId, peerName);
+                this.display.opponentName.textContent = peerName || 'Opponent';
+                // Show connection successful banner
+                this.showConnectionSuccess();
+            };
+
+            this.videoRoom.onPeerVideoReady = (peerId, stream) => {
+                console.log('📹 Peer video ready after refresh:', peerId);
+                if (this.video.remote) {
+                    this.video.remote.srcObject = stream;
+                }
+            };
+
+            this.videoRoom.onPeerLeft = (peerId) => {
+                console.log('👋 Peer left after refresh:', peerId);
+                this.display.opponentName.textContent = 'Opponent (disconnected)';
+                if (this.video.remote) {
+                    this.video.remote.srcObject = null;
+                }
+            };
+
+            // Reset media states
+            this.micEnabled = true;
+            this.cameraEnabled = true;
+            this.buttons.toggleMic.textContent = '🎤';
+            this.buttons.toggleCamera.textContent = '📷';
+
+            // Setup connection status listener for refresh scenario
+            this.setupConnectionStatusListener();
+
+            this.showError('Video call refreshed successfully!');
+
+            console.log('✅ Video call refreshed');
+        } catch (err) {
+            console.error('❌ Refresh failed:', err);
+            this.showError('Failed to refresh call: ' + err.message);
+        }
+    }
+
+    async endCall() {
+        if (this.videoRoom) {
+            await this.videoRoom.leaveRoom();
+        }
+
+        // Stop all media tracks
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Stop connection tracking
+        this.stopConnectionTracking();
+
+        // Reset
+        this.roomCode = null;
+        this.playerId = this.generatePlayerId();
+        this.inputs.roomCode.value = '';
+        this.isSettingsMode = false
+        this.playerId = this.generatePlayerId();
+        this.inputs.roomCode.value = '';
+
+        this.showScreen('start');
+    }
+
+    showScreen(screenName) {
+        Object.values(this.screens).forEach(screen => screen.classList.remove('active'));
+        if (this.screens[screenName]) {
+            this.screens[screenName].classList.add('active');
+        }
+    }
+
+    showError(message) {
+        this.display.error.textContent = message;
+        this.display.error.classList.remove('hidden');
+
+        setTimeout(() => {
+            this.display.error.classList.add('hidden');
+        }, 5000);
+    }
+
+    generatePlayerId() {
+        return 'player_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    startConnectionTracking() {
+        // Start tracking connection time
+        this.connectionStartTime = Date.now();
+        
+        // Show the banner in connecting state
+        if (this.display.connectionBanner) {
+            this.display.connectionBanner.classList.remove('hidden', 'connected');
+            this.display.connectionBanner.classList.add('connecting');
+            this.display.connectionStatus.textContent = 'Connecting...';
+        }
+        
+        // Update timer every second
+        this.connectionTimerInterval = setInterval(() => {
+            this.updateConnectionTimer();
+        }, 1000);
+    }
+
+    updateConnectionTimer() {
+        if (!this.connectionStartTime || !this.display.connectionTimer) return;
+        
+        const elapsed = Math.floor((Date.now() - this.connectionStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        this.display.connectionTimer.textContent = 
+            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    showConnectionSuccess() {
+        if (!this.display.connectionBanner) return;
+        
+        // Clear the timer interval
+        if (this.connectionTimerInterval) {
+            clearInterval(this.connectionTimerInterval);
+            this.connectionTimerInterval = null;
+        }
+        
+        // Update banner to show connected
+        this.display.connectionBanner.classList.remove('connecting');
+        this.display.connectionBanner.classList.add('connected');
+        this.display.connectionStatus.textContent = 'Connected!';
+        
+        console.log('✅ Connection banner showing success');
+        
+        // Send connection success signal to opponent
+        this.sendConnectionSuccessSignal();
+        
+        // Auto-hide after 5 seconds
+        if (this.connectionAutoHideTimer) {
+            clearTimeout(this.connectionAutoHideTimer);
+        }
+        
+        this.connectionAutoHideTimer = setTimeout(() => {
+            if (this.display.connectionBanner) {
+                this.display.connectionBanner.classList.add('hidden');
+            }
+        }, 5000);
+    }
+
+    stopConnectionTracking() {
+        if (this.connectionTimerInterval) {
+            clearInterval(this.connectionTimerInterval);
+            this.connectionTimerInterval = null;
+        }
+        
+        if (this.connectionAutoHideTimer) {
+            clearTimeout(this.connectionAutoHideTimer);
+            this.connectionAutoHideTimer = null;
+        }
+        
+        this.connectionStartTime = null;
+    }
+
+    sendConnectionSuccessSignal() {
+        if (!this.videoRoom || !this.videoRoom.realtimeChannel) {
+            console.log('⚠️ Cannot send connection signal - VideoRoom not initialized');
+            return;
+        }
+
+        const signal = {
+            type: 'connection-success',
+            playerId: this.playerId,
+            playerName: this.playerName,
+            timestamp: Date.now()
+        };
+
+        this.videoRoom.realtimeChannel.send({
+            type: 'broadcast',
+            event: 'peer-signal',
+            payload: {
+                from: this.playerId,
+                type: 'connection-success',
+                data: signal
+            }
+        });
+
+        console.log('📢 Sent connection success signal to opponent');
+    }
+
+    setupConnectionStatusListener() {
+        if (!this.videoRoom || !this.videoRoom.realtimeChannel) {
+            console.log('⚠️ Cannot setup connection listener - VideoRoom not initialized');
+            return;
+        }
+
+        // Listen for opponent's connection success signal
+        this.videoRoom.realtimeChannel.on('broadcast', { event: 'peer-signal' }, (payload) => {
+            const { from, type } = payload.payload;
+            
+            // Ignore own messages and non-connection signals
+            if (from === this.playerId || type !== 'connection-success') return;
+            
+            console.log('🟢 Received connection success signal from opponent:', from);
+            // Trigger connection success for the opponent
+            this.showConnectionSuccess();
+        });
+    }
+}
+
+// Initialize when page loads
 window.addEventListener('DOMContentLoaded', () => {
-    PlayOnline.init();
+    window.playOnlineApp = new PlayOnlineV7();
 });
