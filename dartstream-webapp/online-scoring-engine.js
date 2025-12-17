@@ -21,7 +21,8 @@ let onlineState = {
     localInput: '',  // String for score input (e.g., '180')
     isSubscribed: false,
     supabaseChannel: null,
-    authenticatedUser: null  // Holds auth info
+    authenticatedUser: null,  // Holds auth info
+    isSubmitting: false  // Prevent double submission
 };
 
 // Authentication helper
@@ -792,8 +793,18 @@ function undoLastDart() {
  */
 async function submitScore() {
     if (!onlineState.matchId || !onlineState.localInput || onlineState.localInput.length === 0) return;
+    
+    // Prevent double submission
+    if (onlineState.isSubmitting) {
+        console.warn('⚠️ Submission already in progress');
+        return;
+    }
+    
     const scoreInput = parseInt(onlineState.localInput, 10);
     if (isNaN(scoreInput) || scoreInput < 0 || scoreInput > 180) return;
+    
+    onlineState.isSubmitting = true;  // Lock submissions
+    
     try {
         // Get current match state from DB
         const { data: match } = await window.supabaseClient
@@ -874,8 +885,11 @@ async function submitScore() {
         // Clear local input
         onlineState.localInput = '';
         updateInputDisplay();
+        
     } catch (error) {
         console.error('Error in submitScore:', error);
+    } finally {
+        onlineState.isSubmitting = false;  // Always unlock
     }
 }
 
@@ -1112,14 +1126,14 @@ function updateScoreHistory(scoreHistory) {
 }
 
 // Edit score functionality
-function editScore(playerKey, turnIndex, turnData) {
-    // Only allow editing if it's your turn or you're the host
-    if (onlineState.myRole !== 'host' && playerKey !== onlineState.myRole) {
-        alert('Only the host or the player who scored can edit scores');
+async function editScore(playerKey, turnIndex, turnData) {
+    // Only allow editing if you're the host
+    if (onlineState.myRole !== 'host') {
+        alert('Only the host can edit scores');
         return;
     }
     
-    const newScore = prompt(`Edit score for ${playerKey} (round ${turnIndex + 1}):`, turnData.input);
+    const newScore = prompt(`Edit score for ${playerKey === 'host' ? 'Player 1' : 'Player 2'} (round ${turnIndex + 1}):`, turnData.input);
     if (newScore === null) return; // Cancelled
     
     const scoreValue = parseInt(newScore, 10);
@@ -1128,8 +1142,93 @@ function editScore(playerKey, turnIndex, turnData) {
         return;
     }
     
-    // TODO: Implement actual score editing via database update
-    alert('Score editing will be implemented in a future update');
+    try {
+        // Get current match state
+        const { data: match } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('id', onlineState.matchId)
+            .single();
+        
+        if (!match) return;
+        
+        const scores = match.game_state?.scores || {};
+        const scoreHistory = scores.score_history || [];
+        
+        // Find the turn to edit
+        const playerHistory = scoreHistory.filter(entry => entry.player === playerKey);
+        if (turnIndex >= playerHistory.length) {
+            alert('Turn not found');
+            return;
+        }
+        
+        // Get the actual index in the full history
+        let actualIndex = -1;
+        let playerCount = 0;
+        for (let i = 0; i < scoreHistory.length; i++) {
+            if (scoreHistory[i].player === playerKey) {
+                if (playerCount === turnIndex) {
+                    actualIndex = i;
+                    break;
+                }
+                playerCount++;
+            }
+        }
+        
+        if (actualIndex === -1) return;
+        
+        // Calculate score difference
+        const oldInput = scoreHistory[actualIndex].input;
+        const scoreDifference = scoreValue - oldInput;
+        
+        // Update the history entry
+        scoreHistory[actualIndex].input = scoreValue;
+        scoreHistory[actualIndex].darts = [scoreValue];
+        
+        // Recalculate scores from this point forward
+        const startScore = onlineState.gameType === '501' ? 501 : 301;
+        let hostScore = startScore;
+        let guestScore = startScore;
+        
+        for (let i = 0; i < scoreHistory.length; i++) {
+            const entry = scoreHistory[i];
+            if (entry.player === 'host') {
+                hostScore -= entry.input;
+                entry.newScore = hostScore;
+            } else {
+                guestScore -= entry.input;
+                entry.newScore = guestScore;
+            }
+        }
+        
+        // Update final scores in database
+        scores.host = hostScore;
+        scores.guest = guestScore;
+        scores.score_history = scoreHistory;
+        
+        // Update database
+        const { error } = await window.supabaseClient
+            .from('game_rooms')
+            .update({
+                game_state: {
+                    ...match.game_state,
+                    scores: scores
+                }
+            })
+            .eq('id', onlineState.matchId);
+        
+        if (error) {
+            console.error('Error updating score:', error);
+            alert('Failed to update score');
+            return;
+        }
+        
+        console.log('✅ Score edited successfully');
+        
+    } catch (error) {
+        console.error('Error editing score:', error);
+        alert('Error editing score');
+    }
 }
 
 function updatePreviousShotDisplay(scoreHistory, hostName, guestName) {
