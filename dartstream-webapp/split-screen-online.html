@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="dartstream-logo.png">
+    <title>DartStream - Split Screen: Online Scorer + Video Call</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a2e;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .split-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .split-pane {
+            flex: 1;
+            position: relative;
+            border: none;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .divider {
+            width: 4px;
+            background: #facc15;
+            cursor: col-resize;
+            position: relative;
+            z-index: 10;
+        }
+
+        .divider:hover {
+            background: #f59e0b;
+        }
+
+        .close-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(220, 38, 38, 1);
+            transform: scale(1.05);
+        }
+
+        .layout-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(250, 204, 21, 0.9);
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .layout-toggle:hover {
+            background: rgba(250, 204, 21, 1);
+            transform: scale(1.05);
+        }
+
+        .split-container.vertical {
+            flex-direction: column;
+        }
+
+        .split-container.vertical .divider {
+            width: 100%;
+            height: 4px;
+            cursor: row-resize;
+        }
+
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+            }
+
+            .divider {
+                width: 100%;
+                height: 4px;
+                cursor: row-resize;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="close-btn" onclick="window.location.href='index.html'">✕ Close Split Screen</button>
+    <button class="layout-toggle" onclick="toggleLayout()">⇄ Toggle Layout</button>
+
+    <div class="split-container" id="container">
+        <div class="split-pane">
+            <iframe src="webapp-online-scorer.html" title="Online Scorer"></iframe>
+        </div>
+        <div class="divider" id="divider"></div>
+        <div class="split-pane">
+            <iframe src="play-online.html" title="Video Call"></iframe>
+        </div>
+    </div>
+
+    <script>
+        function toggleLayout() {
+            const container = document.getElementById('container');
+            container.classList.toggle('vertical');
+        }
+
+        // Draggable divider functionality
+        const divider = document.getElementById('divider');
+        const container = document.getElementById('container');
+        let isResizing = false;
+
+        divider.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = container.classList.contains('vertical') ? 'row-resize' : 'col-resize';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const panes = container.querySelectorAll('.split-pane');
+
+            if (container.classList.contains('vertical')) {
+                // Vertical layout (top/bottom)
+                const newTopHeight = e.clientY - containerRect.top;
+                const percentage = (newTopHeight / containerRect.height) * 100;
+                
+                if (percentage > 20 && percentage < 80) {
+                    panes[0].style.flex = `0 0 ${percentage}%`;
+                    panes[1].style.flex = `0 0 ${100 - percentage}%`;
+                }
+            } else {
+                // Horizontal layout (left/right)
+                const newLeftWidth = e.clientX - containerRect.left;
+                const percentage = (newLeftWidth / containerRect.width) * 100;
+                
+                if (percentage > 20 && percentage < 80) {
+                    panes[0].style.flex = `0 0 ${percentage}%`;
+                    panes[1].style.flex = `0 0 ${100 - percentage}%`;
+                }
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        });
+    </script>
+</body>
+</html>
