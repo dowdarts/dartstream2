@@ -22,7 +22,8 @@ let onlineState = {
     isSubscribed: false,
     supabaseChannel: null,
     authenticatedUser: null,  // Holds auth info
-    isSubmitting: false  // Prevent double submission
+    isSubmitting: false,  // Prevent double submission
+    takeControl: false  // Allow inputting opponent's score
 };
 
 // Authentication helper
@@ -197,6 +198,15 @@ function setupEventListeners() {
     // Game screen
     document.getElementById('back-to-landing-game').addEventListener('click', exitMatch);
     document.getElementById('action-btn').addEventListener('click', undoLastDart);
+    
+    // Take Control - click status bar when waiting
+    document.getElementById('turn-status-bar').addEventListener('click', function() {
+        const statusText = document.getElementById('status-text');
+        if (statusText && statusText.textContent.includes('TAKE CONTROL')) {
+            activateTakeControl();
+        }
+    });
+    
     document.getElementById('submit-btn').addEventListener('click', function() {
         // If input is present, submit score; else, add 0 (MISS)
         if (onlineState.localInput && onlineState.localInput.length > 0) {
@@ -725,20 +735,43 @@ function updateTurnStatus(currentTurn) {
     const statusBar = document.getElementById('turn-status-bar');
     const statusText = document.getElementById('status-text');
     
-    if (isMyTurn) {
+    if (isMyTurn || onlineState.takeControl) {
         keypad.style.pointerEvents = 'auto';
         keypad.style.opacity = '1';
         statusBar.style.backgroundColor = '#28a745';
-        statusText.textContent = '🎯 YOUR THROW';
+        if (onlineState.takeControl) {
+            statusText.textContent = '⚠️ CONTROL MODE - Inputting for opponent';
+        } else {
+            statusText.textContent = '🎯 YOUR THROW';
+        }
         document.getElementById('input-mode').textContent = 'Enter Score';
     } else {
         keypad.style.pointerEvents = 'none';
         keypad.style.opacity = '0.5';
         statusBar.style.backgroundColor = '#dc3545';
+        statusBar.style.cursor = 'pointer';
         const opponentName = onlineState.myRole === 'host' ? 'Guest' : 'Host';
-        statusText.textContent = `⏳ ${opponentName.toUpperCase()}'S TURN`;
+        statusText.textContent = `👆 CLICK TO TAKE CONTROL (${opponentName.toUpperCase()}\'S TURN)`;
         document.getElementById('input-mode').textContent = "Waiting...";
     }
+}
+
+/**
+ * Activate Take Control mode - allow inputting opponent's score
+ */
+function activateTakeControl() {
+    onlineState.takeControl = true;
+    console.log('🔧 Take Control activated');
+    updateTurnStatus(onlineState.currentTurn);
+}
+
+/**
+ * Deactivate Take Control mode - return to normal turn flow
+ */
+function deactivateTakeControl() {
+    onlineState.takeControl = false;
+    console.log('✅ Take Control deactivated');
+    updateTurnStatus(onlineState.currentTurn);
 }
 
 /**
@@ -749,7 +782,9 @@ function updateTurnStatus(currentTurn) {
  * Quick-hit score for edge buttons - instantly submit without Enter
  */
 function quickHitScore(score) {
-    if (onlineState.currentTurn !== onlineState.myRole) {
+    // Allow input if it's my turn OR if I have take control
+    const canInput = (onlineState.currentTurn === onlineState.myRole) || onlineState.takeControl;
+    if (!canInput) {
         return;
     }
     onlineState.localInput = score.toString();
@@ -758,8 +793,9 @@ function quickHitScore(score) {
 }
 
 function addToInput(value) {
-    // Only allow input if it's your turn
-    if (onlineState.currentTurn !== onlineState.myRole) {
+    // Allow input if it's my turn OR if I have take control
+    const canInput = (onlineState.currentTurn === onlineState.myRole) || onlineState.takeControl;
+    if (!canInput) {
         return;
     }
     if (typeof onlineState.localInput !== 'string') {
@@ -963,6 +999,11 @@ async function submitScore() {
         }
         
         console.log(`✅ Score submitted. Turn switched from ${playerKey} to ${nextTurn}`);
+        
+        // Deactivate take control if it was active
+        if (onlineState.takeControl) {
+            deactivateTakeControl();
+        }
         
         // Clear local input
         onlineState.localInput = '';
