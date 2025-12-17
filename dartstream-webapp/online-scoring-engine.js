@@ -512,12 +512,11 @@ function renderGameState(roomData) {
     
     const scores = matchData.scores;
     
-    // Determine which player is which on our screen
-    const isHost = onlineState.myRole === 'host';
-    const player1Score = isHost ? scores.host : scores.guest;
-    const player2Score = isHost ? scores.guest : scores.host;
-    const player1Darts = isHost ? scores.host_darts_thrown : scores.guest_darts_thrown;
-    const player2Darts = isHost ? scores.guest_darts_thrown : scores.host_darts_thrown;
+    // Always show host as player1, guest as player2 regardless of my role
+    const player1Score = scores.host;
+    const player2Score = scores.guest;
+    const player1Darts = scores.host_darts_thrown;
+    const player2Darts = scores.guest_darts_thrown;
     
     // Update scoreboard
     document.getElementById('player1-score').textContent = player1Score;
@@ -545,12 +544,7 @@ function renderGameState(roomData) {
     // Update turn status based on current_turn from roomData (not game_state)
     updateTurnStatus(roomData.current_turn);
     
-    // Update score history if it exists
-    if (scores.score_history && scores.score_history.length > 0) {
-        updateScoreHistory(scores.score_history);
-    }
-
-    // Previous shot display (last completed turn for each player)
+    // Update score history with round-based display
     updatePreviousShotDisplay(scores.score_history, matchData.host_name, matchData.guest_name);
 }
 
@@ -596,8 +590,9 @@ function addToInput(value) {
     // Max 3 digits, and max value 180
     if (onlineState.localInput.length < 3) {
         let next = onlineState.localInput + value.toString();
-        if (parseInt(next, 10) <= 180) {
-            onlineState.localInput = next.replace(/^0+(?!$)/, ''); // Remove leading zeros
+        let nextValue = parseInt(next, 10);
+        if (!isNaN(nextValue) && nextValue >= 0 && nextValue <= 180) {
+            onlineState.localInput = next;
         }
     }
     updateInputDisplay();
@@ -877,50 +872,117 @@ function updateScoreHistory(scoreHistory) {
     // Optionally, render full score history here if needed
 }
 
-function updatePreviousShotDisplay(scoreHistory, hostName, guestName) {
-    // Find last completed turn for each player
-    let lastHost = null, lastGuest = null;
-    if (Array.isArray(scoreHistory)) {
-        for (let i = scoreHistory.length - 1; i >= 0; i--) {
-            const entry = scoreHistory[i];
-            if (!lastHost && entry.player === 'host' && !entry.isBust) lastHost = entry;
-            if (!lastGuest && entry.player === 'guest' && !entry.isBust) lastGuest = entry;
-            if (lastHost && lastGuest) break;
-        }
-    }
-    // Display in the scoring area (above or below the number pad)
-    let prevShotBar = document.getElementById('previous-shot-bar');
-    if (!prevShotBar) {
-        prevShotBar = document.createElement('div');
-        prevShotBar.id = 'previous-shot-bar';
-        prevShotBar.style.display = 'flex';
-        prevShotBar.style.justifyContent = 'space-between';
-        prevShotBar.style.background = '#222';
-        prevShotBar.style.padding = '8px 16px';
-        prevShotBar.style.fontSize = '16px';
-        prevShotBar.style.color = '#ffd700';
-        prevShotBar.style.margin = '0 0 8px 0';
+function updateScoreHistory(scoreHistory) {
+    const historyContainer = document.getElementById('score-history');
+    if (!historyContainer) {
+        // Create score history container if it doesn't exist
         const scoringArea = document.querySelector('.scoring-area');
-        if (scoringArea) scoringArea.insertBefore(prevShotBar, scoringArea.firstChild);
+        if (scoringArea) {
+            const newHistoryContainer = document.createElement('div');
+            newHistoryContainer.id = 'score-history';
+            newHistoryContainer.style.cssText = 'max-height: 200px; overflow-y: auto; margin-bottom: 8px; background: #111; border: 1px solid #333; border-radius: 4px;';
+            scoringArea.insertBefore(newHistoryContainer, scoringArea.firstChild);
+            return; // Exit and let the next call handle the actual rendering
+        }
+        return;
     }
-    // Use 1→ and 2→ style, no names, and switch order based on current turn
-    // Determine current turn from global onlineState or fallback to host
-    let currentTurn = 'host';
-    if (window.onlineState && window.onlineState.currentTurn) {
-        currentTurn = window.onlineState.currentTurn;
-    } else if (window.onlineState && window.onlineState.myRole) {
-        currentTurn = window.onlineState.myRole;
+    
+    if (!Array.isArray(scoreHistory) || scoreHistory.length === 0) {
+        historyContainer.innerHTML = '';
+        return;
     }
-    // If it's host's turn, show 1→ left, 2→ right; if guest's turn, swap
-    let left, right;
-    if (currentTurn === 'host') {
-        left = `<span>1&#8594; ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>`;
-        right = `<span>2&#8594; ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
-    } else {
-        left = `<span>2&#8594; ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
-        right = `<span>1&#8594; ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>`;
+    
+    // Group history by rounds (visits)
+    const hostHistory = scoreHistory.filter(entry => entry.player === 'host');
+    const guestHistory = scoreHistory.filter(entry => entry.player === 'guest');
+    const maxRounds = Math.max(hostHistory.length, guestHistory.length, 1);
+    
+    // Clear and rebuild
+    historyContainer.innerHTML = '';
+    
+    for (let round = 1; round <= maxRounds; round++) {
+        const entry = document.createElement('div');
+        entry.className = 'score-entry';
+        entry.style.cssText = 'display: flex; align-items: center; padding: 4px 8px; border-bottom: 1px solid #333;';
+        
+        // Player 1 (Host) column
+        const p1Column = document.createElement('div');
+        p1Column.className = 'player-column';
+        p1Column.style.cssText = 'flex: 1; text-align: center; cursor: pointer; padding: 4px;';
+        
+        const hostTurn = hostHistory[round - 1];
+        if (hostTurn) {
+            let displayText = hostTurn.isBust ? 'X' : (hostTurn.input === 0 ? 'Ø' : hostTurn.input);
+            p1Column.innerHTML = `<div class="darts">${displayText}</div>`;
+            p1Column.addEventListener('click', () => editScore('host', round - 1, hostTurn));
+        }
+        
+        // Round number with arrow
+        const turnColumn = document.createElement('div');
+        turnColumn.className = 'turn-info';
+        turnColumn.style.cssText = 'flex: 0 0 60px; text-align: center; font-weight: bold;';
+        
+        // Determine if this is current round
+        const isCurrentRound = round === maxRounds && (hostHistory.length !== guestHistory.length);
+        const currentTurn = onlineState.currentTurn;
+        
+        if (isCurrentRound) {
+            if (currentTurn === 'host') {
+                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffffff;">← ${round}</span>`;
+            } else {
+                turnColumn.innerHTML = `<span class="turn-arrow" style="color: #ffffff;">${round} →</span>`;
+            }
+        } else {
+            turnColumn.innerHTML = `<span class="turn-number" style="color: #666666;">${round}</span>`;
+        }
+        
+        // Player 2 (Guest) column
+        const p2Column = document.createElement('div');
+        p2Column.className = 'player-column';
+        p2Column.style.cssText = 'flex: 1; text-align: center; cursor: pointer; padding: 4px;';
+        
+        const guestTurn = guestHistory[round - 1];
+        if (guestTurn) {
+            let displayText = guestTurn.isBust ? 'X' : (guestTurn.input === 0 ? 'Ø' : guestTurn.input);
+            p2Column.innerHTML = `<div class="darts">${displayText}</div>`;
+            p2Column.addEventListener('click', () => editScore('guest', round - 1, guestTurn));
+        }
+        
+        entry.appendChild(p1Column);
+        entry.appendChild(turnColumn);
+        entry.appendChild(p2Column);
+        historyContainer.appendChild(entry);
     }
-    prevShotBar.innerHTML = left + right;
+    
+    // Auto-scroll to bottom
+    historyContainer.scrollTop = historyContainer.scrollHeight;
+}
+
+// Edit score functionality
+function editScore(playerKey, turnIndex, turnData) {
+    // Only allow editing if it's your turn or you're the host
+    if (onlineState.myRole !== 'host' && playerKey !== onlineState.myRole) {
+        alert('Only the host or the player who scored can edit scores');
+        return;
+    }
+    
+    const newScore = prompt(`Edit score for ${playerKey} (round ${turnIndex + 1}):`, turnData.input);
+    if (newScore === null) return; // Cancelled
+    
+    const scoreValue = parseInt(newScore, 10);
+    if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 180) {
+        alert('Invalid score. Must be between 0 and 180.');
+        return;
+    }
+    
+    // TODO: Implement actual score editing via database update
+    alert('Score editing will be implemented in a future update');
+}
+
+function updatePreviousShotDisplay(scoreHistory, hostName, guestName) {
+    // This function is replaced by updateScoreHistory
+    // Keep for compatibility but redirect to new function
+    updateScoreHistory(scoreHistory);
 }
 
 function exitMatch() {
