@@ -218,7 +218,16 @@ function setupEventListeners() {
                 }
             });
         } else {
-            btn.addEventListener('click', (e) => addToInput(parseInt(e.target.dataset.score)));
+            const isEdgeButton = btn.classList.contains('edge');
+            btn.addEventListener('click', (e) => {
+                const score = parseInt(e.target.dataset.score);
+                if (isEdgeButton) {
+                    // Quick-hit: auto-submit for edge buttons
+                    quickHitScore(score);
+                } else {
+                    addToInput(score);
+                }
+            });
         }
     });
     
@@ -735,6 +744,19 @@ function updateTurnStatus(currentTurn) {
 /**
  * ============ INPUT HANDLING ============
  */
+
+/**
+ * Quick-hit score for edge buttons - instantly submit without Enter
+ */
+function quickHitScore(score) {
+    if (onlineState.currentTurn !== onlineState.myRole) {
+        return;
+    }
+    onlineState.localInput = score.toString();
+    updateInputDisplay();
+    setTimeout(() => submitScore(), 100);  // Brief delay for visual feedback
+}
+
 function addToInput(value) {
     // Only allow input if it's your turn
     if (onlineState.currentTurn !== onlineState.myRole) {
@@ -798,6 +820,37 @@ function undoLastDart() {
 }
 
 /**
+ * ============ GOOD SHOT DISPLAY ============
+ */
+function showGoodShotDisplay(score) {
+    const goodShotDisplay = document.getElementById('good-shot-display');
+    const goodShotText = document.getElementById('good-shot-text');
+    
+    if (!goodShotDisplay || !goodShotText) return;
+    
+    let message = '';
+    if (score === 180) {
+        message = 'TON EIGHTY!';
+    } else if (score === 171) {
+        message = '171!';
+    } else if (score === 140) {
+        message = 'TON 40!';
+    } else if (score === 100) {
+        message = 'TON!';
+    } else if (score >= 95 && score < 100) {
+        message = `${score}!`;
+    }
+    
+    if (message) {
+        goodShotText.textContent = message;
+        goodShotDisplay.style.display = 'flex';
+        setTimeout(() => {
+            goodShotDisplay.style.display = 'none';
+        }, 2000);
+    }
+}
+
+/**
  * ============ SUBMIT SCORE TO DATABASE ============
  */
 async function submitScore() {
@@ -846,11 +899,14 @@ async function submitScore() {
         let dartOut = null;
         if (newScore === 0) {
             matchWinner = playerKey;
-            // Prompt for which dart finished (1, 2, or 3)
-            let dartPrompt = window.prompt('Which dart finished the game? (1, 2, or 3)', '3');
-            dartOut = parseInt(dartPrompt);
-            if (isNaN(dartOut) || dartOut < 1 || dartOut > 3) dartOut = 3;
+            // Show finish darts modal and wait for response
+            dartOut = await showFinishDartsModal(scoreInput);
         }
+        // Show good shot display for high scores
+        if (!isBust && scoreInput >= 95) {
+            showGoodShotDisplay(scoreInput);
+        }
+        
         // Add to score history
         if (!scores.score_history) scores.score_history = [];
         scores.score_history.push({
@@ -903,23 +959,83 @@ async function submitScore() {
 }
 
 
+/**
+ * ============ FINISH DARTS MODAL ============
+ */
+function showFinishDartsModal(checkoutScore) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('finish-darts-modal');
+        if (!modal) {
+            resolve(3);  // Default to 3 darts if modal not found
+            return;
+        }
+        
+        modal.style.display = 'flex';
+        
+        const buttons = modal.querySelectorAll('.finish-dart-btn');
+        buttons.forEach(btn => {
+            btn.onclick = function() {
+                const darts = parseInt(btn.getAttribute('data-darts'));
+                modal.style.display = 'none';
+                resolve(darts);
+            };
+        });
+    });
+}
+
 function showWinnerModal(winnerKey, dartOut, checkoutScore) {
     // Show the winner modal with info
     const modal = document.getElementById('match-complete-modal');
     if (!modal) return;
-    const winnerName = winnerKey === 'host' ? onlineState.myName : onlineState.opponentName;
+    const winnerName = winnerKey === 'host' ? (onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName) : (onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName);
     document.getElementById('match-winner-name').textContent = winnerName;
     document.getElementById('match-complete-text').textContent = `Checkout: ${checkoutScore} (Dart ${dartOut})`;
     modal.style.display = 'flex';
     
-    // Clear saved match state since match is complete
-    clearSavedMatchState();
+    // Setup match complete modal buttons
+    setupMatchCompleteActions();
+}
+
+/**
+ * Setup match complete modal actions
+ */
+function setupMatchCompleteActions() {
+    // Change Game Mode button
+    const changeGameModeBtn = document.getElementById('change-game-mode-btn');
+    if (changeGameModeBtn) {
+        changeGameModeBtn.onclick = () => {
+            document.getElementById('match-complete-modal').style.display = 'none';
+            clearSavedMatchState();
+            showLanding();
+        };
+    }
     
-    // Optionally, add a button to return to main menu
+    // Continue Match button (play next leg/set)
+    const continueMatchBtn = document.getElementById('continue-match-btn');
+    if (continueMatchBtn) {
+        continueMatchBtn.onclick = async () => {
+            await startNextLeg();
+            document.getElementById('match-complete-modal').style.display = 'none';
+        };
+    }
+    
+    // End Match button (save stats)
+    const endMatchBtn = document.getElementById('end-match-btn');
+    if (endMatchBtn) {
+        endMatchBtn.onclick = async () => {
+            await saveMatchStats();
+            document.getElementById('match-complete-modal').style.display = 'none';
+            clearSavedMatchState();
+            showLanding();
+        };
+    }
+    
+    // Return to Landing button (quick exit)
     const returnBtn = document.getElementById('return-to-landing-btn');
     if (returnBtn) {
-        returnBtn.onclick = function() {
-            modal.style.display = 'none';
+        returnBtn.onclick = () => {
+            document.getElementById('match-complete-modal').style.display = 'none';
+            clearSavedMatchState();
             showLanding();
         };
     }
@@ -1132,6 +1248,159 @@ function updateScoreHistory(scoreHistory) {
     
     // Auto-scroll to bottom
     historyContainer.scrollTop = historyContainer.scrollHeight;
+}
+
+/**
+ * ============ MATCH CONTINUATION & STATS SAVING ============
+ */
+
+/**
+ * Start next leg after current leg completion
+ */
+async function startNextLeg() {
+    if (!onlineState.matchId) return;
+    
+    try {
+        // Get current match state
+        const { data: match } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('id', onlineState.matchId)
+            .single();
+        
+        if (!match) return;
+        
+        const gameState = match.game_state || {};
+        const scores = gameState.scores || {};
+        
+        // Reset scores to starting score
+        const startScore = gameState.game_type === '501' ? 501 : 301;
+        scores.host = startScore;
+        scores.guest = startScore;
+        scores.host_darts_thrown = 0;
+        scores.guest_darts_thrown = 0;
+        scores.host_leg_avg = 0;
+        scores.guest_leg_avg = 0;
+        scores.score_history = [];
+        
+        // Update database
+        const { error } = await window.supabaseClient
+            .from('game_rooms')
+            .update({
+                game_state: {
+                    ...gameState,
+                    scores: scores
+                },
+                current_turn: 'host',  // Host starts next leg
+                status: 'playing'\n            })
+            .eq('id', onlineState.matchId);
+        
+        if (error) {
+            console.error('Error starting next leg:', error);
+            alert('Failed to start next leg');
+            return;
+        }
+        
+        console.log('✅ Next leg started');
+        fetchAndRenderMatchState();
+        
+    } catch (error) {
+        console.error('Error in startNextLeg:', error);
+    }
+}
+
+/**
+ * Save match stats to database
+ */
+async function saveMatchStats() {
+    if (!onlineState.matchId) return;
+    
+    try {
+        // Get final match state
+        const { data: match } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('id', onlineState.matchId)
+            .single();
+        
+        if (!match) return;
+        
+        const gameState = match.game_state || {};
+        const scores = gameState.scores || {};
+        
+        // Determine winner
+        const hostWon = gameState.match_winner === 'host';
+        const guestWon = gameState.match_winner === 'guest';
+        
+        // Save host stats (if host has linked player_id)
+        if (gameState.host_player_id) {
+            await savePlayerMatchStats({
+                player_library_id: gameState.host_player_id,
+                won: hostWon,
+                legs_won: scores.host_legs_won || 0,
+                legs_lost: scores.guest_legs_won || 0,
+                average_3dart: scores.host_match_avg || 0,
+                count_180s: countAchievements(scores.score_history, 'host', 180),
+                count_171s: countAchievements(scores.score_history, 'host', 171),
+                count_140s: countAchievements(scores.score_history, 'host', 140),
+                count_100s: countAchievements(scores.score_history, 'host', 100),
+                darts_thrown: scores.host_darts_thrown || 0,
+                game_type: gameState.game_type\n            });
+        }
+        
+        // Save guest stats (if guest has linked player_id)
+        if (gameState.guest_player_id) {
+            await savePlayerMatchStats({
+                player_library_id: gameState.guest_player_id,
+                won: guestWon,
+                legs_won: scores.guest_legs_won || 0,
+                legs_lost: scores.host_legs_won || 0,
+                average_3dart: scores.guest_match_avg || 0,
+                count_180s: countAchievements(scores.score_history, 'guest', 180),
+                count_171s: countAchievements(scores.score_history, 'guest', 171),
+                count_140s: countAchievements(scores.score_history, 'guest', 140),
+                count_100s: countAchievements(scores.score_history, 'guest', 100),
+                darts_thrown: scores.guest_darts_thrown || 0,
+                game_type: gameState.game_type
+            });
+        }
+        
+        console.log('✅ Match stats saved');
+        alert('Match stats saved successfully!');
+        
+    } catch (error) {
+        console.error('Error saving match stats:', error);
+        alert('Error saving match stats');
+    }
+}
+
+/**
+ * Save individual player match stats
+ */
+async function savePlayerMatchStats(stats) {
+    try {
+        const { error } = await window.supabaseClient
+            .from('match_stats')
+            .insert([stats]);
+        
+        if (error) {
+            console.error('Error inserting match stats:', error);
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error in savePlayerMatchStats:', error);
+        throw error;
+    }
+}
+
+/**
+ * Count achievements from score history
+ */
+function countAchievements(scoreHistory, playerKey, targetScore) {
+    if (!Array.isArray(scoreHistory)) return 0;
+    return scoreHistory.filter(entry => 
+        entry.player === playerKey && entry.input === targetScore
+    ).length;
 }
 
 // Edit score functionality
