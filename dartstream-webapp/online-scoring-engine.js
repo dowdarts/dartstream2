@@ -164,11 +164,29 @@ function setupEventListeners() {
     // Game screen
     document.getElementById('back-to-landing-game').addEventListener('click', exitMatch);
     document.getElementById('action-btn').addEventListener('click', undoLastDart);
-    document.getElementById('submit-btn').addEventListener('click', submitScore);
+    document.getElementById('submit-btn').addEventListener('click', function() {
+        // If input is present, submit score; else, add 0 (MISS)
+        if (Array.isArray(onlineState.localInput) && onlineState.localInput.length > 0) {
+            submitScore();
+        } else {
+            addToInput(0); // MISS
+        }
+    });
     
     // Number pad
     document.querySelectorAll('.num-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => addToInput(parseInt(e.target.dataset.score)));
+        // Dual-function 180/0 button
+        if (btn.id === 'btn-180-zero') {
+            btn.addEventListener('click', function() {
+                if (Array.isArray(onlineState.localInput) && onlineState.localInput.length > 0) {
+                    addToInput(0); // 0 when input present
+                } else {
+                    addToInput(180); // 180 when no input
+                }
+            });
+        } else {
+            btn.addEventListener('click', (e) => addToInput(parseInt(e.target.dataset.score)));
+        }
     });
     
     // Match complete
@@ -479,6 +497,9 @@ function renderGameState(roomData) {
     if (scores.score_history && scores.score_history.length > 0) {
         updateScoreHistory(scores.score_history);
     }
+
+    // Previous shot display (last completed turn for each player)
+    updatePreviousShotDisplay(scores.score_history, matchData.host_name, matchData.guest_name);
 }
 
 /**
@@ -546,12 +567,38 @@ function addToInput(value) {
 
 function updateInputDisplay() {
     const display = document.getElementById('input-mode');
+    const submitBtn = document.getElementById('submit-btn');
+    const btn180 = document.getElementById('btn-180-zero');
     if (!Array.isArray(onlineState.localInput) || onlineState.localInput.length === 0) {
         display.textContent = 'Enter Score';
+        // MISS button state
+        if (submitBtn) {
+            submitBtn.textContent = 'MISS';
+            submitBtn.classList.remove('green');
+            submitBtn.classList.add('red');
+        }
+        // 180 button state
+        if (btn180) {
+            btn180.textContent = '180';
+            btn180.classList.remove('operation-mode');
+            btn180.classList.add('red');
+        }
     } else {
         // Show the darts being entered with proper formatting
         const formatted = onlineState.localInput.join(' ');
         display.textContent = formatted;
+        // ENTER button state
+        if (submitBtn) {
+            submitBtn.textContent = 'ENTER';
+            submitBtn.classList.remove('red');
+            submitBtn.classList.add('green');
+        }
+        // 0 button state
+        if (btn180) {
+            btn180.textContent = '0';
+            btn180.classList.remove('red');
+            btn180.classList.add('operation-mode');
+        }
     }
 }
 
@@ -606,10 +653,15 @@ async function submitScore() {
         
         // Check for winner (reached exactly 0)
         let matchWinner = null;
+        let dartOut = null;
         if (newScore === 0) {
             matchWinner = playerKey;
+            // Prompt for which dart finished (1, 2, or 3)
+            let dartPrompt = window.prompt('Which dart finished the game? (1, 2, or 3)', onlineState.localInput.length);
+            dartOut = parseInt(dartPrompt);
+            if (isNaN(dartOut) || dartOut < 1 || dartOut > 3) dartOut = onlineState.localInput.length;
         }
-        
+
         // Add to score history
         if (!scores.score_history) scores.score_history = [];
         scores.score_history.push({
@@ -618,19 +670,21 @@ async function submitScore() {
             input: scoreInput,
             newScore: newScore,
             isBust: isBust,
+            isCheckout: matchWinner ? true : false,
+            dartOut: dartOut,
             timestamp: new Date().toISOString()
         });
-        
+
         // Switch turn (unless match is won)
         let nextTurn = isHost ? 'guest' : 'host';
         let gameStatus = 'playing';
-        
+
         if (matchWinner) {
             gameStatus = 'complete';
-            // Prompt for dartout (will handle separately)
-            promptForDartOut(playerKey);
+            // Show winner modal
+            showWinnerModal(playerKey, dartOut, scoreInput);
         }
-        
+
         // Update database
         const { error } = await window.supabaseClient
             .from('game_rooms')
@@ -644,12 +698,12 @@ async function submitScore() {
                 status: gameStatus
             })
             .eq('id', onlineState.matchId);
-        
+
         if (error) {
             console.error('Error submitting score:', error);
             return;
         }
-        
+
         // Clear local input
         onlineState.localInput = [];
         updateInputDisplay();
@@ -659,12 +713,23 @@ async function submitScore() {
     }
 }
 
-function promptForDartOut(winnerKey) {
-    // TODO: Show dialog asking which dart was used for checkout (double, single, outer bull)
-    // This will affect average calculation
-    const message = `Player ${winnerKey === 'host' ? onlineState.myName : onlineState.opponentName} won! What dart was used?\n\n1: Single\n2: Double\n3: Outer Bull`;
-    const choice = prompt(message);
-    // TODO: Update scores with dart out type
+
+function showWinnerModal(winnerKey, dartOut, checkoutScore) {
+    // Show the winner modal with info
+    const modal = document.getElementById('match-complete-modal');
+    if (!modal) return;
+    const winnerName = winnerKey === 'host' ? onlineState.myName : onlineState.opponentName;
+    document.getElementById('match-winner-name').textContent = winnerName;
+    document.getElementById('match-complete-text').textContent = `Checkout: ${checkoutScore} (Dart ${dartOut})`;
+    modal.style.display = 'flex';
+    // Optionally, add a button to return to main menu
+    const returnBtn = document.getElementById('return-to-landing-btn');
+    if (returnBtn) {
+        returnBtn.onclick = function() {
+            modal.style.display = 'none';
+            showLanding();
+        };
+    }
 }
 
 /**
@@ -785,9 +850,40 @@ async function fetchAndRenderMatchState() {
     }
 }
 
+
 function updateScoreHistory(scoreHistory) {
-    const historyEl = document.getElementById('score-history');
-    // TODO: Implement score history rendering
+    // Optionally, render full score history here if needed
+}
+
+function updatePreviousShotDisplay(scoreHistory, hostName, guestName) {
+    // Find last completed turn for each player
+    let lastHost = null, lastGuest = null;
+    if (Array.isArray(scoreHistory)) {
+        for (let i = scoreHistory.length - 1; i >= 0; i--) {
+            const entry = scoreHistory[i];
+            if (!lastHost && entry.player === 'host' && !entry.isBust) lastHost = entry;
+            if (!lastGuest && entry.player === 'guest' && !entry.isBust) lastGuest = entry;
+            if (lastHost && lastGuest) break;
+        }
+    }
+    // Display in the scoring area (above or below the number pad)
+    let prevShotBar = document.getElementById('previous-shot-bar');
+    if (!prevShotBar) {
+        prevShotBar = document.createElement('div');
+        prevShotBar.id = 'previous-shot-bar';
+        prevShotBar.style.display = 'flex';
+        prevShotBar.style.justifyContent = 'space-between';
+        prevShotBar.style.background = '#222';
+        prevShotBar.style.padding = '8px 16px';
+        prevShotBar.style.fontSize = '16px';
+        prevShotBar.style.color = '#ffd700';
+        prevShotBar.style.margin = '0 0 8px 0';
+        const scoringArea = document.querySelector('.scoring-area');
+        if (scoringArea) scoringArea.insertBefore(prevShotBar, scoringArea.firstChild);
+    }
+    prevShotBar.innerHTML =
+        `<span><b>${hostName || 'Host'}:</b> ${lastHost ? lastHost.darts.join(' ') + ' (' + lastHost.input + ')' : '-'}</span>` +
+        `<span><b>${guestName || 'Guest'}:</b> ${lastGuest ? lastGuest.darts.join(' ') + ' (' + lastGuest.input + ')' : '-'}</span>`;
 }
 
 function exitMatch() {
