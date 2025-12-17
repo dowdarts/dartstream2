@@ -307,7 +307,7 @@ async function checkForReconnection() {
     
     try {
         const matchState = JSON.parse(savedMatch);
-        console.log('🔄 Found saved match, attempting reconnection:', matchState);
+        console.log('🔄 Found saved match:', matchState);
         
         // Check if match is still active in database
         const { data: match, error } = await window.supabaseClient
@@ -329,6 +329,15 @@ async function checkForReconnection() {
             return;
         }
         
+        // Ask user if they want to reconnect
+        const shouldReconnect = confirm(`You have an active match (Room: ${matchState.roomCode}).\n\nDo you want to reconnect?`);
+        
+        if (!shouldReconnect) {
+            console.log('❌ User declined reconnection');
+            clearSavedMatchState();
+            return;
+        }
+        
         // Restore state
         onlineState.matchId = matchState.matchId;
         onlineState.roomCode = matchState.roomCode;
@@ -344,7 +353,7 @@ async function checkForReconnection() {
             onlineState.opponentPlayerId = gameState.host_player_id;
         }
         
-        console.log('✅ Reconnected to match:', onlineState.roomCode);
+        console.log('✅ Reconnecting to match:', onlineState.roomCode);
         
         // Show reconnection message and go to game screen
         showScreen('game-screen');
@@ -353,9 +362,6 @@ async function checkForReconnection() {
         // Subscribe to updates and render current state
         subscribeToMatchUpdates();
         renderGameState(match);
-        
-        // Show reconnection notification
-        alert(`Reconnected to match: ${onlineState.roomCode}`);
         
     } catch (error) {
         console.error('❌ Error during reconnection:', error);
