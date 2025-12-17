@@ -45,6 +45,7 @@
                     <button class="continue-btn red" id="back-to-main-app" style="margin-top: 20px;">Return to Main App</button>
                 </div>
 
+
                 <div id="host-setup-form" style="display: none;">
                     <h2 class="yellow-text">Host Match</h2>
                     <div class="form-group">
@@ -56,6 +57,25 @@
                         <div class="custom-options-row">
                             <button class="option-btn selected" id="host-game-501">501 SIDO</button>
                             <button class="option-btn" id="host-game-301">301 DIDO</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Match Format</label>
+                        <div class="custom-options-row" id="host-match-format-row">
+                            <button class="option-btn selected" data-format="single">Single Leg</button>
+                            <button class="option-btn" data-format="playall3">Play All 3 Legs</button>
+                            <button class="option-btn" data-format="bo3">Best of 3 Legs</button>
+                            <button class="option-btn" data-format="bo5">Best of 5 Legs</button>
+                            <button class="option-btn" data-format="bo7">Best of 7 Legs</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Set Format</label>
+                        <div class="custom-options-row" id="host-set-format-row">
+                            <button class="option-btn selected" data-set="none">No Sets</button>
+                            <button class="option-btn" data-set="bo3">Best of 3 Sets</button>
+                            <button class="option-btn" data-set="bo5">Best of 5 Sets</button>
+                            <button class="option-btn" data-set="playall">Play All Sets</button>
                         </div>
                     </div>
                     <button class="continue-btn green" id="create-match-btn">Create Match</button>

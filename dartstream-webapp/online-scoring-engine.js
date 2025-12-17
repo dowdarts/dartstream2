@@ -155,6 +155,35 @@ function setupEventListeners() {
     
     // Setup screen
     document.getElementById('back-to-landing').addEventListener('click', showLanding);
+
+    // Match format selection (legs)
+    const matchFormatRow = document.getElementById('host-match-format-row');
+    if (matchFormatRow) {
+        matchFormatRow.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                matchFormatRow.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                onlineState.matchFormat = btn.getAttribute('data-format');
+            });
+        });
+        // Default
+        onlineState.matchFormat = matchFormatRow.querySelector('.option-btn.selected')?.getAttribute('data-format') || 'single';
+    }
+
+    // Set format selection
+    const setFormatRow = document.getElementById('host-set-format-row');
+    if (setFormatRow) {
+        setFormatRow.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                setFormatRow.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                onlineState.setFormat = btn.getAttribute('data-set');
+            });
+        });
+        // Default
+        onlineState.setFormat = setFormatRow.querySelector('.option-btn.selected')?.getAttribute('data-set') || 'none';
+    }
+
     document.getElementById('create-match-btn').addEventListener('click', hostMatch);
     document.getElementById('join-match-submit-btn').addEventListener('click', joinMatch);
     
@@ -272,11 +301,27 @@ async function hostMatch() {
     
     showScreen('waiting-screen');
     document.getElementById('room-code-display').textContent = onlineState.roomCode;
-    
+
     try {
         // Create match in Supabase using game_rooms table
         const startScore = onlineState.gameType === '501' ? 501 : 301;
-        
+
+        // Determine legs/sets from matchFormat and setFormat
+        let totalLegs = 1, legsFormat = 'single', totalSets = 1, setsFormat = 'none';
+        switch (onlineState.matchFormat) {
+            case 'single': totalLegs = 1; legsFormat = 'single'; break;
+            case 'playall3': totalLegs = 3; legsFormat = 'playall'; break;
+            case 'bo3': totalLegs = 3; legsFormat = 'bestof'; break;
+            case 'bo5': totalLegs = 5; legsFormat = 'bestof'; break;
+            case 'bo7': totalLegs = 7; legsFormat = 'bestof'; break;
+        }
+        switch (onlineState.setFormat) {
+            case 'none': totalSets = 1; setsFormat = 'none'; break;
+            case 'bo3': totalSets = 3; setsFormat = 'bestof'; break;
+            case 'bo5': totalSets = 5; setsFormat = 'bestof'; break;
+            case 'playall': totalSets = 3; setsFormat = 'playall'; break;
+        }
+
         const { data, error } = await window.supabaseClient
             .from('game_rooms')
             .insert([{
@@ -289,6 +334,12 @@ async function hostMatch() {
                     start_type: onlineState.startType,
                     host_name: onlineState.myName,
                     host_player_id: onlineState.myPlayerId,
+                    match_format: onlineState.matchFormat,
+                    set_format: onlineState.setFormat,
+                    total_legs: totalLegs,
+                    legs_format: legsFormat,
+                    total_sets: totalSets,
+                    sets_format: setsFormat,
                     scores: {
                         host: startScore,
                         guest: startScore,
@@ -306,7 +357,7 @@ async function hostMatch() {
             }])
             .select()
             .single();
-        
+
         if (error) {
             console.error('Error creating match:', error);
             console.error('Error details:', JSON.stringify(error, null, 2));
@@ -314,13 +365,13 @@ async function hostMatch() {
             alert(`Failed to create match: ${error?.message || JSON.stringify(error)}`);
             return;
         }
-        
+
         onlineState.matchId = data.id;
         console.log('✅ Match created with room code:', onlineState.roomCode);
-        
+
         // Start listening for guest joining (subscription will trigger startGame when guest joins)
         subscribeToMatchUpdates();
-        
+
     } catch (error) {
         console.error('Error in hostMatch:', error);
         alert('Error hosting match');
