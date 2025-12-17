@@ -649,6 +649,21 @@ function subscribeToMatchUpdates() {
                     const playerSelectionScreen = document.getElementById('player-selection-screen');
                     if (waitingScreen?.classList.contains('active')) {
                         startGame();
+                        
+                        // BROADCAST video call notification to both users via Supabase channel
+                        if (window.supabaseClient && onlineState.supabaseChannel) {
+                            onlineState.supabaseChannel.send({
+                                type: 'broadcast',
+                                event: 'VIDEO_CALL_PROMPT',
+                                payload: {
+                                    roomCode: onlineState.roomCode,
+                                    hostName: onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName,
+                                    guestName: onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName,
+                                    timestamp: Date.now()
+                                }
+                            });
+                            console.log('📢 BROADCAST: Video call prompt sent to both users via channel');
+                        }
                     }
                     
                     // Notify parent window (split-screen mode) that both players connected
@@ -675,6 +690,15 @@ function subscribeToMatchUpdates() {
                             type: 'ONLINE_SCORER_GAME_STARTED',
                             roomCode: onlineState.roomCode
                         }, '*');
+                        
+                        // BROADCAST game started to hide notifications
+                        if (window.supabaseClient && onlineState.supabaseChannel) {
+                            onlineState.supabaseChannel.send({
+                                type: 'broadcast',
+                                event: 'GAME_STARTED',
+                                payload: { roomCode: onlineState.roomCode }
+                            });
+                        }
                     }
                 }
                 

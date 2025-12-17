@@ -874,7 +874,54 @@ class PlayOnlineV7 {
             return;
         }
         
-        // Subscribe to all game_rooms changes
+        // Subscribe to broadcast messages from online scorer matches
+        const broadcastChannel = window.supabaseClient
+            .channel('video-call-global-broadcast')
+            .on('broadcast', { event: 'VIDEO_CALL_PROMPT' }, (payload) => {
+                console.log('📢 RECEIVED BROADCAST: Video call prompt', payload);
+                
+                const data = payload.payload;
+                const notification = document.getElementById('autoJoinNotification');
+                
+                if (notification && data.roomCode) {
+                    const hostName = data.hostName || 'Host';
+                    const guestName = data.guestName || 'Guest';
+                    
+                    notification.innerHTML = `
+                        <div>🎮 Online Match Connected!</div>
+                        <div style="font-size: 0.9rem; margin-top: 5px;">${hostName} vs ${guestName}</div>
+                        <div style="font-size: 0.85rem; margin-top: 5px; opacity: 0.9;">Click to start video call for bull-off</div>
+                    `;
+                    notification.classList.add('visible');
+                    
+                    const autoJoinRoomCode = data.roomCode;
+                    
+                    notification.onclick = () => {
+                        notification.classList.remove('visible');
+                        const roomCodeInput = document.getElementById('roomCodeInput');
+                        if (roomCodeInput) {
+                            roomCodeInput.value = autoJoinRoomCode;
+                        }
+                        this.showScreen('join');
+                    };
+                    
+                    console.log('✅ Video call notification shown for room:', autoJoinRoomCode);
+                }
+            })
+            .on('broadcast', { event: 'GAME_STARTED' }, (payload) => {
+                console.log('📢 RECEIVED BROADCAST: Game started', payload);
+                const notification = document.getElementById('autoJoinNotification');
+                if (notification) {
+                    notification.classList.remove('visible');
+                }
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('✅ Subscribed to video call broadcast channel');
+                }
+            });
+        
+        // Also subscribe to database changes as backup
         const channel = window.supabaseClient
             .channel('video-call-monitor')
             .on(
@@ -892,7 +939,7 @@ class PlayOnlineV7 {
                         roomData.game_state?.guest_name && 
                         roomData.status === 'waiting') {
                         
-                        console.log('📹 Online scorer match detected:', roomData.room_code);
+                        console.log('📹 Online scorer match detected (DB):', roomData.room_code);
                         
                         // Show notification
                         const notification = document.getElementById('autoJoinNotification');
@@ -934,7 +981,7 @@ class PlayOnlineV7 {
             )
             .subscribe();
         
-        console.log('👀 Monitoring online scorer matches for auto-join');
+        console.log('👀 Monitoring online scorer matches for auto-join (broadcast + DB)');
     }
 }
 
