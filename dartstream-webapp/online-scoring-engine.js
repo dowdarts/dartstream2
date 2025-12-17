@@ -18,7 +18,7 @@ let onlineState = {
     gameType: '501',  // '501' or '301'
     startType: 'SI',  // 'SI' or 'DI'
     currentTurn: 'host',
-    localInput: [],  // Array of dart values (1-25)
+    localInput: '',  // String for score input (e.g., '180')
     isSubscribed: false,
     supabaseChannel: null,
     authenticatedUser: null  // Holds auth info
@@ -590,38 +590,24 @@ function addToInput(value) {
     if (onlineState.currentTurn !== onlineState.myRole) {
         return;
     }
-    
-    // Store as array of darts instead of concatenated number
-    // Each dart value can be 1-20, 25 (bull), 50 (outer bull)
-    if (!Array.isArray(onlineState.localInput)) {
-        onlineState.localInput = [];
+    if (typeof onlineState.localInput !== 'string') {
+        onlineState.localInput = '';
     }
-    
-    // Max 3 darts per turn
+    // Max 3 digits, and max value 180
     if (onlineState.localInput.length < 3) {
-        // If current entry is incomplete (0-9), combine with next digit
-        // Otherwise start new dart
-        const lastDart = onlineState.localInput[onlineState.localInput.length - 1];
-        
-        if (lastDart !== undefined && lastDart < 20) {
-            // Combine: 2 + 5 = 25, or 1 + 0 = 10
-            const combined = lastDart * 10 + value;
-            if (combined <= 25) {  // Valid dart is 1-20, 25
-                onlineState.localInput[onlineState.localInput.length - 1] = combined;
-            }
-        } else {
-            // Start new dart
-            onlineState.localInput.push(value);
+        let next = onlineState.localInput + value.toString();
+        if (parseInt(next, 10) <= 180) {
+            onlineState.localInput = next.replace(/^0+(?!$)/, ''); // Remove leading zeros
         }
-        updateInputDisplay();
     }
+    updateInputDisplay();
 }
 
 function updateInputDisplay() {
     const display = document.getElementById('input-mode');
     const submitBtn = document.getElementById('submit-btn');
     const btn180 = document.getElementById('btn-180-zero');
-    if (!Array.isArray(onlineState.localInput) || onlineState.localInput.length === 0) {
+    if (!onlineState.localInput || onlineState.localInput.length === 0) {
         display.textContent = 'Enter Score';
         // MISS button state
         if (submitBtn) {
@@ -636,9 +622,8 @@ function updateInputDisplay() {
             btn180.classList.add('red');
         }
     } else {
-        // Show the darts being entered with proper formatting
-        const formatted = onlineState.localInput.join(' ');
-        display.textContent = formatted;
+        // Show the score being entered
+        display.textContent = onlineState.localInput;
         // ENTER button state
         if (submitBtn) {
             submitBtn.textContent = 'ENTER';
@@ -655,7 +640,9 @@ function updateInputDisplay() {
 }
 
 function undoLastDart() {
-    onlineState.localInput = Math.floor(onlineState.localInput / 100);
+    if (typeof onlineState.localInput === 'string' && onlineState.localInput.length > 0) {
+        onlineState.localInput = onlineState.localInput.slice(0, -1);
+    }
     updateInputDisplay();
 }
 
@@ -663,8 +650,9 @@ function undoLastDart() {
  * ============ SUBMIT SCORE TO DATABASE ============
  */
 async function submitScore() {
-    if (!onlineState.matchId || !Array.isArray(onlineState.localInput) || onlineState.localInput.length === 0) return;
-    
+    if (!onlineState.matchId || !onlineState.localInput || onlineState.localInput.length === 0) return;
+    const scoreInput = parseInt(onlineState.localInput, 10);
+    if (isNaN(scoreInput) || scoreInput < 0 || scoreInput > 180) return;
     try {
         // Get current match state from DB
         const { data: match } = await window.supabaseClient
@@ -672,53 +660,41 @@ async function submitScore() {
             .select('*')
             .eq('id', onlineState.matchId)
             .single();
-        
         if (!match) return;
-        
         const scores = match.game_state?.scores || {};
-        
-        // Calculate total from dart array
-        const scoreInput = onlineState.localInput.reduce((sum, dart) => sum + dart, 0);
-        
         // Determine which score to update
         const isHost = onlineState.myRole === 'host';
         const playerKey = isHost ? 'host' : 'guest';
         const opponentKey = isHost ? 'guest' : 'host';
-        
         const preTurnScore = scores[playerKey];
         let newScore = preTurnScore - scoreInput;
         let isBust = false;
-        
         // Bust detection: score < 0 OR score = 1 (can't finish on 1)
         if (newScore < 0 || newScore === 1) {
             isBust = true;
             newScore = preTurnScore;  // Restore original score on bust
             console.log('🎯 BUST! Score would be', newScore - preTurnScore + scoreInput, '. Restored to', preTurnScore);
         }
-        
         // Update darts thrown (add 3 for this turn)
         const dartsKey = playerKey + '_darts_thrown';
         scores[dartsKey] = (scores[dartsKey] || 0) + 3;
-        
         // Update the score
         scores[playerKey] = newScore;
-        
         // Check for winner (reached exactly 0)
         let matchWinner = null;
         let dartOut = null;
         if (newScore === 0) {
             matchWinner = playerKey;
             // Prompt for which dart finished (1, 2, or 3)
-            let dartPrompt = window.prompt('Which dart finished the game? (1, 2, or 3)', onlineState.localInput.length);
+            let dartPrompt = window.prompt('Which dart finished the game? (1, 2, or 3)', '3');
             dartOut = parseInt(dartPrompt);
-            if (isNaN(dartOut) || dartOut < 1 || dartOut > 3) dartOut = onlineState.localInput.length;
+            if (isNaN(dartOut) || dartOut < 1 || dartOut > 3) dartOut = 3;
         }
-
         // Add to score history
         if (!scores.score_history) scores.score_history = [];
         scores.score_history.push({
             player: playerKey,
-            darts: onlineState.localInput,
+            darts: [scoreInput],
             input: scoreInput,
             newScore: newScore,
             isBust: isBust,
@@ -726,17 +702,14 @@ async function submitScore() {
             dartOut: dartOut,
             timestamp: new Date().toISOString()
         });
-
         // Switch turn (unless match is won)
         let nextTurn = isHost ? 'guest' : 'host';
         let gameStatus = 'playing';
-
         if (matchWinner) {
             gameStatus = 'complete';
             // Show winner modal
             showWinnerModal(playerKey, dartOut, scoreInput);
         }
-
         // Update database
         const { error } = await window.supabaseClient
             .from('game_rooms')
@@ -750,16 +723,13 @@ async function submitScore() {
                 status: gameStatus
             })
             .eq('id', onlineState.matchId);
-
         if (error) {
             console.error('Error submitting score:', error);
             return;
         }
-
         // Clear local input
-        onlineState.localInput = [];
+        onlineState.localInput = '';
         updateInputDisplay();
-        
     } catch (error) {
         console.error('Error in submitScore:', error);
     }
@@ -827,7 +797,7 @@ function resetOnlineState() {
         gameType: '501',
         startType: 'SI',
         currentTurn: 'host',
-        localInput: 0,
+        localInput: '',
         isSubscribed: false,
         supabaseChannel: null,
         ...auth
