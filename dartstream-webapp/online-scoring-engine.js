@@ -141,29 +141,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Listen for messages from parent (split-screen) to join room from lobby
 window.addEventListener('message', (event) => {
+    console.log('📨 Message received in scorer:', event.data);
+    
     if (event.data.type === 'JOIN_ROOM_FROM_LOBBY') {
         console.log('📡 Received JOIN_ROOM_FROM_LOBBY:', event.data.roomCode);
         
-        // Set the room code and trigger join
-        const roomCodeInput = document.getElementById('room-code-input');
-        if (roomCodeInput) {
+        // Wait for DOM to be ready
+        const processJoin = () => {
+            const roomCodeInput = document.getElementById('room-code-input');
+            const joinBtn = document.getElementById('join-room-btn');
+            
+            if (!roomCodeInput || !joinBtn) {
+                console.log('⏳ DOM not ready, waiting...');
+                setTimeout(processJoin, 100);
+                return;
+            }
+            
+            // Set the room code
             roomCodeInput.value = event.data.roomCode;
             console.log('✅ Room code set to:', event.data.roomCode);
             
-            // Show join setup and trigger join
+            // Show join setup
             showJoinSetup();
+            console.log('✅ Join setup shown');
             
-            // Auto-click join button after a brief delay
+            // Auto-click join button
             setTimeout(() => {
-                const joinBtn = document.getElementById('join-room-btn');
-                if (joinBtn) {
-                    joinBtn.click();
-                    console.log('🎮 Auto-joining room from lobby');
-                }
+                joinBtn.click();
+                console.log('🎮 Auto-clicked join button for room:', event.data.roomCode);
             }, 500);
-        }
+        };
+        
+        processJoin();
     }
 });
+console.log('✅ Message listener registered for JOIN_ROOM_FROM_LOBBY');
 
 /**
  * Get authenticated player's name and ID
