@@ -1062,10 +1062,14 @@ window.addEventListener('beforeunload', (event) => {
     }
     
     // Delete hosted match if user is leaving while hosting (but not if match accepted)
-    if (lobbyState.myHostedMatch && lobbyState.myHostedMatch.status !== 'in_progress') {
-        console.log('[LOBBY] 🚪 User leaving - deleting hosted match:', lobbyState.myHostedMatch.id);
+    if (lobbyState.myHostedMatch) {
+        console.log('[LOBBY] 🚪 User leaving - checking match status before cleanup');
         
-        // CRITICAL: Must be synchronous! Get session token synchronously from localStorage
+        // CRITICAL: Check current database status before deleting
+        // DO NOT delete if status is 'in_progress' (match was accepted)
+        const matchId = lobbyState.myHostedMatch.id;
+        
+        // Get session token synchronously from localStorage
         const sessionKey = Object.keys(localStorage).find(key => 
             key.startsWith('sb-') && key.endsWith('-auth-token')
         );
@@ -1073,16 +1077,38 @@ window.addEventListener('beforeunload', (event) => {
         const token = session?.access_token;
         
         if (token) {
-            // Use fetch with keepalive - DO NOT await! Browser will complete it
-            fetch(`https://kswwbqumgsdissnwuiab.supabase.co/rest/v1/game_rooms?id=eq.${lobbyState.myHostedMatch.id}`, {
-                method: 'DELETE',
+            // First fetch current status, then delete if needed
+            fetch(`https://kswwbqumgsdissnwuiab.supabase.co/rest/v1/game_rooms?select=status&id=eq.${matchId}`, {
+                method: 'GET',
                 headers: {
                     'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50',
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 keepalive: true
-            }).catch(err => console.error('[LOBBY] Cleanup error:', err));
+            }).then(res => res.json())
+              .then(data => {
+                  const currentStatus = data?.[0]?.status;
+                  console.log('[LOBBY] Current match status:', currentStatus);
+                  
+                  // Only delete if NOT in_progress (match wasn't accepted)
+                  if (currentStatus && currentStatus !== 'in_progress') {
+                      console.log('[LOBBY] 🗑️ Deleting unaccepted match:', matchId);
+                      fetch(`https://kswwbqumgsdissnwuiab.supabase.co/rest/v1/game_rooms?id=eq.${matchId}`, {
+                          method: 'DELETE',
+                          headers: {
+                              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50',
+                              'Authorization': `Bearer ${token}`,
+                              'Content-Type': 'application/json'
+                          },
+                          keepalive: true
+                      }).catch(err => console.error('[LOBBY] Delete error:', err));
+                  } else {
+                      console.log('[LOBBY] ✅ Match accepted, skipping cleanup');
+                  }
+              })
+              .catch(err => console.error('[LOBBY] Status check error:', err));
         }
     }
 });
