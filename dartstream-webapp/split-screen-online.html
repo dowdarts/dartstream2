@@ -188,7 +188,7 @@
         if (showLobby) {
             console.log('🏛️ Loading split-screen with lobby');
             const onlineScorerIframe = document.getElementById('online-scorer-iframe');
-                onlineScorerIframe.src = `online-lobby.html?v=1.0.16&t=${Date.now()}`;
+                onlineScorerIframe.src = `online-lobby.html?v=1.0.17&t=${Date.now()}`;
             onlineScorerIframe.title = 'Match Lobby';
         }
         
@@ -272,16 +272,17 @@
             if (event.data.type === 'LOBBY_JOIN_MATCH') {
                 console.log('📡 Lobby join request received:', event.data);
                 const roomCode = event.data.roomCode;
+                const role = event.data.role || 'guest';  // Default to guest if not specified
                 
                 // Replace lobby iframe with scorer iframe
                 const scorerFrame = document.getElementById('online-scorer-iframe');
                 const currentSrc = scorerFrame.src;
                 console.log('🔄 Current iframe src:', currentSrc);
-                console.log('🔄 Replacing lobby with scorer...');
+                console.log('🔄 Replacing lobby with scorer. Role:', role);
                 
-                scorerFrame.src = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true&v=2.5.2&t=${Date.now()}`;
+                scorerFrame.src = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true&role=${role}&v=2.5.2&t=${Date.now()}`;
                 scorerFrame.title = 'Online Scorer';
-                console.log('✅ Scorer loaded with room:', roomCode, 'New src:', scorerFrame.src);
+                console.log('✅ Scorer loaded with room:', roomCode, 'Role:', role, 'New src:', scorerFrame.src);
                 
                 // DON'T send video message yet - wait for ONLINE_SCORER_PLAYERS_CONNECTED
                 // which will have the player names

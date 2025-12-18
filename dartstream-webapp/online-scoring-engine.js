@@ -114,9 +114,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // If no reconnection happened, proceed with normal flow (including lobby joins)
         if (fromLobby && roomCodeParam) {
-            console.log('🎮 Auto-joining match from lobby, room:', roomCodeParam);
+            const lobbyRole = urlParams.get('role') || 'guest';  // Default to guest
+            console.log('🎮 Auto-joining match from lobby, room:', roomCodeParam, 'role:', lobbyRole);
             
-            // Show join setup screen first
+            // HOST: Show game setup screen (don't auto-join)
+            if (lobbyRole === 'host') {
+                console.log('👑 Host mode - showing game setup screen');
+                showJoinSetup();
+                
+                // Pre-fill room code
+                const roomCodeInput = document.getElementById('room-code-input');
+                if (roomCodeInput) {
+                    roomCodeInput.value = roomCodeParam.toUpperCase();
+                    console.log('✅ Room code pre-filled for host:', roomCodeParam);
+                }
+                
+                // Auto-click join button after a brief delay
+                setTimeout(() => {
+                    const joinSubmitBtn = document.getElementById('join-match-submit-btn');
+                    if (joinSubmitBtn) {
+                        console.log('👑 Auto-clicking join as HOST');
+                        joinSubmitBtn.click();
+                    }
+                }, 800);
+                return;
+            }
+            
+            // GUEST: Auto-join as guest
+            console.log('👤 Guest mode - auto-joining match');
             showJoinSetup();
             
             // Pre-fill room code

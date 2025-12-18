@@ -2,10 +2,10 @@
  * Online Lobby System
  * Allows players to browse public matches and instantly join
  * Integrates with both online scorer and video call (split-screen mode)
- * Version: 1.0.16 - Manual accept with local status fix
+ * Version: 1.0.17 - Role-based join (host/guest)
  */
 
-console.log('[LOBBY] Version 1.0.16 loading...');
+console.log('[LOBBY] Version 1.0.17 loading...');
 
 let lobbyState = {
     currentUser: null,
@@ -398,12 +398,13 @@ function waitForHostResponse(matchId, roomCode) {
                         window.parent.postMessage({
                             type: 'LOBBY_JOIN_MATCH',
                             roomCode: roomCode,
-                            fromLobby: true
+                            fromLobby: true,
+                            role: 'guest'  // GUEST is joining
                         }, '*');
                         console.log('[LOBBY] ✅ Guest message posted');
                     } else {
                         console.log('[LOBBY] Guest not in iframe, redirecting...');
-                        window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+                        window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true&role=guest`;
                     }
                 }
                 // Check if request was declined (pending fields cleared)
@@ -1001,12 +1002,13 @@ document.getElementById('accept-join-request-btn')?.addEventListener('click', as
             window.parent.postMessage({
                 type: 'LOBBY_JOIN_MATCH',
                 roomCode: roomCode,
-                fromLobby: true
+                fromLobby: true,
+                role: 'host'  // HOST is accepting, not guest
             }, '*');
             console.log('[LOBBY] ✅ Message posted to parent');
         } else {
             console.log('[LOBBY] Not in iframe, redirecting directly...');
-            window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+            window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true&role=host`;
         }
         
     } catch (error) {
