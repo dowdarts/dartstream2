@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="dartstream-logo.png">
-    <title>DartStream - Split Screen: Online Scorer + Video Call v2.6.9</title>
+    <title>DartStream - Split Screen: Online Scorer + Video Call v2.7.0</title>
     <style>
         * {
             margin: 0;
@@ -150,7 +150,7 @@
 <body>
     <button class="close-btn" onclick="window.location.href='index.html'">✕ Close Split Screen</button>
     <button class="layout-toggle" onclick="toggleLayout()">⇄ Toggle Layout</button>
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.6.9</div>
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.0</div>
 
     <!-- Share Link Banner (shown when room code detected) -->
     <div id="share-link-banner" class="share-link-banner">
@@ -254,16 +254,16 @@
                 console.log('📡 Lobby join request received:', event.data);
                 const roomCode = event.data.roomCode;
                 
-                // Update online scorer iframe with room code
+                // Tell the scorer iframe to join this room
                 const scorerFrame = document.getElementById('online-scorer-iframe');
-                if (scorerFrame) {
-                    // Reload scorer with room code in URL
-                    const scorerUrl = new URL(scorerFrame.src);
-                    scorerUrl.searchParams.set('room', roomCode);
-                    scorerUrl.searchParams.set('auto', 'true');
-                    scorerUrl.searchParams.set('fromLobby', 'true');
-                    scorerFrame.src = scorerUrl.toString();
-                    console.log('✅ Updated scorer iframe with room:', roomCode);
+                if (scorerFrame && scorerFrame.contentWindow) {
+                    scorerFrame.contentWindow.postMessage({
+                        type: 'JOIN_ROOM_FROM_LOBBY',
+                        roomCode: roomCode
+                    }, '*');
+                    console.log('📡 Sent JOIN_ROOM_FROM_LOBBY to scorer iframe:', roomCode);
+                } else {
+                    console.error('❌ Scorer iframe not found or not ready');
                 }
                 
                 // DON'T send video message yet - wait for ONLINE_SCORER_PLAYERS_CONNECTED

@@ -139,6 +139,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Listen for messages from parent (split-screen) to join room from lobby
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'JOIN_ROOM_FROM_LOBBY') {
+        console.log('📡 Received JOIN_ROOM_FROM_LOBBY:', event.data.roomCode);
+        
+        // Set the room code and trigger join
+        const roomCodeInput = document.getElementById('room-code-input');
+        if (roomCodeInput) {
+            roomCodeInput.value = event.data.roomCode;
+            console.log('✅ Room code set to:', event.data.roomCode);
+            
+            // Show join setup and trigger join
+            showJoinSetup();
+            
+            // Auto-click join button after a brief delay
+            setTimeout(() => {
+                const joinBtn = document.getElementById('join-room-btn');
+                if (joinBtn) {
+                    joinBtn.click();
+                    console.log('🎮 Auto-joining room from lobby');
+                }
+            }, 500);
+        }
+    }
+});
+
 /**
  * Get authenticated player's name and ID
  */
