@@ -125,9 +125,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Store config for when both players join
             sessionStorage.setItem('lobby_match_config', JSON.stringify(lobbyMatchConfig));
             
-            // Pre-fill room code and show join setup
+            // Pre-fill room code and auto-join
             document.getElementById('room-code-input').value = lobbyMatchConfig.roomCode;
-            showJoinSetup();
+            
+            // Auto-join the match after a brief delay
+            setTimeout(() => {
+                const joinButton = document.getElementById('join-room-btn');
+                if (joinButton) {
+                    console.log('🎮 Auto-clicking join button for lobby match');
+                    joinButton.click();
+                }
+            }, 500);
         } else if (roomCodeParam && roomCodeParam.length === 4) {
             console.log('🔗 Auto-joining room from URL:', roomCodeParam);
             // Pre-fill room code and show join setup
