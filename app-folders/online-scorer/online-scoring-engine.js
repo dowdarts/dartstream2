@@ -190,17 +190,13 @@ async function joinMatch() {
         return;
     }
     
+    // Get role from URL parameter (set by lobby) or default to guest
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRole = urlParams.get('role') || 'guest';
+    
     onlineState.myName = nameInput || 'Away';
-    onlineState.myRole = 'guest';
-    onlineState.roomCode = roomCodeInput;
-    
-    showScreen('waiting-screen');
-    document.getElementById('room-code-display').textContent = onlineState.roomCode;
-    document.getElementById('waiting-message').textContent = 'Joining match...';
-    
-    try {
-        // Find the match
-        const { data: match, error } = await window.supabase
+    onlineState.myRole = urlRole;
+    console.log('🎯 joinMatch() setting role to:', urlRole);
             .from('live_matches')
             .select('*')
             .eq('room_code', onlineState.roomCode)

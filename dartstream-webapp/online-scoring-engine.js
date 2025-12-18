@@ -664,8 +664,12 @@ async function joinMatch() {
         return;
     }
     
-    // Use authenticated user name
-    onlineState.myRole = 'guest';
+    // Get role from URL parameter (set by lobby) or default to guest
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRole = urlParams.get('role') || 'guest';
+    onlineState.myRole = urlRole;
+    console.log('🎯 joinMatch() setting role to:', urlRole);
+    
     onlineState.roomCode = roomCodeInput;
     
     showScreen('waiting-screen');
