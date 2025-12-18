@@ -99,13 +99,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupEventListeners();
         console.log('[OK] Event listeners setup complete');
         
-        // Check for reconnection to existing match
-        await checkForReconnection();
-        
-        // Check for room code in URL parameter (for auto-join from split-screen)
+        // Check for room code in URL parameter FIRST (for auto-join from split-screen)
         const urlParams = new URLSearchParams(window.location.search);
         const roomCodeParam = urlParams.get('room');
         const fromLobby = urlParams.get('fromLobby') === 'true';
+        
+        // Skip reconnection check if coming from lobby (new match takes priority)
+        if (!fromLobby) {
+            await checkForReconnection();
+        }
         
         // If coming from lobby with full match config, auto-start the match
         if (fromLobby && roomCodeParam) {
