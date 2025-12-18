@@ -335,18 +335,13 @@ window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
             return;
         }
         
-        // Update match status to pending with guest request info
-        const { error: updateError } = await window.supabaseClient
-            .from('game_rooms')
-            .update({
-                status: 'pending',
-                game_state: {
-                    ...match.game_state,
-                    pending_guest_id: lobbyState.myUserId,
-                    pending_guest_name: lobbyState.myDisplayName
-                }
-            })
-            .eq('id', matchId);
+        // Update match status to pending with guest request info using RPC function
+        const { data: updatedMatch, error: updateError } = await window.supabaseClient
+            .rpc('send_join_request', {
+                p_match_id: matchId,
+                p_guest_id: lobbyState.myUserId,
+                p_guest_name: lobbyState.myDisplayName
+            });
         
         if (updateError) throw updateError;
         
