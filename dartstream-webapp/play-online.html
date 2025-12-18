@@ -745,8 +745,37 @@
                 console.log('📹 Video call received auto-join request:', event.data);
                 autoJoinRoomCode = event.data.roomCode;
                 notificationPersistent = event.data.persistent || false;
+                const autoConnect = event.data.autoConnect || false;
+                const fromLobby = event.data.fromLobby || false;
                 
-                // Show flashing notification
+                // If auto-connect from lobby, directly join the video room
+                if (autoConnect && fromLobby) {
+                    console.log('🚀 Auto-connecting from lobby...');
+                    
+                    // Wait a moment for page to initialize
+                    setTimeout(() => {
+                        const roomCodeInput = document.getElementById('roomCodeInput');
+                        if (roomCodeInput) {
+                            roomCodeInput.value = autoJoinRoomCode;
+                            
+                            // Switch to join screen and auto-join
+                            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                            document.getElementById('joinScreen').classList.add('active');
+                            
+                            // Trigger join after short delay
+                            setTimeout(() => {
+                                const joinButton = document.getElementById('joinCallBtn');
+                                if (joinButton) {
+                                    console.log('🎥 Auto-clicking join button...');
+                                    joinButton.click();
+                                }
+                            }, 500);
+                        }
+                    }, 1500);
+                    return;
+                }
+                
+                // Show flashing notification (normal behavior)
                 const notification = document.getElementById('autoJoinNotification');
                 notification.classList.add('visible');
                 

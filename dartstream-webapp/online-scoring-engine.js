@@ -165,6 +165,9 @@ async function initializePlayerData(user) {
  */
 function setupEventListeners() {
     // Landing screen
+    document.getElementById('online-lobby-btn').addEventListener('click', () => {
+        window.location.href = './online-lobby.html';
+    });
     document.getElementById('host-match-btn').addEventListener('click', showHostSetup);
     document.getElementById('join-match-btn').addEventListener('click', showJoinSetup);
     

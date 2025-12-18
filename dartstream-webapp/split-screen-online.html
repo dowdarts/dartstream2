@@ -172,10 +172,31 @@
         // Check for room code in URL and pass to online scorer iframe
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
+        const autoConnect = urlParams.get('auto') === 'true';
+        
         if (roomCode && roomCode.length === 4) {
-            console.log('🔗 Split-screen loaded with room code:', roomCode);
+            console.log('🔗 Split-screen loaded with room code:', roomCode, 'Auto:', autoConnect);
             const onlineScorerIframe = document.getElementById('online-scorer-iframe');
             onlineScorerIframe.src = `webapp-online-scorer.html?room=${roomCode.toUpperCase()}`;
+            
+            // If auto-connect from lobby, also connect video call automatically
+            if (autoConnect) {
+                console.log('🎥 Auto-connecting to video call...');
+                
+                // Wait a moment for iframes to load, then send auto-join command to video call
+                setTimeout(() => {
+                    const videoCallFrame = document.querySelector('iframe[src*="play-online"]');
+                    if (videoCallFrame && videoCallFrame.contentWindow) {
+                        videoCallFrame.contentWindow.postMessage({
+                            type: 'AUTO_JOIN_VIDEO_ROOM',
+                            roomCode: roomCode.toUpperCase(),
+                            fromLobby: true,
+                            autoConnect: true
+                        }, '*');
+                        console.log('📡 Sent AUTO_JOIN_VIDEO_ROOM to video call');
+                    }
+                }, 2000);
+            }
         }
         
         function copyGuestLink() {
