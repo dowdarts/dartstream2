@@ -360,7 +360,7 @@ window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
         
     } catch (error) {
         console.error('[LOBBY] Error sending join request:', error);
-        alert('Failed to send join request. Please try again.');
+        alert(`Failed to send join request: ${error.message || JSON.stringify(error)}`);
     }
 };
 
