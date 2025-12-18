@@ -2,10 +2,10 @@
  * Online Lobby System
  * Allows players to browse public matches and instantly join
  * Integrates with both online scorer and video call (split-screen mode)
- * Version: 1.0.15 - Auto-accept join requests
+ * Version: 1.0.16 - Manual accept with local status fix
  */
 
-console.log('[LOBBY] Version 1.0.15 loading...');
+console.log('[LOBBY] Version 1.0.16 loading...');
 
 let lobbyState = {
     currentUser: null,
@@ -705,11 +705,9 @@ function subscribeToHostMatch(matchId) {
                 console.log('[LOBBY] Host match updated:', payload);
                 const updatedMatch = payload.new;
                 
-                // Auto-accept join request immediately (no prompt)
+                // Check for join request (pending_guest_id set)
                 if (updatedMatch.game_state?.pending_guest_id && updatedMatch.status === 'pending') {
-                    console.log('[LOBBY] Auto-accepting join request from:', updatedMatch.game_state.pending_guest_name);
-                    lobbyState.myHostedMatch = updatedMatch;
-                    autoAcceptJoinRequest(updatedMatch);
+                    showJoinRequestNotification(updatedMatch);
                 }
             }
         )
@@ -947,77 +945,7 @@ document.getElementById('cancel-hosted-match-btn')?.addEventListener('click', as
 });
 
 /**
- * Auto-accept join request immediately (no user prompt)
- */
-async function autoAcceptJoinRequest(match) {
-    const pendingGuestId = match.game_state?.pending_guest_id;
-    const pendingGuestName = match.game_state?.pending_guest_name;
-    
-    if (!pendingGuestId) {
-        console.error('[LOBBY] Auto-accept failed: No pending guest ID');
-        return;
-    }
-    
-    try {
-        console.log('[LOBBY] Auto-accepting join request for:', pendingGuestName);
-        
-        // Update match: move pending guest to actual guest, set status to in_progress
-        const { error } = await window.supabaseClient
-            .from('game_rooms')
-            .update({
-                guest_id: pendingGuestId,
-                status: 'in_progress',
-                game_state: {
-                    ...match.game_state,
-                    guest_name: pendingGuestName,
-                    guest_player_id: pendingGuestId,
-                    pending_guest_id: null,
-                    pending_guest_name: null
-                }
-            })
-            .eq('id', match.id);
-        
-        if (error) throw error;
-        
-        // CRITICAL: Update local state IMMEDIATELY so beforeunload sees it
-        lobbyState.myHostedMatch.status = 'in_progress';
-        
-        console.log('[LOBBY] ✅ Join request auto-accepted - starting match');
-        
-        // Stop timer
-        if (lobbyState.matchTimer) {
-            clearInterval(lobbyState.matchTimer);
-        }
-        
-        // Small delay to ensure both players get the database update before navigating
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // Navigate to match
-        const roomCode = match.room_code;
-        const isInIframe = window.parent !== window;
-        
-        console.log('[LOBBY] Navigating to match. isInIframe:', isInIframe, 'roomCode:', roomCode);
-        
-        if (isInIframe) {
-            console.log('[LOBBY] Posting LOBBY_JOIN_MATCH to parent window...');
-            window.parent.postMessage({
-                type: 'LOBBY_JOIN_MATCH',
-                roomCode: roomCode,
-                fromLobby: true
-            }, '*');
-            console.log('[LOBBY] ✅ Message posted to parent');
-        } else {
-            console.log('[LOBBY] Not in iframe, redirecting directly...');
-            window.location.href = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true`;
-        }
-    } catch (error) {
-        console.error('[LOBBY] Error auto-accepting join request:', error);
-        alert('Failed to accept join request. Please try again.');
-    }
-}
-
-/**
- * Accept join request button handler (manual acceptance - kept for backward compatibility)
+ * Accept join request button handler
  */
 document.getElementById('accept-join-request-btn')?.addEventListener('click', async () => {
     console.log('[LOBBY] Accepting join request');
@@ -1152,12 +1080,12 @@ window.addEventListener('beforeunload', (event) => {
         
         // If match already accepted (status changed to in_progress), skip cleanup
         if (localStatus === 'in_progress' || localStatus === 'playing') {
-            console.log('[LOBBY v1.0.14] ✅ Match accepted (local status), skipping cleanup');
+            console.log('[LOBBY v1.0.16] ✅ Match accepted (local status), skipping cleanup');
             return;
         }
         
         // Only delete if status is 'waiting' or 'pending' (not yet accepted)
-        console.log('[LOBBY v1.0.14] 🗑️ Deleting unaccepted match:', matchId);
+        console.log('[LOBBY v1.0.16] 🗑️ Deleting unaccepted match:', matchId);
         
         // Get session token synchronously from localStorage
         const sessionKey = Object.keys(localStorage).find(key => 
@@ -1175,7 +1103,7 @@ window.addEventListener('beforeunload', (event) => {
                     'Content-Type': 'application/json'
                 },
                 keepalive: true
-            }).catch(err => console.error('[LOBBY v1.0.14] Delete error:', err));
+            }).catch(err => console.error('[LOBBY v1.0.16] Delete error:', err));
         }
     }
 });
