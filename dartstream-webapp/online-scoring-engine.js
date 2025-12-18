@@ -104,12 +104,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const roomCodeParam = urlParams.get('room');
         const fromLobby = urlParams.get('fromLobby') === 'true';
         
-        // Skip reconnection check if coming from lobby (new match takes priority)
-        if (!fromLobby) {
-            await checkForReconnection();
+        // ALWAYS check for reconnection first (even if from lobby)
+        // If player has active match, reconnect seamlessly
+        const reconnected = await checkForReconnection();
+        if (reconnected) {
+            console.log('✅ Reconnected to active match, skipping lobby flow');
+            return; // Stop initialization, reconnection handles everything
         }
         
-        // If coming from lobby with full match config, auto-start the match
+        // If no reconnection happened, proceed with normal flow (including lobby joins)
         if (fromLobby && roomCodeParam) {
             console.log('🎮 Auto-starting match from lobby');
             
@@ -406,7 +409,7 @@ async function checkForReconnection() {
     const savedMatch = localStorage.getItem('dartstream_active_match');
     if (!savedMatch) {
         console.log('ℹ️ No saved match found');
-        return;
+        return false; // Return false to indicate no reconnection
     }
     
     try {
@@ -423,24 +426,18 @@ async function checkForReconnection() {
         if (error || !match) {
             console.warn('⚠️ Saved match no longer exists in database');
             clearSavedMatchState();
-            return;
+            return false;
         }
         
         // Check if match is still in progress
         if (match.status === 'complete' || match.status === 'cancelled') {
             console.log('ℹ️ Match has ended, clearing saved state');
             clearSavedMatchState();
-            return;
+            return false;
         }
         
-        // Ask user if they want to reconnect
-        const shouldReconnect = confirm(`You have an active match (Room: ${matchState.roomCode}).\n\nDo you want to reconnect?`);
-        
-        if (!shouldReconnect) {
-            console.log('❌ User declined reconnection');
-            clearSavedMatchState();
-            return;
-        }
+        // Auto-reconnect without asking (seamless reconnection)
+        console.log('🔌 Auto-reconnecting to active match...');
         
         // Restore state
         onlineState.matchId = matchState.matchId;
@@ -467,9 +464,12 @@ async function checkForReconnection() {
         subscribeToMatchUpdates();
         renderGameState(match);
         
+        return true; // Return true to indicate successful reconnection
+        
     } catch (error) {
         console.error('❌ Error during reconnection:', error);
         clearSavedMatchState();
+        return false;
     }
 }
 
