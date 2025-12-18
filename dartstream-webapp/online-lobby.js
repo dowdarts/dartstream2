@@ -350,7 +350,9 @@ window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
         if (updateError) throw updateError;
         
         console.log('[LOBBY] ✅ Join request sent');
-        alert('✅ Join request sent! Waiting for host approval...');
+        
+        // Show guest waiting screen
+        showGuestWaitingScreen(match);
         
         // Wait for host response by subscribing to changes
         waitForHostResponse(matchId, roomCode);
@@ -720,6 +722,76 @@ function getFormatLabel(format) {
     };
     return labels[format] || 'Single Leg';
 }
+
+/**
+ * Show guest waiting screen after sending join request
+ */
+function showGuestWaitingScreen(match) {
+    console.log('[LOBBY] Showing guest waiting screen');
+    
+    const matchesContainer = document.getElementById('matches-container');
+    const loadingState = document.getElementById('loading-state');
+    
+    if (matchesContainer) matchesContainer.style.display = 'none';
+    if (loadingState) {
+        loadingState.style.display = 'block';
+        loadingState.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <div style="font-size: 64px; margin-bottom: 20px;">⏳</div>
+                <h2 style="color: #FFD700; margin-bottom: 10px;">Join Request Sent!</h2>
+                <p style="color: #aaa; font-size: 18px; margin-bottom: 30px;">
+                    Waiting for <strong style="color: #FFD700;">${match.game_state.host_name}</strong> to accept your request...
+                </p>
+                <button onclick="cancelJoinRequest('${match.id}')" 
+                        style="padding: 15px 40px; font-size: 18px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                    ✗ Cancel Request
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Cancel guest's own join request
+ */
+window.cancelJoinRequest = async function(matchId) {
+    console.log('[LOBBY] Cancelling join request');
+    
+    try {
+        // Get current match
+        const { data: match, error: fetchError } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('id', matchId)
+            .single();
+        
+        if (fetchError) throw fetchError;
+        
+        // Clear pending guest info
+        const { error: updateError } = await window.supabaseClient
+            .from('game_rooms')
+            .update({
+                status: 'waiting',
+                game_state: {
+                    ...match.game_state,
+                    pending_guest_id: null,
+                    pending_guest_name: null
+                }
+            })
+            .eq('id', matchId);
+        
+        if (updateError) throw updateError;
+        
+        console.log('[LOBBY] ✅ Join request cancelled');
+        
+        // Return to lobby
+        window.location.reload();
+        
+    } catch (error) {
+        console.error('[LOBBY] Error cancelling request:', error);
+        alert('Failed to cancel request.');
+    }
+};
 
 /**
  * Subscribe to join requests - not needed anymore since using real-time
