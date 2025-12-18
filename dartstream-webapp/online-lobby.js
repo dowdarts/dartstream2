@@ -9,6 +9,9 @@ let lobbyState = {
     myDisplayName: null,
     myUserId: null,
     availableMatches: [],
+    myHostedMatch: null,
+    matchTimer: null,
+    matchExpiryTime: null,
     realtimeChannel: null,
     matchSetup: {
         gameType: '501',
@@ -313,7 +316,7 @@ window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
         return;
     }
     
-    console.log('[LOBBY] Joining match:', matchId, roomCode);
+    console.log('[LOBBY] Sending join request for match:', matchId);
     
     try {
         // Get the match details
@@ -325,47 +328,88 @@ window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
         
         if (fetchError) throw fetchError;
         
-        // Update match with guest info
+        // Check if someone else already requested
+        if (match.game_state?.pending_guest_id) {
+            alert('⏳ Another player has already requested to join this match.');
+            return;
+        }
+        
+        // Update match status to pending with guest request info
         const { error: updateError } = await window.supabaseClient
             .from('game_rooms')
             .update({
-                guest_id: lobbyState.myUserId,
+                status: 'pending',
                 game_state: {
                     ...match.game_state,
-                    guest_name: lobbyState.myDisplayName,
-                    guest_player_id: lobbyState.myUserId
+                    pending_guest_id: lobbyState.myUserId,
+                    pending_guest_name: lobbyState.myDisplayName
                 }
             })
             .eq('id', matchId);
         
         if (updateError) throw updateError;
         
-        console.log('[LOBBY] ✅ Joined match successfully');
+        console.log('[LOBBY] ✅ Join request sent');
+        alert('✅ Join request sent! Waiting for host approval...');
         
-        // Check if we're already in split-screen mode (running in iframe)
-        const isInIframe = window.parent !== window;
-        
-        if (isInIframe) {
-            // We're already in split-screen - tell parent to load the match
-            console.log('[LOBBY] In split-screen mode - sending message to parent');
-            alert('✅ Joined match! Connecting...');
-            
-            window.parent.postMessage({
-                type: 'LOBBY_JOIN_MATCH',
-                roomCode: roomCode,
-                fromLobby: true
-            }, '*');
-        } else {
-            // Not in split-screen yet - redirect to split-screen
-            alert('✅ Joined match! Connecting...');
-            window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
-        }
+        // Wait for host response by subscribing to changes
+        waitForHostResponse(matchId, roomCode);
         
     } catch (error) {
-        console.error('[LOBBY] Error joining match:', error);
-        alert('Failed to join match. Please try again.');
+        console.error('[LOBBY] Error sending join request:', error);
+        alert('Failed to send join request. Please try again.');
     }
 };
+
+/**
+ * Wait for host to accept/decline join request
+ */
+function waitForHostResponse(matchId, roomCode) {
+    console.log('[LOBBY] Waiting for host response...');
+    
+    const channel = window.supabaseClient
+        .channel(`match_${matchId}_response`)
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'game_rooms',
+                filter: `id=eq.${matchId}`
+            },
+            (payload) => {
+                console.log('[LOBBY] Match updated:', payload);
+                const updatedMatch = payload.new;
+                
+                // Check if request was accepted (guest_id set)
+                if (updatedMatch.guest_id === lobbyState.myUserId && updatedMatch.status === 'in_progress') {
+                    console.log('[LOBBY] ✅ Request accepted!');
+                    channel.unsubscribe();
+                    
+                    alert('✅ Request accepted! Connecting to match...');
+                    
+                    // Join the match
+                    const isInIframe = window.parent !== window;
+                    if (isInIframe) {
+                        window.parent.postMessage({
+                            type: 'LOBBY_JOIN_MATCH',
+                            roomCode: roomCode,
+                            fromLobby: true
+                        }, '*');
+                    } else {
+                        window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+                    }
+                }
+                // Check if request was declined (pending fields cleared)
+                else if (!updatedMatch.game_state?.pending_guest_id && updatedMatch.status === 'waiting') {
+                    console.log('[LOBBY] ❌ Request declined');
+                    channel.unsubscribe();
+                    alert('❌ Host declined your request.');
+                }
+            }
+        )
+        .subscribe();
+}
 
 // =============================
 // UNUSED - Direct Join Mode
@@ -472,10 +516,17 @@ async function createLobbyMatch() {
         
         console.log('[LOBBY] ✅ Match created:', newMatch);
         
-        alert(`✅ Match created! Room Code: ${roomCode}\nWaiting for players in lobby...`);
+        // Store hosted match info
+        lobbyState.myHostedMatch = newMatch;
         
-        // Refresh matches
-        await loadAvailableMatches();
+        // Show waiting room with timer
+        showWaitingRoom(newMatch);
+        
+        // Start 10-minute countdown timer
+        startMatchTimer(newMatch.id);
+        
+        // Subscribe to join requests for this match
+        subscribeToHostMatch(newMatch.id);
         
     } catch (error) {
         console.error('[LOBBY] Error creating match:', error);
@@ -519,10 +570,162 @@ function subscribeToLobbyUpdates() {
 }
 
 /**
- * Subscribe to join requests - not needed anymore since direct join
+ * Show host waiting room after creating a match
+ */
+function showWaitingRoom(match) {
+    console.log('[LOBBY] Showing waiting room for match:', match);
+    
+    // Hide lobby, show waiting room
+    document.querySelector('.lobby-container').style.display = 'none';
+    document.getElementById('host-waiting-room').style.display = 'block';
+    
+    // Populate match details
+    const gameState = match.game_state || {};
+    const matchTitle = `${gameState.game_type || '501'} ${gameState.start_type || 'SIDO'} ${getFormatLabel(gameState.match_format || 'single')}`;
+    
+    document.getElementById('waiting-match-title').textContent = matchTitle;
+    document.getElementById('waiting-host-name').textContent = lobbyState.myDisplayName;
+    document.getElementById('waiting-game-type').textContent = `${gameState.game_type || '501'} ${gameState.start_type || 'SIDO'}`;
+    document.getElementById('waiting-format').textContent = getFormatLabel(gameState.match_format || 'single');
+    document.getElementById('waiting-room-code').textContent = match.room_code;
+}
+
+/**
+ * Hide waiting room and return to lobby
+ */
+function hideWaitingRoom() {
+    document.getElementById('host-waiting-room').style.display = 'none';
+    document.querySelector('.lobby-container').style.display = 'block';
+    
+    // Clear hosted match
+    lobbyState.myHostedMatch = null;
+    
+    // Stop timer
+    if (lobbyState.matchTimer) {
+        clearInterval(lobbyState.matchTimer);
+        lobbyState.matchTimer = null;
+    }
+}
+
+/**
+ * Start 10-minute countdown timer for hosted match
+ */
+function startMatchTimer(matchId) {
+    console.log('[LOBBY] Starting 10-minute match timer');
+    
+    // Set expiry time (10 minutes from now)
+    lobbyState.matchExpiryTime = Date.now() + (10 * 60 * 1000);
+    
+    // Update timer every second
+    lobbyState.matchTimer = setInterval(() => {
+        const remaining = lobbyState.matchExpiryTime - Date.now();
+        
+        if (remaining <= 0) {
+            // Timer expired - cancel match
+            clearInterval(lobbyState.matchTimer);
+            autoExpireMatch(matchId);
+        } else {
+            // Update display
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            const timerDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            const timerElement = document.getElementById('match-timer');
+            if (timerElement) {
+                timerElement.textContent = timerDisplay;
+                
+                // Change color to red when under 2 minutes
+                if (remaining < 2 * 60 * 1000) {
+                    timerElement.style.color = '#f44336';
+                }
+            }
+        }
+    }, 1000);
+}
+
+/**
+ * Auto-expire match when timer runs out
+ */
+async function autoExpireMatch(matchId) {
+    console.log('[LOBBY] ⏰ Match timer expired - auto-cancelling');
+    
+    try {
+        await window.supabaseClient
+            .from('game_rooms')
+            .delete()
+            .eq('id', matchId);
+        
+        alert('⏰ Match expired after 10 minutes.');
+        hideWaitingRoom();
+        await loadAvailableMatches();
+    } catch (error) {
+        console.error('[LOBBY] Error expiring match:', error);
+    }
+}
+
+/**
+ * Subscribe to join requests for hosted match
+ */
+function subscribeToHostMatch(matchId) {
+    console.log('[LOBBY] Subscribing to join requests for match:', matchId);
+    
+    const channel = window.supabaseClient
+        .channel(`host_match_${matchId}`)
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'game_rooms',
+                filter: `id=eq.${matchId}`
+            },
+            (payload) => {
+                console.log('[LOBBY] Host match updated:', payload);
+                const updatedMatch = payload.new;
+                
+                // Check for join request (pending_guest_id set)
+                if (updatedMatch.game_state?.pending_guest_id && updatedMatch.status === 'pending') {
+                    showJoinRequestNotification(updatedMatch);
+                }
+            }
+        )
+        .subscribe();
+}
+
+/**
+ * Show join request notification to host
+ */
+function showJoinRequestNotification(match) {
+    console.log('[LOBBY] Showing join request notification:', match);
+    
+    const notification = document.getElementById('join-request-notification');
+    const nameElement = document.getElementById('requester-display-name');
+    
+    nameElement.textContent = match.game_state.pending_guest_name || 'Unknown Player';
+    notification.style.display = 'block';
+    
+    // Store match for accept/decline handlers
+    lobbyState.myHostedMatch = match;
+}
+
+/**
+ * Get format label for display
+ */
+function getFormatLabel(format) {
+    const labels = {
+        'single': 'Single Leg',
+        'bo3': 'Best of 3',
+        'bo5': 'Best of 5',
+        'bo7': 'Best of 7'
+    };
+    return labels[format] || 'Single Leg';
+}
+
+/**
+ * Subscribe to join requests - not needed anymore since using real-time
  */
 function subscribeToJoinRequests() {
-    console.log('[LOBBY] Direct join mode - no join request subscriptions needed');
+    console.log('[LOBBY] Using real-time subscriptions for join requests');
 }
 
 /*
@@ -625,6 +828,131 @@ async function declineJoinRequest() {
 */
 
 /**
+ * Cancel hosted match button handler
+ */
+document.getElementById('cancel-hosted-match-btn')?.addEventListener('click', async () => {
+    console.log('[LOBBY] Cancelling hosted match');
+    
+    if (!lobbyState.myHostedMatch) return;
+    
+    if (!confirm('Are you sure you want to cancel this match?')) return;
+    
+    try {
+        await window.supabaseClient
+            .from('game_rooms')
+            .delete()
+            .eq('id', lobbyState.myHostedMatch.id);
+        
+        console.log('[LOBBY] ✅ Match cancelled');
+        hideWaitingRoom();
+        await loadAvailableMatches();
+    } catch (error) {
+        console.error('[LOBBY] Error cancelling match:', error);
+        alert('Failed to cancel match.');
+    }
+});
+
+/**
+ * Accept join request button handler
+ */
+document.getElementById('accept-join-request-btn')?.addEventListener('click', async () => {
+    console.log('[LOBBY] Accepting join request');
+    
+    if (!lobbyState.myHostedMatch) return;
+    
+    const match = lobbyState.myHostedMatch;
+    const pendingGuestId = match.game_state?.pending_guest_id;
+    const pendingGuestName = match.game_state?.pending_guest_name;
+    
+    if (!pendingGuestId) {
+        alert('No pending join request found.');
+        return;
+    }
+    
+    try {
+        // Update match: move pending guest to actual guest, set status to in_progress
+        const { error } = await window.supabaseClient
+            .from('game_rooms')
+            .update({
+                guest_id: pendingGuestId,
+                status: 'in_progress',
+                game_state: {
+                    ...match.game_state,
+                    guest_name: pendingGuestName,
+                    guest_player_id: pendingGuestId,
+                    pending_guest_id: null,
+                    pending_guest_name: null
+                }
+            })
+            .eq('id', match.id);
+        
+        if (error) throw error;
+        
+        console.log('[LOBBY] ✅ Join request accepted - starting match');
+        
+        // Stop timer
+        if (lobbyState.matchTimer) {
+            clearInterval(lobbyState.matchTimer);
+        }
+        
+        // Navigate to match
+        const roomCode = match.room_code;
+        const isInIframe = window.parent !== window;
+        
+        if (isInIframe) {
+            window.parent.postMessage({
+                type: 'LOBBY_JOIN_MATCH',
+                roomCode: roomCode,
+                fromLobby: true
+            }, '*');
+        } else {
+            window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+        }
+        
+    } catch (error) {
+        console.error('[LOBBY] Error accepting join request:', error);
+        alert('Failed to accept join request.');
+    }
+});
+
+/**
+ * Decline join request button handler
+ */
+document.getElementById('decline-join-request-btn')?.addEventListener('click', async () => {
+    console.log('[LOBBY] Declining join request');
+    
+    if (!lobbyState.myHostedMatch) return;
+    
+    const match = lobbyState.myHostedMatch;
+    
+    try {
+        // Clear pending guest info and return to waiting status
+        const { error } = await window.supabaseClient
+            .from('game_rooms')
+            .update({
+                status: 'waiting',
+                game_state: {
+                    ...match.game_state,
+                    pending_guest_id: null,
+                    pending_guest_name: null
+                }
+            })
+            .eq('id', match.id);
+        
+        if (error) throw error;
+        
+        console.log('[LOBBY] ✅ Join request declined');
+        
+        // Hide notification
+        document.getElementById('join-request-notification').style.display = 'none';
+        
+    } catch (error) {
+        console.error('[LOBBY] Error declining join request:', error);
+        alert('Failed to decline join request.');
+    }
+});
+
+/**
  * Cleanup on page unload
  */
 window.addEventListener('beforeunload', () => {
@@ -633,5 +961,8 @@ window.addEventListener('beforeunload', () => {
     }
     if (lobbyState.joinRequestListener) {
         lobbyState.joinRequestListener.unsubscribe();
+    }
+    if (lobbyState.matchTimer) {
+        clearInterval(lobbyState.matchTimer);
     }
 });
