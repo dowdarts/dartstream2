@@ -1042,9 +1042,10 @@ document.getElementById('decline-join-request-btn')?.addEventListener('click', a
 });
 
 /**
- * Cleanup on page unload
+ * Cleanup on page unload - DELETE hosted match if user leaves
  */
-window.addEventListener('beforeunload', () => {
+window.addEventListener('beforeunload', async (event) => {
+    // Clean up subscriptions
     if (lobbyState.realtimeChannel) {
         lobbyState.realtimeChannel.unsubscribe();
     }
@@ -1053,5 +1054,24 @@ window.addEventListener('beforeunload', () => {
     }
     if (lobbyState.matchTimer) {
         clearInterval(lobbyState.matchTimer);
+    }
+    
+    // Delete hosted match if user is leaving while hosting
+    if (lobbyState.myHostedMatch) {
+        console.log('[LOBBY] 🚪 User leaving - deleting hosted match');
+        try {
+            // Use fetch with keepalive to ensure request completes even as page unloads
+            await fetch(`https://kswwbqumgsdissnwuiab.supabase.co/rest/v1/game_rooms?id=eq.${lobbyState.myHostedMatch.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzd3dicXVtZ3NkaXNzbnd1aWFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODMwNTIsImV4cCI6MjA4MDA1OTA1Mn0.b-z8JqL1dBYJcrrzSt7u6VAaFAtTOl1vqqtFFgHkJ50',
+                    'Authorization': `Bearer ${(await window.supabaseClient.auth.getSession()).data.session?.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                keepalive: true
+            });
+        } catch (error) {
+            console.error('[LOBBY] Error deleting match on unload:', error);
+        }
     }
 });
