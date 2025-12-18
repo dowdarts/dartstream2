@@ -387,7 +387,8 @@ function waitForHostResponse(matchId, roomCode) {
                     console.log('[LOBBY] ✅ Request accepted!');
                     channel.unsubscribe();
                     
-                    alert('✅ Request accepted! Connecting to match...');
+                    // Silent connection - no popup alert
+                    console.log('[LOBBY] 🔄 Connecting to match silently...');
                     
                     // Join the match
                     const isInIframe = window.parent !== window;
@@ -411,7 +412,8 @@ function waitForHostResponse(matchId, roomCode) {
                 else if (!updatedMatch.game_state?.pending_guest_id && updatedMatch.status === 'waiting') {
                     console.log('[LOBBY] ❌ Request declined');
                     channel.unsubscribe();
-                    alert('❌ Host declined your request.');
+                    console.log('[LOBBY] 🔄 Request was declined, returning to lobby silently...');
+                    showLobby();
                 }
             }
         )
@@ -446,7 +448,10 @@ async function sendJoinRequest(matchId) {
         // Refresh UI
         await loadAvailableMatches();
         
-        alert('✅ Join request sent! Waiting for host to accept...');
+        console.log('[LOBBY] ✅ Join request sent! Waiting for host to accept...');
+        
+        // Silent request - no popup alert
+        console.log('[LOBBY] 🔄 Request sent silently, waiting for response...');
         
     } catch (error) {
         console.error('[LOBBY] Error sending join request:', error);
@@ -883,7 +888,7 @@ async function acceptJoinRequest() {
         
         const params = new URLSearchParams(matchConfig);
         
-        alert('✅ Player accepted! Connecting to match...');
+        console.log('[LOBBY] ✅ Player accepted! Connecting to match silently...');
         
         // Redirect to split-screen with full match config
         window.location.href = `./split-screen-online.html?${params.toString()}`;
