@@ -201,16 +201,21 @@ window.selectFormat = function(format, legs) {
 
 /**
  * Load all available matches from database
+ * Only shows matches created in the last 5 minutes
  */
 async function loadAvailableMatches() {
     console.log('[LOBBY] Loading matches...');
     
     try {
+        // Calculate timestamp for 5 minutes ago
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        
         const { data: matches, error } = await window.supabaseClient
             .from('game_rooms')
             .select('*')
             .eq('status', 'waiting')
             .is('guest_id', null)  // Only show matches without a guest
+            .gte('created_at', fiveMinutesAgo)  // Only show matches from last 5 minutes
             .order('created_at', { ascending: false });
         
         if (error) throw error;
@@ -337,9 +342,24 @@ window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
         
         console.log('[LOBBY] ✅ Joined match successfully');
         
-        // Redirect to split-screen with room code
-        alert('✅ Joined match! Connecting...');
-        window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+        // Check if we're already in split-screen mode (running in iframe)
+        const isInIframe = window.parent !== window;
+        
+        if (isInIframe) {
+            // We're already in split-screen - tell parent to load the match
+            console.log('[LOBBY] In split-screen mode - sending message to parent');
+            alert('✅ Joined match! Connecting...');
+            
+            window.parent.postMessage({
+                type: 'LOBBY_JOIN_MATCH',
+                roomCode: roomCode,
+                fromLobby: true
+            }, '*');
+        } else {
+            // Not in split-screen yet - redirect to split-screen
+            alert('✅ Joined match! Connecting...');
+            window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+        }
         
     } catch (error) {
         console.error('[LOBBY] Error joining match:', error);
