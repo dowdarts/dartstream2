@@ -218,6 +218,7 @@ async function loadAvailableMatches() {
             .select('*')
             .eq('status', 'waiting')
             .is('guest_id', null)  // Only show matches without a guest
+            .neq('host_id', lobbyState.myUserId)  // Don't show user's own matches
             .gte('created_at', fiveMinutesAgo)  // Only show matches from last 5 minutes
             .order('created_at', { ascending: false });
         
@@ -595,9 +596,22 @@ function showWaitingRoom(match) {
 /**
  * Hide waiting room and return to lobby
  */
-function hideWaitingRoom() {
+async function hideWaitingRoom() {
     document.getElementById('host-waiting-room').style.display = 'none';
     document.querySelector('.lobby-container').style.display = 'block';
+    
+    // Delete hosted match if it still exists
+    if (lobbyState.myHostedMatch) {
+        try {
+            await window.supabaseClient
+                .from('game_rooms')
+                .delete()
+                .eq('id', lobbyState.myHostedMatch.id);
+            console.log('[LOBBY] Cleaned up hosted match on return to lobby');
+        } catch (error) {
+            console.error('[LOBBY] Error cleaning up match:', error);
+        }
+    }
     
     // Clear hosted match
     lobbyState.myHostedMatch = null;
@@ -607,6 +621,9 @@ function hideWaitingRoom() {
         clearInterval(lobbyState.matchTimer);
         lobbyState.matchTimer = null;
     }
+    
+    // Reload matches
+    await loadAvailableMatches();
 }
 
 /**
