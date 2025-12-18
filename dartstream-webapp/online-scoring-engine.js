@@ -695,28 +695,43 @@ async function joinMatch() {
         
         onlineState.matchId = match.id;
         const hostGameState = match.game_state || {};
-        onlineState.opponentName = hostGameState.host_name || 'Host';
-        onlineState.opponentPlayerId = hostGameState.host_player_id;
-        onlineState.gameType = hostGameState.game_type || '501';
-        onlineState.startType = hostGameState.start_type || 'SI';
         
-        // Update the match with guest info
-        const { error: updateError } = await window.supabaseClient
-            .from('game_rooms')
-            .update({ 
-                guest_id: onlineState.authenticatedUser.id,
-                game_state: {
-                    ...match.game_state,
-                    guest_name: onlineState.myName,
-                    guest_player_id: onlineState.myPlayerId
-                }
-            })
-            .eq('id', onlineState.matchId);
-        
-        if (updateError) {
-            console.error('Error joining match:', updateError);
-            alert('Failed to join match');
-            return;
+        // Role-specific logic: Host vs Guest
+        if (onlineState.myRole === 'host') {
+            // HOST: Already the host of this match, just join
+            console.log('🏰 Host rejoining their own match');
+            onlineState.opponentName = hostGameState.guest_name || 'Guest';
+            onlineState.opponentPlayerId = hostGameState.guest_player_id;
+            onlineState.gameType = hostGameState.game_type || '501';
+            onlineState.startType = hostGameState.start_type || 'SI';
+            
+            // No need to update database - host is already set
+        } else {
+            // GUEST: Joining as guest 
+            console.log('👤 Guest joining host match');
+            onlineState.opponentName = hostGameState.host_name || 'Host';
+            onlineState.opponentPlayerId = hostGameState.host_player_id;
+            onlineState.gameType = hostGameState.game_type || '501';
+            onlineState.startType = hostGameState.start_type || 'SI';
+            
+            // Update the match with guest info
+            const { error: updateError } = await window.supabaseClient
+                .from('game_rooms')
+                .update({ 
+                    guest_id: onlineState.authenticatedUser.id,
+                    game_state: {
+                        ...match.game_state,
+                        guest_name: onlineState.myName,
+                        guest_player_id: onlineState.myPlayerId
+                    }
+                })
+                .eq('id', onlineState.matchId);
+            
+            if (updateError) {
+                console.error('Error joining match:', updateError);
+                alert('Failed to join match');
+                return;
+            }
         }
         
         // Save match state for reconnection

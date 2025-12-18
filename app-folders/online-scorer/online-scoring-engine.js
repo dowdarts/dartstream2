@@ -210,20 +210,34 @@ async function joinMatch() {
         }
         
         onlineState.matchId = match.id;
-        onlineState.opponentName = match.host_name;
-        onlineState.gameType = match.game_type;
-        onlineState.startType = match.start_type;
         
-        // Update the match with guest name
-        const { error: updateError } = await window.supabase
-            .from('live_matches')
-            .update({ guest_name: onlineState.myName })
-            .eq('id', onlineState.matchId);
-        
-        if (updateError) {
-            console.error('Error joining match:', updateError);
-            alert('Failed to join match');
-            return;
+        // Role-specific logic: Host vs Guest
+        if (onlineState.myRole === 'host') {
+            // HOST: Already the host of this match, just join
+            console.log('🏰 Host rejoining their own match');
+            onlineState.opponentName = match.guest_name || 'Guest';
+            onlineState.gameType = match.game_type;
+            onlineState.startType = match.start_type;
+            
+            // No need to update database - host is already set
+        } else {
+            // GUEST: Joining as guest
+            console.log('👤 Guest joining host match');
+            onlineState.opponentName = match.host_name;
+            onlineState.gameType = match.game_type;
+            onlineState.startType = match.start_type;
+            
+            // Update the match with guest name
+            const { error: updateError } = await window.supabase
+                .from('live_matches')
+                .update({ guest_name: onlineState.myName })
+                .eq('id', onlineState.matchId);
+            
+            if (updateError) {
+                console.error('Error joining match:', updateError);
+                alert('Failed to join match');
+                return;
+            }
         }
         
         document.getElementById('waiting-message').textContent = 'Joined! Waiting for host to start...';
