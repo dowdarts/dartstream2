@@ -2,7 +2,10 @@
  * Online Lobby System
  * Allows players to browse public matches and instantly join
  * Integrates with both online scorer and video call (split-screen mode)
+ * Version: 1.0.12
  */
+
+console.log('[LOBBY] Version 1.0.12 loading...');
 
 let lobbyState = {
     currentUser: null,
@@ -1063,7 +1066,8 @@ window.addEventListener('beforeunload', (event) => {
     
     // Delete hosted match if user is leaving while hosting (but not if match accepted)
     if (lobbyState.myHostedMatch) {
-        console.log('[LOBBY] 🚪 User leaving - checking match status before cleanup');
+        console.log('[LOBBY v1.0.11] 🚪 User leaving - checking match status before cleanup');
+        console.log('[LOBBY v1.0.11] Match ID:', lobbyState.myHostedMatch.id);
         
         // CRITICAL: Check current database status before deleting
         // DO NOT delete if status is 'in_progress' (match was accepted)
@@ -1090,11 +1094,11 @@ window.addEventListener('beforeunload', (event) => {
             }).then(res => res.json())
               .then(data => {
                   const currentStatus = data?.[0]?.status;
-                  console.log('[LOBBY] Current match status:', currentStatus);
+                  console.log('[LOBBY v1.0.11] Current match status from DB:', currentStatus);
                   
                   // Only delete if NOT in_progress (match wasn't accepted)
                   if (currentStatus && currentStatus !== 'in_progress') {
-                      console.log('[LOBBY] 🗑️ Deleting unaccepted match:', matchId);
+                      console.log('[LOBBY v1.0.11] 🗑️ Deleting unaccepted match:', matchId);
                       fetch(`https://kswwbqumgsdissnwuiab.supabase.co/rest/v1/game_rooms?id=eq.${matchId}`, {
                           method: 'DELETE',
                           headers: {
@@ -1103,12 +1107,12 @@ window.addEventListener('beforeunload', (event) => {
                               'Content-Type': 'application/json'
                           },
                           keepalive: true
-                      }).catch(err => console.error('[LOBBY] Delete error:', err));
+                      }).catch(err => console.error('[LOBBY v1.0.11] Delete error:', err));
                   } else {
-                      console.log('[LOBBY] ✅ Match accepted, skipping cleanup');
+                      console.log('[LOBBY v1.0.11] ✅ Match accepted, skipping cleanup');
                   }
               })
-              .catch(err => console.error('[LOBBY] Status check error:', err));
+              .catch(err => console.error('[LOBBY v1.0.11] Status check error:', err));
         }
     }
 });
