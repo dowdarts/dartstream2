@@ -855,6 +855,20 @@ function renderGameState(roomData) {
     
     const scores = matchData.scores;
     
+    // Safety check: If scores don't exist yet, initialize default state
+    if (!scores) {
+        console.log('⚠️ Match exists but game not started yet - scores undefined');
+        const startScore = parseInt(onlineState.gameType) || 501;
+        
+        // Show default scores
+        document.getElementById('host-score').textContent = startScore;
+        document.getElementById('guest-score').textContent = startScore;
+        document.getElementById('host-average').textContent = '0.00';
+        document.getElementById('guest-average').textContent = '0.00';
+        
+        return; // Exit early - game not started yet
+    }
+    
     // Always show host as player1, guest as player2 regardless of my role
     const player1Score = scores.host;
     const player2Score = scores.guest;

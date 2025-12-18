@@ -280,6 +280,20 @@ function renderGameState(matchData) {
     
     const scores = matchData.scores;
     
+    // Safety check: If scores don't exist yet, initialize default state
+    if (!scores) {
+        console.log('⚠️ Match exists but game not started yet - scores undefined');
+        const startScore = parseInt(onlineState.gameType) || 501;
+        
+        // Show default scores
+        document.getElementById('player1-score').textContent = startScore;
+        document.getElementById('player2-score').textContent = startScore;
+        document.getElementById('player1-average').textContent = '0.00';
+        document.getElementById('player2-average').textContent = '0.00';
+        
+        return; // Exit early - game not started yet
+    }
+    
     // Determine which player is which on our screen
     const isHost = onlineState.myRole === 'host';
     const player1Score = isHost ? scores.host : scores.guest;

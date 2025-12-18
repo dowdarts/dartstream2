@@ -168,7 +168,7 @@
 
     <div class="split-container" id="container">
         <div class="split-pane">
-            <iframe id="online-scorer-iframe" src="webapp-online-scorer.html?v=2.5.4" title="Online Scorer"></iframe>
+            <iframe id="online-scorer-iframe" src="webapp-online-scorer.html?v=2.5.5" title="Online Scorer"></iframe>
         </div>
         <div class="divider" id="divider"></div>
         <div class="split-pane">
@@ -280,7 +280,7 @@
                 console.log('🔄 Current iframe src:', currentSrc);
                 console.log('🔄 Replacing lobby with scorer. Role:', role);
                 
-                scorerFrame.src = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true&role=${role}&v=2.5.4&t=${Date.now()}`;
+                scorerFrame.src = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true&role=${role}&v=2.5.5&t=${Date.now()}`;
                 scorerFrame.title = 'Online Scorer';
                 console.log('✅ Scorer loaded with room:', roomCode, 'Role:', role, 'New src:', scorerFrame.src);
                 
