@@ -150,7 +150,7 @@
 <body>
     <button class="close-btn" onclick="window.location.href='index.html'">✕ Close Split Screen</button>
     <button class="layout-toggle" onclick="toggleLayout()">⇄ Toggle Layout</button>
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.8</div>
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.9</div>
     
     <!-- User Display Badge -->
     <div id="user-display" style="position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; color: #4ade80; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; border: 2px solid #4ade80; display: none;">
@@ -263,17 +263,22 @@
 
         // Listen for messages from online scorer iframe AND lobby iframe
         window.addEventListener('message', (event) => {
-            // When guest joins from lobby iframe
+            console.log('📨 Split-screen received message:', event.data.type);
+            
+            // When lobby sends join match signal (for both host and guest)
             if (event.data.type === 'LOBBY_JOIN_MATCH') {
                 console.log('📡 Lobby join request received:', event.data);
                 const roomCode = event.data.roomCode;
                 
                 // Replace lobby iframe with scorer iframe
                 const scorerFrame = document.getElementById('online-scorer-iframe');
+                const currentSrc = scorerFrame.src;
+                console.log('🔄 Current iframe src:', currentSrc);
                 console.log('🔄 Replacing lobby with scorer...');
-                scorerFrame.src = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true`;
+                
+                scorerFrame.src = `webapp-online-scorer.html?room=${roomCode}&auto=true&fromLobby=true&v=2.5.1&t=${Date.now()}`;
                 scorerFrame.title = 'Online Scorer';
-                console.log('✅ Scorer loaded with room:', roomCode);
+                console.log('✅ Scorer loaded with room:', roomCode, 'New src:', scorerFrame.src);
                 
                 // DON'T send video message yet - wait for ONLINE_SCORER_PLAYERS_CONNECTED
                 // which will have the player names

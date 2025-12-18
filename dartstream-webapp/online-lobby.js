@@ -388,13 +388,18 @@ function waitForHostResponse(matchId, roomCode) {
                     
                     // Join the match
                     const isInIframe = window.parent !== window;
+                    console.log('[LOBBY] Guest joining match. isInIframe:', isInIframe, 'roomCode:', roomCode);
+                    
                     if (isInIframe) {
+                        console.log('[LOBBY] Guest posting LOBBY_JOIN_MATCH to parent...');
                         window.parent.postMessage({
                             type: 'LOBBY_JOIN_MATCH',
                             roomCode: roomCode,
                             fromLobby: true
                         }, '*');
+                        console.log('[LOBBY] ✅ Guest message posted');
                     } else {
+                        console.log('[LOBBY] Guest not in iframe, redirecting...');
                         window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
                     }
                 }
@@ -983,13 +988,18 @@ document.getElementById('accept-join-request-btn')?.addEventListener('click', as
         const roomCode = match.room_code;
         const isInIframe = window.parent !== window;
         
+        console.log('[LOBBY] Navigating to match. isInIframe:', isInIframe, 'roomCode:', roomCode);
+        
         if (isInIframe) {
+            console.log('[LOBBY] Posting LOBBY_JOIN_MATCH to parent window...');
             window.parent.postMessage({
                 type: 'LOBBY_JOIN_MATCH',
                 roomCode: roomCode,
                 fromLobby: true
             }, '*');
+            console.log('[LOBBY] ✅ Message posted to parent');
         } else {
+            console.log('[LOBBY] Not in iframe, redirecting directly...');
             window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
         }
         
