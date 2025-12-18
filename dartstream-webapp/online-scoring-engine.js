@@ -536,6 +536,15 @@ async function hostMatch() {
         onlineState.matchId = data.id;
         console.log('✅ Match created with room code:', onlineState.roomCode);
 
+        // Notify parent window (split-screen) that room was created
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'ONLINE_SCORER_ROOM_CREATED',
+                roomCode: onlineState.roomCode
+            }, '*');
+            console.log('📡 Notified parent window of room creation:', onlineState.roomCode);
+        }
+
         // Save match state for reconnection
         saveMatchState();
 
