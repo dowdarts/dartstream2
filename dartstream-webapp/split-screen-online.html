@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="dartstream-logo.png">
-    <title>DartStream - Split Screen: Online Scorer + Video Call v2.6.8</title>
+    <title>DartStream - Split Screen: Online Scorer + Video Call v2.6.9</title>
     <style>
         * {
             margin: 0;
@@ -150,7 +150,7 @@
 <body>
     <button class="close-btn" onclick="window.location.href='index.html'">✕ Close Split Screen</button>
     <button class="layout-toggle" onclick="toggleLayout()">⇄ Toggle Layout</button>
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.6.8</div>
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.6.9</div>
 
     <!-- Share Link Banner (shown when room code detected) -->
     <div id="share-link-banner" class="share-link-banner">
@@ -255,7 +255,7 @@
                 const roomCode = event.data.roomCode;
                 
                 // Update online scorer iframe with room code
-                const scorerFrame = document.querySelector('iframe[src*="online-scoring-engine"]');
+                const scorerFrame = document.getElementById('online-scorer-iframe');
                 if (scorerFrame) {
                     // Reload scorer with room code in URL
                     const scorerUrl = new URL(scorerFrame.src);
@@ -275,10 +275,6 @@
             if (event.data.type === 'ONLINE_SCORER_ROOM_CREATED') {
                 const roomCode = event.data.roomCode;
                 const guestUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
-                document.getElementById('guest-url').textContent = guestUrl;
-                document.getElementById('share-link-banner').style.display = 'block';
-                console.log('✅ Room created, guest link ready:', guestUrl);
-            }
                 document.getElementById('guest-url').textContent = guestUrl;
                 document.getElementById('share-link-banner').style.display = 'block';
                 console.log('✅ Room created, guest link ready:', guestUrl);
