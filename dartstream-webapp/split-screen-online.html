@@ -169,15 +169,48 @@
     </div>
 
     <script>
-        // Check for room code in URL and pass to online scorer iframe
+        // Check for URL parameters from lobby
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
         const autoConnect = urlParams.get('auto') === 'true';
+        const fromLobby = urlParams.get('fromLobby') === 'true';
+        
+        // Match configuration from lobby
+        const matchConfig = {
+            gameType: urlParams.get('gameType'),
+            startScore: urlParams.get('startScore'),
+            doubleIn: urlParams.get('doubleIn') === 'true',
+            doubleOut: urlParams.get('doubleOut') === 'true',
+            totalLegs: parseInt(urlParams.get('totalLegs')),
+            hostName: urlParams.get('hostName'),
+            guestName: urlParams.get('guestName')
+        };
         
         if (roomCode && roomCode.length === 4) {
-            console.log('🔗 Split-screen loaded with room code:', roomCode, 'Auto:', autoConnect);
+            console.log('🔗 Split-screen loaded with room code:', roomCode, 'Auto:', autoConnect, 'FromLobby:', fromLobby);
+            
             const onlineScorerIframe = document.getElementById('online-scorer-iframe');
-            onlineScorerIframe.src = `webapp-online-scorer.html?room=${roomCode.toUpperCase()}`;
+            
+            // If coming from lobby with match config, pass everything to online scorer
+            if (fromLobby && matchConfig.gameType) {
+                const scorerParams = new URLSearchParams({
+                    room: roomCode.toUpperCase(),
+                    fromLobby: 'true',
+                    gameType: matchConfig.gameType,
+                    startScore: matchConfig.startScore,
+                    doubleIn: matchConfig.doubleIn,
+                    doubleOut: matchConfig.doubleOut,
+                    totalLegs: matchConfig.totalLegs,
+                    hostName: matchConfig.hostName,
+                    guestName: matchConfig.guestName
+                });
+                
+                onlineScorerIframe.src = `webapp-online-scorer.html?${scorerParams.toString()}`;
+                console.log('📊 Passing match config to online scorer:', matchConfig);
+            } else {
+                // Regular auto-join without match config
+                onlineScorerIframe.src = `webapp-online-scorer.html?room=${roomCode.toUpperCase()}`;
+            }
             
             // If auto-connect from lobby, also connect video call automatically
             if (autoConnect) {

@@ -305,6 +305,39 @@
         </div>
     </div>
 
+    <!-- Match Setup Modal -->
+    <div id="match-setup-modal" class="join-request-modal">
+        <div class="modal-content-custom" style="max-width: 600px;">
+            <h2>🎮 Setup New Match</h2>
+            
+            <div style="text-align: left; margin: 20px 0;">
+                <label style="color: #FFD700; font-weight: bold; display: block; margin-bottom: 10px;">Match Title</label>
+                <input type="text" id="match-title-input" 
+                       style="width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 2px solid #FFD700; background: #1a1a1a; color: white;"
+                       placeholder="Enter match title" value="Open Match">
+                
+                <label style="color: #FFD700; font-weight: bold; display: block; margin: 20px 0 10px 0;">Game Type</label>
+                <div style="display: flex; gap: 10px;">
+                    <button class="modal-btn" id="game-501" style="flex: 1; background: #4CAF50;" onclick="selectGameType('501')">501 SIDO</button>
+                    <button class="modal-btn" id="game-301" style="flex: 1; background: #666;" onclick="selectGameType('301')">301 DIDO</button>
+                </div>
+                
+                <label style="color: #FFD700; font-weight: bold; display: block; margin: 20px 0 10px 0;">Match Format</label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <button class="modal-btn" id="format-single" style="background: #4CAF50;" onclick="selectFormat('single', 1)">Single Leg</button>
+                    <button class="modal-btn" id="format-bo3" style="background: #666;" onclick="selectFormat('bo3', 3)">Best of 3</button>
+                    <button class="modal-btn" id="format-bo5" style="background: #666;" onclick="selectFormat('bo5', 5)">Best of 5</button>
+                    <button class="modal-btn" id="format-bo7" style="background: #666;" onclick="selectFormat('bo7', 7)">Best of 7</button>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn accept" id="create-match-submit-btn">✓ Create Match</button>
+                <button class="modal-btn decline" id="cancel-setup-btn">✗ Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Join Request Modal (for hosts) -->
     <div id="join-request-modal" class="join-request-modal">
         <div class="modal-content-custom">

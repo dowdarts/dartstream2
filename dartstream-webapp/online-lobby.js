@@ -12,7 +12,15 @@ let lobbyState = {
     myPendingRequest: null,
     realtimeChannel: null,
     joinRequestListener: null,
-    currentJoinRequest: null  // For hosts receiving requests
+    currentJoinRequest: null,  // For hosts receiving requests
+    matchSetup: {
+        gameType: '501',
+        startScore: 501,
+        doubleIn: false,
+        doubleOut: true,
+        matchFormat: 'single',
+        totalLegs: 1
+    }
 };
 
 // Initialize on page load
@@ -128,15 +136,73 @@ async function loadPlayerName(user) {
  * Setup UI event listeners
  */
 function setupUIListeners() {
-    document.getElementById('host-lobby-match-btn').addEventListener('click', hostLobbyMatch);
+    document.getElementById('host-lobby-match-btn').addEventListener('click', showMatchSetupModal);
     document.getElementById('back-to-scorer-btn').addEventListener('click', () => {
         window.location.href = './webapp-online-scorer.html';
     });
+    
+    // Match setup modal buttons
+    document.getElementById('create-match-submit-btn').addEventListener('click', createLobbyMatch);
+    document.getElementById('cancel-setup-btn').addEventListener('click', hideMatchSetupModal);
     
     // Join request modal buttons
     document.getElementById('accept-request-btn').addEventListener('click', acceptJoinRequest);
     document.getElementById('decline-request-btn').addEventListener('click', declineJoinRequest);
 }
+
+/**
+ * Show match setup modal
+ */
+function showMatchSetupModal() {
+    document.getElementById('match-setup-modal').classList.add('active');
+    // Reset to defaults
+    selectGameType('501');
+    selectFormat('single', 1);
+}
+
+/**
+ * Hide match setup modal
+ */
+function hideMatchSetupModal() {
+    document.getElementById('match-setup-modal').classList.remove('active');
+}
+
+/**
+ * Select game type
+ */
+window.selectGameType = function(type) {
+    lobbyState.matchSetup.gameType = type;
+    
+    if (type === '501') {
+        lobbyState.matchSetup.startScore = 501;
+        lobbyState.matchSetup.doubleIn = false;
+        lobbyState.matchSetup.doubleOut = true;
+    } else if (type === '301') {
+        lobbyState.matchSetup.startScore = 301;
+        lobbyState.matchSetup.doubleIn = true;
+        lobbyState.matchSetup.doubleOut = true;
+    }
+    
+    // Update button styles
+    document.getElementById('game-501').style.background = type === '501' ? '#4CAF50' : '#666';
+    document.getElementById('game-301').style.background = type === '301' ? '#4CAF50' : '#666';
+};
+
+/**
+ * Select match format
+ */
+window.selectFormat = function(format, legs) {
+    lobbyState.matchSetup.matchFormat = format;
+    lobbyState.matchSetup.totalLegs = legs;
+    
+    // Update button styles
+    ['single', 'bo3', 'bo5', 'bo7'].forEach(f => {
+        const btn = document.getElementById(`format-${f}`);
+        if (btn) {
+            btn.style.background = f === format ? '#4CAF50' : '#666';
+        }
+    });
+};
 
 /**
  * Load all available matches from database
@@ -326,16 +392,19 @@ window.cancelJoinRequest = async function(matchId) {
 };
 
 /**
- * Host a new lobby match
+ * Create a new lobby match with configured settings
  */
-async function hostLobbyMatch() {
+async function createLobbyMatch() {
     console.log('[LOBBY] Creating new lobby match...');
     
     // Generate unique room code
     const roomCode = generateRoomCode();
     
-    // Get game settings from user (simplified for now, use defaults)
-    const matchTitle = prompt('Enter match title:', 'Open Match') || 'Open Match';
+    // Get match title from input
+    const matchTitle = document.getElementById('match-title-input').value || 'Open Match';
+    
+    // Hide setup modal
+    hideMatchSetupModal();
     
     try {
         const { data: newMatch, error } = await window.supabaseClient
@@ -345,11 +414,11 @@ async function hostLobbyMatch() {
                 host_display_name: lobbyState.myDisplayName,
                 room_code: roomCode,
                 match_title: matchTitle,
-                game_type: '501',
-                start_score: 501,
-                double_in: false,
-                double_out: true,
-                total_legs: 1,
+                game_type: lobbyState.matchSetup.gameType,
+                start_score: lobbyState.matchSetup.startScore,
+                double_in: lobbyState.matchSetup.doubleIn,
+                double_out: lobbyState.matchSetup.doubleOut,
+                total_legs: lobbyState.matchSetup.totalLegs,
                 status: 'waiting'
             })
             .select()
@@ -359,8 +428,17 @@ async function hostLobbyMatch() {
         
         console.log('[LOBBY] ✅ Match created:', newMatch);
         
-        // Store match ID for listening to join requests
+        // Store match ID and settings for listening to join requests
         localStorage.setItem('hosting_lobby_match_id', newMatch.id);
+        localStorage.setItem('hosting_lobby_match_settings', JSON.stringify({
+            roomCode: roomCode,
+            gameType: lobbyState.matchSetup.gameType,
+            startScore: lobbyState.matchSetup.startScore,
+            doubleIn: lobbyState.matchSetup.doubleIn,
+            doubleOut: lobbyState.matchSetup.doubleOut,
+            totalLegs: lobbyState.matchSetup.totalLegs,
+            matchFormat: lobbyState.matchSetup.matchFormat
+        }));
         
         alert(`✅ Match created! Room Code: ${roomCode}\nWaiting for players in lobby...`);
         
@@ -462,8 +540,24 @@ function subscribeToJoinRequests() {
                     if (match) {
                         alert('✅ Request accepted! Connecting to match...');
                         
-                        // Redirect to split-screen with room code and auto-connect
-                        window.location.href = `./split-screen-online.html?room=${match.room_code}&auto=true`;
+                        // Build URL with match config for auto-start
+                        const matchConfig = {
+                            room: match.room_code,
+                            auto: 'true',
+                            gameType: match.game_type,
+                            startScore: match.start_score,
+                            doubleIn: match.double_in,
+                            doubleOut: match.double_out,
+                            totalLegs: match.total_legs,
+                            hostName: match.host_display_name,
+                            guestName: match.joined_display_name,
+                            fromLobby: 'true'
+                        };
+                        
+                        const params = new URLSearchParams(matchConfig);
+                        
+                        // Redirect to split-screen with full match config
+                        window.location.href = `./split-screen-online.html?${params.toString()}`;
                     }
                 }
                 
@@ -526,11 +620,26 @@ async function acceptJoinRequest() {
         
         console.log('[LOBBY] ✅ Join request accepted, match:', match);
         
-        // Redirect both players to split-screen with auto-connect
+        // Build URL with match config for auto-start
+        const matchConfig = {
+            room: match.room_code,
+            auto: 'true',
+            gameType: match.game_type,
+            startScore: match.start_score,
+            doubleIn: match.double_in,
+            doubleOut: match.double_out,
+            totalLegs: match.total_legs,
+            hostName: match.host_display_name,
+            guestName: match.joined_display_name,
+            fromLobby: 'true'
+        };
+        
+        const params = new URLSearchParams(matchConfig);
+        
         alert('✅ Player accepted! Connecting to match...');
         
-        // Redirect to split-screen with room code
-        window.location.href = `./split-screen-online.html?room=${match.room_code}&auto=true`;
+        // Redirect to split-screen with full match config
+        window.location.href = `./split-screen-online.html?${params.toString()}`;
         
     } catch (error) {
         console.error('[LOBBY] Error accepting request:', error);

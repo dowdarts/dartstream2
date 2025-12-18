@@ -105,7 +105,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Check for room code in URL parameter (for auto-join from split-screen)
         const urlParams = new URLSearchParams(window.location.search);
         const roomCodeParam = urlParams.get('room');
-        if (roomCodeParam && roomCodeParam.length === 4) {
+        const fromLobby = urlParams.get('fromLobby') === 'true';
+        
+        // If coming from lobby with full match config, auto-start the match
+        if (fromLobby && roomCodeParam) {
+            console.log('🎮 Auto-starting match from lobby');
+            
+            const lobbyMatchConfig = {
+                roomCode: roomCodeParam.toUpperCase(),
+                gameType: urlParams.get('gameType') || '501',
+                startScore: parseInt(urlParams.get('startScore')) || 501,
+                doubleIn: urlParams.get('doubleIn') === 'true',
+                doubleOut: urlParams.get('doubleOut') === 'true',
+                totalLegs: parseInt(urlParams.get('totalLegs')) || 1,
+                hostName: urlParams.get('hostName'),
+                guestName: urlParams.get('guestName')
+            };
+            
+            // Store config for when both players join
+            sessionStorage.setItem('lobby_match_config', JSON.stringify(lobbyMatchConfig));
+            
+            // Pre-fill room code and show join setup
+            document.getElementById('room-code-input').value = lobbyMatchConfig.roomCode;
+            showJoinSetup();
+        } else if (roomCodeParam && roomCodeParam.length === 4) {
             console.log('🔗 Auto-joining room from URL:', roomCodeParam);
             // Pre-fill room code and show join setup
             document.getElementById('room-code-input').value = roomCodeParam.toUpperCase();
