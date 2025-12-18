@@ -2,10 +2,10 @@
  * Online Lobby System
  * Allows players to browse public matches and instantly join
  * Integrates with both online scorer and video call (split-screen mode)
- * Version: 1.0.13
+ * Version: 1.0.14
  */
 
-console.log('[LOBBY] Version 1.0.13 loading...');
+console.log('[LOBBY] Version 1.0.14 loading...');
 
 let lobbyState = {
     currentUser: null,
@@ -980,6 +980,9 @@ document.getElementById('accept-join-request-btn')?.addEventListener('click', as
         
         if (error) throw error;
         
+        // CRITICAL: Update local state IMMEDIATELY so beforeunload sees it
+        lobbyState.myHostedMatch.status = 'in_progress';
+        
         console.log('[LOBBY] ✅ Join request accepted - starting match');
         
         // Stop timer
@@ -1066,9 +1069,9 @@ window.addEventListener('beforeunload', (event) => {
     
     // Delete hosted match if user is leaving while hosting (but not if match accepted)
     if (lobbyState.myHostedMatch) {
-        console.log('[LOBBY v1.0.13] 🚪 User leaving - checking local match status');
-        console.log('[LOBBY v1.0.13] Match ID:', lobbyState.myHostedMatch.id);
-        console.log('[LOBBY v1.0.13] Local status:', lobbyState.myHostedMatch.status);
+        console.log('[LOBBY v1.0.14] 🚪 User leaving - checking local match status');
+        console.log('[LOBBY v1.0.14] Match ID:', lobbyState.myHostedMatch.id);
+        console.log('[LOBBY v1.0.14] Local status:', lobbyState.myHostedMatch.status);
         
         // CRITICAL: Check LOCAL status first (already updated by acceptJoinRequest)
         // DO NOT delete if status is 'in_progress' or 'playing' (match was accepted)
@@ -1077,12 +1080,12 @@ window.addEventListener('beforeunload', (event) => {
         
         // If match already accepted (status changed to in_progress), skip cleanup
         if (localStatus === 'in_progress' || localStatus === 'playing') {
-            console.log('[LOBBY v1.0.13] ✅ Match accepted (local status), skipping cleanup');
+            console.log('[LOBBY v1.0.14] ✅ Match accepted (local status), skipping cleanup');
             return;
         }
         
         // Only delete if status is 'waiting' or 'pending' (not yet accepted)
-        console.log('[LOBBY v1.0.13] 🗑️ Deleting unaccepted match:', matchId);
+        console.log('[LOBBY v1.0.14] 🗑️ Deleting unaccepted match:', matchId);
         
         // Get session token synchronously from localStorage
         const sessionKey = Object.keys(localStorage).find(key => 
@@ -1100,7 +1103,7 @@ window.addEventListener('beforeunload', (event) => {
                     'Content-Type': 'application/json'
                 },
                 keepalive: true
-            }).catch(err => console.error('[LOBBY v1.0.13] Delete error:', err));
+            }).catch(err => console.error('[LOBBY v1.0.14] Delete error:', err));
         }
     }
 });
