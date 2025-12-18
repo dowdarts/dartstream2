@@ -1,6 +1,6 @@
 /**
  * Online Lobby System
- * Allows players to browse public matches and join via request system
+ * Allows players to browse public matches and instantly join
  * Integrates with both online scorer and video call (split-screen mode)
  */
 
@@ -9,10 +9,7 @@ let lobbyState = {
     myDisplayName: null,
     myUserId: null,
     availableMatches: [],
-    myPendingRequest: null,
     realtimeChannel: null,
-    joinRequestListener: null,
-    currentJoinRequest: null,  // For hosts receiving requests
     matchSetup: {
         gameType: '501',
         startScore: 501,
@@ -145,9 +142,7 @@ function setupUIListeners() {
     document.getElementById('create-match-submit-btn').addEventListener('click', createLobbyMatch);
     document.getElementById('cancel-setup-btn').addEventListener('click', hideMatchSetupModal);
     
-    // Join request modal buttons
-    document.getElementById('accept-request-btn').addEventListener('click', acceptJoinRequest);
-    document.getElementById('decline-request-btn').addEventListener('click', declineJoinRequest);
+    // NOTE: Direct join mode - no join request modal needed anymore
 }
 
 /**
@@ -212,26 +207,15 @@ async function loadAvailableMatches() {
     
     try {
         const { data: matches, error } = await window.supabaseClient
-            .from('lobby_matches')
+            .from('game_rooms')
             .select('*')
             .eq('status', 'waiting')
+            .is('guest_id', null)  // Only show matches without a guest
             .order('created_at', { ascending: false });
         
         if (error) throw error;
         
         lobbyState.availableMatches = matches || [];
-        
-        // Check if user has any pending requests
-        const { data: myRequests } = await window.supabaseClient
-            .from('join_requests')
-            .select('*, lobby_matches(*)')
-            .eq('requesting_user_id', lobbyState.myUserId)
-            .eq('status', 'pending')
-            .single();
-        
-        if (myRequests) {
-            lobbyState.myPendingRequest = myRequests;
-        }
         
         renderMatches();
         
@@ -266,72 +250,109 @@ function renderMatches() {
     matchCount.textContent = lobbyState.availableMatches.length;
     
     matchesGrid.innerHTML = lobbyState.availableMatches.map(match => {
-        const isPending = lobbyState.myPendingRequest && 
-                         lobbyState.myPendingRequest.lobby_match_id === match.id;
-        const isMyMatch = match.host_user_id === lobbyState.myUserId;
+        const gameState = match.game_state || {};
+        const hostName = gameState.host_name || 'Host';
+        const gameType = gameState.game_type || '501';
+        const startType = gameState.start_type || 'SI';
+        const matchFormat = gameState.match_format || 'single';
+        const totalLegs = gameState.total_legs || 1;
+        const isMyMatch = match.host_id === lobbyState.myUserId;
+        
+        // Format display strings
+        const gameDisplay = `${gameType} ${startType}DO`;
+        const formatDisplay = matchFormat === 'single' ? 'Single Leg' : 
+                             matchFormat === 'bo3' ? 'Best of 3' :
+                             matchFormat === 'bo5' ? 'Best of 5' :
+                             matchFormat === 'bo7' ? 'Best of 7' : `Best of ${totalLegs}`;
         
         return `
-            <div class="match-card ${isPending ? 'pending-request' : ''}" 
+            <div class="match-card" 
                  data-match-id="${match.id}"
-                 onclick="handleMatchClick('${match.id}', ${isMyMatch})">
+                 onclick="handleMatchClick('${match.id}', '${match.room_code}', ${isMyMatch})">
                 <div class="match-card-header">
-                    <div class="match-title">${match.match_title}</div>
-                    <div class="match-status ${isPending ? 'pending' : 'waiting'}">
-                        ${isPending ? '⏳ Pending' : isMyMatch ? '🏠 Your Match' : '✓ Available'}
+                    <div class="match-title">${gameDisplay} ${formatDisplay}</div>
+                    <div class="match-status ${isMyMatch ? 'pending' : 'waiting'}">
+                        ${isMyMatch ? '🏠 Your Match' : '✓ Available'}
                     </div>
                 </div>
                 
                 <div class="host-name">
-                    🎯 Host: ${match.host_display_name}
+                    🎯 Host: ${hostName}
                 </div>
                 
                 <div class="match-info">
                     <div class="match-info-row">
                         <span class="match-info-label">Game Type:</span>
-                        <span class="match-info-value">${match.game_type} ${match.double_in ? 'DI' : 'SI'}/${match.double_out ? 'DO' : 'SO'}</span>
+                        <span class="match-info-value">${gameDisplay}</span>
                     </div>
                     <div class="match-info-row">
                         <span class="match-info-label">Format:</span>
-                        <span class="match-info-value">${match.total_legs === 1 ? 'Single Leg' : 'Best of ' + match.total_legs}</span>
+                        <span class="match-info-value">${formatDisplay}</span>
                     </div>
                     <div class="match-info-row">
                         <span class="match-info-label">Room Code:</span>
                         <span class="match-info-value">${match.room_code}</span>
                     </div>
                 </div>
-                
-                ${isPending ? `
-                    <button class="cancel-request-btn" onclick="event.stopPropagation(); cancelJoinRequest('${match.id}')">
-                        Cancel Request
-                    </button>
-                ` : ''}
             </div>
         `;
     }).join('');
 }
 
 /**
- * Handle match card click
+ * Handle match card click - join the match directly
  */
-window.handleMatchClick = async function(matchId, isMyMatch) {
+window.handleMatchClick = async function(matchId, roomCode, isMyMatch) {
     if (isMyMatch) {
-        alert('This is your match! Wait for players to request to join.');
+        alert('This is your match! Wait for players to join.');
         return;
     }
     
-    // Check if already have pending request
-    if (lobbyState.myPendingRequest && lobbyState.myPendingRequest.lobby_match_id === matchId) {
-        alert('You already have a pending request for this match!');
-        return;
-    }
+    console.log('[LOBBY] Joining match:', matchId, roomCode);
     
-    // Send join request
-    await sendJoinRequest(matchId);
+    try {
+        // Get the match details
+        const { data: match, error: fetchError } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('id', matchId)
+            .single();
+        
+        if (fetchError) throw fetchError;
+        
+        // Update match with guest info
+        const { error: updateError } = await window.supabaseClient
+            .from('game_rooms')
+            .update({
+                guest_id: lobbyState.myUserId,
+                game_state: {
+                    ...match.game_state,
+                    guest_name: lobbyState.myDisplayName,
+                    guest_player_id: lobbyState.myUserId
+                }
+            })
+            .eq('id', matchId);
+        
+        if (updateError) throw updateError;
+        
+        console.log('[LOBBY] ✅ Joined match successfully');
+        
+        // Redirect to split-screen with room code
+        alert('✅ Joined match! Connecting...');
+        window.location.href = `./split-screen-online.html?room=${roomCode}&auto=true&fromLobby=true`;
+        
+    } catch (error) {
+        console.error('[LOBBY] Error joining match:', error);
+        alert('Failed to join match. Please try again.');
+    }
 };
 
-/**
- * Send join request to match host
- */
+// =============================
+// UNUSED - Direct Join Mode
+// =============================
+// These functions were for join request approval system
+// Now using instant join via handleMatchClick()
+/*
 async function sendJoinRequest(matchId) {
     console.log('[LOBBY] Sending join request for match:', matchId);
     
@@ -362,9 +383,6 @@ async function sendJoinRequest(matchId) {
     }
 }
 
-/**
- * Cancel join request
- */
 window.cancelJoinRequest = async function(matchId) {
     console.log('[LOBBY] Cancelling join request for match:', matchId);
     
@@ -390,6 +408,7 @@ window.cancelJoinRequest = async function(matchId) {
         alert('Failed to cancel request');
     }
 };
+*/
 
 /**
  * Create a new lobby match with configured settings
@@ -406,20 +425,25 @@ async function createLobbyMatch() {
     // Hide setup modal
     hideMatchSetupModal();
     
+    // Determine start type based on game type
+    const startType = lobbyState.matchSetup.gameType === '501' ? 'SI' : 'DI';
+    
     try {
         const { data: newMatch, error } = await window.supabaseClient
-            .from('lobby_matches')
+            .from('game_rooms')
             .insert({
-                host_user_id: lobbyState.myUserId,
-                host_display_name: lobbyState.myDisplayName,
                 room_code: roomCode,
-                match_title: matchTitle,
-                game_type: lobbyState.matchSetup.gameType,
-                start_score: lobbyState.matchSetup.startScore,
-                double_in: lobbyState.matchSetup.doubleIn,
-                double_out: lobbyState.matchSetup.doubleOut,
-                total_legs: lobbyState.matchSetup.totalLegs,
-                status: 'waiting'
+                host_id: lobbyState.myUserId,
+                status: 'waiting',
+                game_state: {
+                    host_name: lobbyState.myDisplayName,
+                    host_player_id: lobbyState.myUserId,
+                    game_type: lobbyState.matchSetup.gameType,
+                    start_type: startType,
+                    match_format: lobbyState.matchSetup.matchFormat,
+                    total_legs: lobbyState.matchSetup.totalLegs,
+                    match_title: matchTitle
+                }
             })
             .select()
             .single();
@@ -427,18 +451,6 @@ async function createLobbyMatch() {
         if (error) throw error;
         
         console.log('[LOBBY] ✅ Match created:', newMatch);
-        
-        // Store match ID and settings for listening to join requests
-        localStorage.setItem('hosting_lobby_match_id', newMatch.id);
-        localStorage.setItem('hosting_lobby_match_settings', JSON.stringify({
-            roomCode: roomCode,
-            gameType: lobbyState.matchSetup.gameType,
-            startScore: lobbyState.matchSetup.startScore,
-            doubleIn: lobbyState.matchSetup.doubleIn,
-            doubleOut: lobbyState.matchSetup.doubleOut,
-            totalLegs: lobbyState.matchSetup.totalLegs,
-            matchFormat: lobbyState.matchSetup.matchFormat
-        }));
         
         alert(`✅ Match created! Room Code: ${roomCode}\nWaiting for players in lobby...`);
         
@@ -470,13 +482,13 @@ function subscribeToLobbyUpdates() {
     console.log('[LOBBY] Subscribing to real-time updates...');
     
     lobbyState.realtimeChannel = window.supabaseClient
-        .channel('lobby_matches_channel')
+        .channel('lobby_game_rooms_channel')
         .on(
             'postgres_changes',
             {
                 event: '*',
                 schema: 'public',
-                table: 'lobby_matches'
+                table: 'game_rooms'
             },
             (payload) => {
                 console.log('[LOBBY] Match update:', payload);
@@ -487,94 +499,14 @@ function subscribeToLobbyUpdates() {
 }
 
 /**
- * Subscribe to join requests for hosted matches
+ * Subscribe to join requests - not needed anymore since direct join
  */
 function subscribeToJoinRequests() {
-    console.log('[LOBBY] Subscribing to join requests...');
-    
-    lobbyState.joinRequestListener = window.supabaseClient
-        .channel('join_requests_channel')
-        .on(
-            'postgres_changes',
-            {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'join_requests',
-                filter: `status=eq.pending`
-            },
-            async (payload) => {
-                console.log('[LOBBY] Join request received:', payload);
-                
-                // Check if this request is for my match
-                const request = payload.new;
-                const hostingMatchId = localStorage.getItem('hosting_lobby_match_id');
-                
-                if (request.lobby_match_id === hostingMatchId) {
-                    // Show accept/decline modal
-                    showJoinRequestModal(request);
-                }
-            }
-        )
-        .on(
-            'postgres_changes',
-            {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'join_requests',
-                filter: `requesting_user_id=eq.${lobbyState.myUserId}`
-            },
-            async (payload) => {
-                console.log('[LOBBY] Join request updated:', payload);
-                
-                const request = payload.new;
-                
-                // If my request was accepted, redirect to match
-                if (request.status === 'accepted' && lobbyState.myPendingRequest) {
-                    // Get match details
-                    const { data: match } = await window.supabaseClient
-                        .from('lobby_matches')
-                        .select('*')
-                        .eq('id', request.lobby_match_id)
-                        .single();
-                    
-                    if (match) {
-                        alert('✅ Request accepted! Connecting to match...');
-                        
-                        // Build URL with match config for auto-start
-                        const matchConfig = {
-                            room: match.room_code,
-                            auto: 'true',
-                            gameType: match.game_type,
-                            startScore: match.start_score,
-                            doubleIn: match.double_in,
-                            doubleOut: match.double_out,
-                            totalLegs: match.total_legs,
-                            hostName: match.host_display_name,
-                            guestName: match.joined_display_name,
-                            fromLobby: 'true'
-                        };
-                        
-                        const params = new URLSearchParams(matchConfig);
-                        
-                        // Redirect to split-screen with full match config
-                        window.location.href = `./split-screen-online.html?${params.toString()}`;
-                    }
-                }
-                
-                // If declined, show notification
-                if (request.status === 'declined') {
-                    alert('❌ Host declined your join request');
-                    lobbyState.myPendingRequest = null;
-                    await loadAvailableMatches();
-                }
-            }
-        )
-        .subscribe();
+    console.log('[LOBBY] Direct join mode - no join request subscriptions needed');
 }
 
-/**
- * Show join request modal for hosts
- */
+/*
+// UNUSED - Direct join mode (no approval needed)
 function showJoinRequestModal(request) {
     lobbyState.currentJoinRequest = request;
     
@@ -583,10 +515,9 @@ function showJoinRequestModal(request) {
     
     console.log('[LOBBY] Showing join request modal:', request);
 }
+*/
 
-/**
- * Accept join request
- */
+/*
 async function acceptJoinRequest() {
     if (!lobbyState.currentJoinRequest) return;
     
@@ -647,9 +578,6 @@ async function acceptJoinRequest() {
     }
 }
 
-/**
- * Decline join request
- */
 async function declineJoinRequest() {
     if (!lobbyState.currentJoinRequest) return;
     
@@ -674,6 +602,7 @@ async function declineJoinRequest() {
         alert('Failed to decline request');
     }
 }
+*/
 
 /**
  * Cleanup on page unload
