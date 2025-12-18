@@ -165,7 +165,7 @@
 
     <div class="split-container" id="container">
         <div class="split-pane">
-            <iframe id="online-scorer-iframe" src="webapp-online-scorer.html" title="Online Scorer"></iframe>
+            <iframe id="online-scorer-iframe" src="webapp-online-scorer.html?v=2.5.2" title="Online Scorer"></iframe>
         </div>
         <div class="divider" id="divider"></div>
         <div class="split-pane">
@@ -185,7 +185,7 @@
         if (showLobby) {
             console.log('🏛️ Loading split-screen with lobby');
             const onlineScorerIframe = document.getElementById('online-scorer-iframe');
-                onlineScorerIframe.src = `online-lobby.html?v=1.0.9&t=${Date.now()}`;
+                onlineScorerIframe.src = `online-lobby.html?v=1.0.10&t=${Date.now()}`;
             onlineScorerIframe.title = 'Match Lobby';
         }
         
