@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="dartstream-logo.png">
-    <title>DartStream - Split Screen: Online Scorer + Video Call v2.7.7</title>
+    <title>DartStream - Split Screen: Online Scorer + Video Call v2.7.8</title>
     <style>
         * {
             margin: 0;
@@ -150,7 +150,7 @@
 <body>
     <button class="close-btn" onclick="window.location.href='index.html'">✕ Close Split Screen</button>
     <button class="layout-toggle" onclick="toggleLayout()">⇄ Toggle Layout</button>
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.7</div>
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.8</div>
     
     <!-- User Display Badge -->
     <div id="user-display" style="position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; color: #4ade80; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; border: 2px solid #4ade80; display: none;">
@@ -185,7 +185,7 @@
         if (showLobby) {
             console.log('🏛️ Loading split-screen with lobby');
             const onlineScorerIframe = document.getElementById('online-scorer-iframe');
-                onlineScorerIframe.src = `online-lobby.html?v=1.0.8&t=${Date.now()}`;
+                onlineScorerIframe.src = `online-lobby.html?v=1.0.9&t=${Date.now()}`;
             onlineScorerIframe.title = 'Match Lobby';
         }
         

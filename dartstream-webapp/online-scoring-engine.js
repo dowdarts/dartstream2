@@ -641,12 +641,12 @@ async function joinMatch() {
     document.getElementById('waiting-message').textContent = 'Joining match...';
     
     try {
-        // Find the match
+        // Find the match (waiting or in_progress)
         const { data: match, error } = await window.supabaseClient
             .from('game_rooms')
             .select('*')
             .eq('room_code', onlineState.roomCode)
-            .eq('status', 'waiting')
+            .in('status', ['waiting', 'in_progress'])
             .single();
         
         if (error || !match) {

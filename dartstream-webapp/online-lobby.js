@@ -1051,8 +1051,8 @@ window.addEventListener('beforeunload', (event) => {
         clearInterval(lobbyState.matchTimer);
     }
     
-    // Delete hosted match if user is leaving while hosting
-    if (lobbyState.myHostedMatch) {
+    // Delete hosted match if user is leaving while hosting (but not if match accepted)
+    if (lobbyState.myHostedMatch && lobbyState.myHostedMatch.status !== 'in_progress') {
         console.log('[LOBBY] 🚪 User leaving - deleting hosted match:', lobbyState.myHostedMatch.id);
         
         // CRITICAL: Must be synchronous! Get session token synchronously from localStorage
