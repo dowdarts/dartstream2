@@ -114,33 +114,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // If no reconnection happened, proceed with normal flow (including lobby joins)
         if (fromLobby && roomCodeParam) {
-            console.log('🎮 Auto-starting match from lobby');
+            console.log('🎮 Auto-joining match from lobby, room:', roomCodeParam);
             
-            const lobbyMatchConfig = {
-                roomCode: roomCodeParam.toUpperCase(),
-                gameType: urlParams.get('gameType') || '501',
-                startScore: parseInt(urlParams.get('startScore')) || 501,
-                doubleIn: urlParams.get('doubleIn') === 'true',
-                doubleOut: urlParams.get('doubleOut') === 'true',
-                totalLegs: parseInt(urlParams.get('totalLegs')) || 1,
-                hostName: urlParams.get('hostName'),
-                guestName: urlParams.get('guestName')
-            };
+            // Show join setup screen first
+            showJoinSetup();
             
-            // Store config for when both players join
-            sessionStorage.setItem('lobby_match_config', JSON.stringify(lobbyMatchConfig));
+            // Pre-fill room code
+            const roomCodeInput = document.getElementById('room-code-input');
+            if (roomCodeInput) {
+                roomCodeInput.value = roomCodeParam.toUpperCase();
+                console.log('✅ Room code pre-filled:', roomCodeParam);
+            } else {
+                console.error('❌ Room code input not found (ID: room-code-input)');
+            }
             
-            // Pre-fill room code and auto-join
-            document.getElementById('room-code-input').value = lobbyMatchConfig.roomCode;
-            
-            // Auto-join the match after a brief delay
+            // Auto-click join button after a brief delay to allow DOM to settle
             setTimeout(() => {
-                const joinButton = document.getElementById('join-room-btn');
-                if (joinButton) {
-                    console.log('🎮 Auto-clicking join button for lobby match');
-                    joinButton.click();
+                const joinSubmitBtn = document.getElementById('join-match-submit-btn');
+                if (joinSubmitBtn) {
+                    console.log('🎮 Auto-clicking join submit button for lobby match');
+                    joinSubmitBtn.click();
+                } else {
+                    console.error('❌ Join submit button not found (ID: join-match-submit-btn)');
                 }
-            }, 500);
+            }, 800);
         } else if (roomCodeParam && roomCodeParam.length === 4) {
             console.log('🔗 Auto-joining room from URL:', roomCodeParam);
             // Pre-fill room code and show join setup
