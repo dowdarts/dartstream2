@@ -1341,20 +1341,7 @@ function resetOnlineState() {
 }
 
 function startGame() {
-    // Check if this is a lobby match (from URL or session storage)
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromLobby = urlParams.get('fromLobby') === 'true';
-    const lobbyConfigStr = sessionStorage.getItem('lobby_match_config');
-    const isLobbyMatch = fromLobby || lobbyConfigStr;
-    
-    // For lobby matches, auto-start with host as starting player
-    if (isLobbyMatch && onlineState.myRole === 'host') {
-        console.log('🎮 Auto-starting lobby match with host as starting player');
-        startActualGame('host');
-        return;
-    }
-    
-    // Only host sees player selection screen (for non-lobby matches)
+    // Only host sees player selection screen
     if (onlineState.myRole === 'host') {
         showScreen('player-selection-screen');
         
@@ -1372,7 +1359,7 @@ function startGame() {
         // Guest goes directly to waiting for host to select
         showScreen('game-screen');
         document.getElementById('room-code-display-game').textContent = onlineState.roomCode;
-        document.getElementById('status-text').textContent = isLobbyMatch ? '🎯 STARTING MATCH...' : '⏳ HOST IS SELECTING STARTING PLAYER';
+        document.getElementById('status-text').textContent = '⏳ HOST IS SELECTING STARTING PLAYER';
         fetchAndRenderMatchState();
     }
 }
