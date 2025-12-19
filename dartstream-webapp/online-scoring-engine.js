@@ -767,6 +767,9 @@ function subscribeToMatchUpdates() {
                 
                 // If both players are now present and we're NOT already on game screen, show player selection
                 if (roomData.game_state?.host_name && roomData.game_state?.guest_name) {
+                    console.log('🎯 Both players detected! Host:', roomData.game_state?.host_name, 'Guest:', roomData.game_state?.guest_name);
+                    console.log('🎯 My role:', onlineState.myRole, 'Current screen:', document.querySelector('.screen.active')?.id);
+                    
                     // Get opponent info if we haven't yet
                     if (!onlineState.opponentName) {
                         if (onlineState.myRole === 'host') {
@@ -776,12 +779,14 @@ function subscribeToMatchUpdates() {
                             onlineState.opponentName = roomData.game_state.host_name;
                             onlineState.opponentPlayerId = roomData.game_state.host_player_id;
                         }
+                        console.log('🎯 Opponent set:', onlineState.opponentName);
                     }
                     
                     // Only trigger startGame once, when on waiting screen
                     const waitingScreen = document.getElementById('waiting-screen');
                     const playerSelectionScreen = document.getElementById('player-selection-screen');
                     if (waitingScreen?.classList.contains('active')) {
+                        console.log('🎯 Transitioning from waiting screen to game screens...');
                         startGame();
                         
                         // BROADCAST video call notification to both users via GLOBAL channel
@@ -1406,8 +1411,11 @@ function resetOnlineState() {
 }
 
 function startGame() {
+    console.log('🎮 startGame() called. My role:', onlineState.myRole);
+    
     // Only host sees player selection screen
     if (onlineState.myRole === 'host') {
+        console.log('👑 Host: Showing player selection screen');
         showScreen('player-selection-screen');
         
         // Display player names in selection buttons
@@ -1422,6 +1430,7 @@ function startGame() {
         guestSelectBtn.onclick = () => startActualGame('guest');
     } else {
         // Guest goes directly to waiting for host to select
+        console.log('👤 Guest: Showing game screen with "Host is selecting" message');
         showScreen('game-screen');
         document.getElementById('room-code-display-game').textContent = onlineState.roomCode;
         document.getElementById('status-text').textContent = '⏳ HOST IS SELECTING STARTING PLAYER';
