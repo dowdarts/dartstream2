@@ -644,6 +644,10 @@ async function hostMatch() {
         // Save match state for reconnection
         saveMatchState();
 
+        // After saving state, check if both players are now connected
+        console.log('🔍 Host checking if both players are connected...');
+        checkBothPlayersConnected();
+
         // Start listening for guest joining (subscription will trigger startGame when guest joins)
         subscribeToMatchUpdates();
 
@@ -737,12 +741,88 @@ async function joinMatch() {
         // Save match state for reconnection
         saveMatchState();
         
+        // After saving state, check if both players are now connected
+        console.log('🔍 Checking if both players are connected after join...');
+        checkBothPlayersConnected();
+        
         document.getElementById('waiting-message').textContent = 'Joined! Waiting for host to start...';
         subscribeToMatchUpdates();
         
     } catch (error) {
         console.error('Error in joinMatch:', error);
         alert('Error joining match');
+    }
+}
+
+/**
+ * ============ BOTH PLAYERS CONNECTED CHECK ============
+ */
+async function checkBothPlayersConnected() {
+    console.log('🔍 checkBothPlayersConnected() called');
+    
+    try {
+        // Re-fetch the latest match data to check if both players are present
+        const { data: match, error } = await window.supabaseClient
+            .from('game_rooms')
+            .select('*')
+            .eq('room_code', onlineState.roomCode)
+            .single();
+            
+        if (error || !match) {
+            console.log('⚠️ Could not fetch match for both-players check:', error);
+            return;
+        }
+        
+        const gameState = match.game_state || {};
+        console.log('🔍 Current match state:', {
+            hostName: gameState.host_name,
+            guestName: gameState.guest_name,
+            myRole: onlineState.myRole,
+            currentScreen: document.querySelector('.screen.active')?.id
+        });
+        
+        // If both players are present and we're on waiting screen, transition
+        if (gameState.host_name && gameState.guest_name) {
+            console.log('🎯 BOTH PLAYERS CONFIRMED CONNECTED!');
+            
+            // Update opponent info if needed
+            if (!onlineState.opponentName) {
+                if (onlineState.myRole === 'host') {
+                    onlineState.opponentName = gameState.guest_name;
+                    onlineState.opponentPlayerId = gameState.guest_player_id;
+                } else {
+                    onlineState.opponentName = gameState.host_name;
+                    onlineState.opponentPlayerId = gameState.host_player_id;
+                }
+                console.log('🎯 Opponent info updated:', onlineState.opponentName);
+            }
+            
+            // Transition from waiting screen if we're on it
+            const waitingScreen = document.getElementById('waiting-screen');
+            if (waitingScreen?.classList.contains('active')) {
+                console.log('🎯 Transitioning from waiting screen to game screens...');
+                startGame();
+                
+                // Send video call notification
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'ONLINE_SCORER_PLAYERS_CONNECTED',
+                        roomCode: onlineState.roomCode,
+                        hostName: onlineState.myRole === 'host' ? onlineState.myName : onlineState.opponentName,
+                        guestName: onlineState.myRole === 'guest' ? onlineState.myName : onlineState.opponentName,
+                        status: match.status
+                    }, '*');
+                    console.log('📡 Manual notification sent: both players connected');
+                }
+            } else {
+                console.log('🎯 Not on waiting screen, current screen:', document.querySelector('.screen.active')?.id);
+            }
+        } else {
+            console.log('🔍 Still waiting for other player. Host:', gameState.host_name, 'Guest:', gameState.guest_name);
+        }
+        
+    } catch (error) {
+        console.error('Error in checkBothPlayersConnected:', error);
     }
 }
 
