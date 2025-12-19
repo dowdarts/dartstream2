@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link rel="icon" type="image/png" href="dartstream-logo.png">
-    <title>DartStream - Split Screen: Online Scorer + Video Call v2.7.14</title>
+    <title>DartStream - Split Screen: Online Scorer + Video Call v2.7.15</title>
     <style>
         * {
             margin: 0;
@@ -153,7 +153,7 @@
 <body>
     <button class="close-btn" onclick="window.location.href='index.html'">✕ Close Split Screen</button>
     <button class="layout-toggle" onclick="toggleLayout()">⇄ Toggle Layout</button>
-    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.9</div>
+    <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: #facc15; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px; border: 2px solid #facc15;">v2.7.15</div>
     
     <!-- User Display Badge -->
     <div id="user-display" style="position: fixed; top: 10px; left: 10px; font-size: 12px; font-weight: bold; color: #4ade80; z-index: 999; font-family: monospace; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; border: 2px solid #4ade80; display: none;">
@@ -305,7 +305,7 @@
                 // Hide share link banner when both players connect
                 document.getElementById('share-link-banner').style.display = 'none';
                 
-                // Forward to video call iframe
+                // Forward to video call iframe with auto-connect for seamless joining
                 const videoCallFrame = document.querySelector('iframe[src*="play-online"]');
                 if (videoCallFrame && videoCallFrame.contentWindow) {
                     videoCallFrame.contentWindow.postMessage({
@@ -313,9 +313,11 @@
                         roomCode: event.data.roomCode,
                         hostName: event.data.hostName,
                         guestName: event.data.guestName,
-                        persistent: true  // Keep showing until dismissed
+                        persistent: true,  // Keep showing until dismissed
+                        autoConnect: true, // NEW: Automatically connect without user clicking
+                        fromLobby: true    // NEW: Treat as lobby connection for seamless flow
                     }, '*');
-                    console.log('📡 Forwarded to video call iframe:', event.data.roomCode);
+                    console.log('📡 Auto-connecting both players to video call:', event.data.roomCode);
                 }
             }
             
